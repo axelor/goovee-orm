@@ -6,11 +6,20 @@ import { generateSchema } from "../schema/schema-generator";
 
 const tsConfig = {
   compilerOptions: {
+    lib: ["es5", "es6"],
+    target: "es6",
     module: "commonjs",
-    experimentalDecorators: true,
+    moduleResolution: "node",
     emitDecoratorMetadata: true,
-    target: "esnext",
+    experimentalDecorators: true,
+    declaration: true,
+    declarationMap: true,
+    outDir: "./dist",
+    paths: {
+      typeorm: ["../cms-core/node_modules/typeorm"],
+    },
   },
+  include: ["src"],
   exclude: ["node_modules"],
 };
 
@@ -19,6 +28,8 @@ const packageJson = {
   version: pkg.version,
   license: pkg.license,
   private: true,
+  main: "./dist/index.js",
+  types: "./dist/index.d.ts",
   dependencies: {
     "@goovee/orm": pkg.version,
     typeorm: pkg.dependencies.typeorm,
@@ -45,6 +56,10 @@ export const generateProject = (outDir: string) => {
 
   files.push(create(outDir, "package.json", packageJson));
   files.push(create(outDir, "tsconfig.json", tsConfig));
+
+  create(path.join(outDir, "src"), "index.ts", 'export * from "./entity";\n');
+
+  files.push(path.join("src", "index.ts"));
 
   return files;
 };
