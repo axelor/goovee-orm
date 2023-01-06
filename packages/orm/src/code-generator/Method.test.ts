@@ -14,9 +14,9 @@ describe("Method tests", () => {
     const method = new Method("say", {
       modifier: "function",
     });
-    method.param("what", "string", "Hello!");
-    method.param("next", "string");
-    method.param("...args", "string[]");
+    method.param("what", { type: "string", value: "Hello!" });
+    method.param("next", { type: "string" });
+    method.param("...args", { type: "string[]" });
     method.line("console.log(`Say: ${what}`);");
     method.line("console.log(`And: ${next}`);");
     method.line("console.log(`Also: ${args.join(' ')}`);");
@@ -50,7 +50,7 @@ function say(what: string = "Hello!", next?: string, ...args: string[]) {
     const method = new Method("say", {
       modifier: "function",
     });
-    method.param("what", "string");
+    method.param("what", { type: "string" });
     method.doc("Say what you want.");
     method.doc("");
     method.doc("This method will print the given message!");

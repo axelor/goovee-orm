@@ -29,7 +29,7 @@ describe("Interface tests", () => {
     const code = emit(type);
     expect(code).toBe(`\
 interface Type extends Some, Another {
-  name!: string;
+  name: string;
   readonly age?: number = 200;
   test(): number;
 }`);

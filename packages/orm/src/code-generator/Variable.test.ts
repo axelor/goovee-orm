@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CodeFile } from "./CodeFile";
+import { ContainerType } from "./Container";
 import { Variable } from "./Variable";
 
 const emit = (v: Variable) => {
@@ -43,6 +44,7 @@ describe("Variable tests", () => {
       type: "string",
       required: true,
       field: true,
+      ownerType: ContainerType.CLASS,
     });
     const code = emit(variable);
     expect(code).equals("hello!: string;");

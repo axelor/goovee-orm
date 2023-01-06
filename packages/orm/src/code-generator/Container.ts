@@ -38,9 +38,14 @@ export abstract class Container<T extends ContainerOptions>
   }
 
   field(field: string | Variable, options: VariableOptions = {}) {
-    const opts = { ...options, field: true };
     const member =
-      typeof field === "string" ? new Variable(field, opts) : field;
+      typeof field === "string" ? new Variable(field, options) : field;
+
+    member.merge({
+      field: true,
+      ownerType: this.type,
+    });
+
     this.fields.push(member);
     return member;
   }

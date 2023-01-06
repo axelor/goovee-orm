@@ -2,10 +2,11 @@ import { CodeFile } from "./CodeFile";
 import { Decorable } from "./Decorable";
 import { Emittable } from "./Emittable";
 import { ImportName } from "./ImportName";
-import { Variable } from "./Variable";
+import { Variable, VariableOptions } from "./Variable";
 
 export interface MethodOptions {
   type?: string | ImportName;
+  typeArgs?: string[];
   visibility?: "private" | "protected";
   abstract?: boolean;
   getter?: boolean;
@@ -13,6 +14,7 @@ export interface MethodOptions {
   arrow?: boolean | string;
   declaration?: boolean;
   modifier?: "function" | "const";
+  async?: boolean;
 }
 
 export class Method extends Decorable implements Emittable {
@@ -27,8 +29,9 @@ export class Method extends Decorable implements Emittable {
     this.opts = options;
   }
 
-  param(name: string, type?: string | ImportName, value?: any) {
-    const param = new Variable(name, { type, value });
+  param(name: string | Variable, options: VariableOptions = {}) {
+    const param = typeof name === "string" ? new Variable(name) : name;
+    param.merge(options);
     this.args.push(param);
     return this;
   }
@@ -49,6 +52,7 @@ export class Method extends Decorable implements Emittable {
       if (opts.abstract) file.write("abstract ");
       if (opts.getter) file.write("get ");
       if (opts.setter) file.write("set ");
+      if (opts.async) file.write("async ");
     }
 
     if (modifier) file.write(modifier).write(" ");
@@ -57,6 +61,13 @@ export class Method extends Decorable implements Emittable {
     }
 
     if (modifier && arrow) file.write(" = ");
+    if (opts.async && arrow) file.write("async ");
+
+    if (opts.typeArgs?.length) {
+      file.write("<");
+      file.write(opts.typeArgs.join(", "));
+      file.write(">");
+    }
 
     file.write("(");
 
