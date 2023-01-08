@@ -1,0 +1,171 @@
+import * as typeorm from "typeorm";
+import { createDataSource } from "../typeorm";
+import {
+  BulkDeleteOptions,
+  BulkUpdateOptions,
+  CreateOptions,
+  DeleteOptions,
+  Entity,
+  ID,
+  Payload,
+  QueryOptions,
+  QueryPayload,
+  Repository,
+  UpdateOptions,
+  WhereOptions,
+} from "./types";
+
+export type QueryClient = {
+  $raw(query: string, ...params: any[]): Promise<unknown>;
+};
+
+export type ConnectionClient<T extends QueryClient> = T & {
+  $sync(): Promise<void>;
+  $sync(drop: boolean): Promise<void>;
+  $connect(): Promise<void>;
+  $disconnect(): Promise<void>;
+  $transaction<R>(job: (client: T) => Promise<R>): Promise<R>;
+};
+
+export type EntityClass<T extends Entity = Entity> = new () => T;
+export type EntityClient<T extends Record<string, EntityClass>> =
+  QueryClient & {
+    [K in keyof T]: T[K] extends EntityClass<infer E> ? Repository<E> : never;
+  };
+
+export type ClientOptions = {
+  url: string;
+  sync?: boolean;
+};
+
+const createClientProxy = <T extends object>(
+  target: T,
+  em: typeorm.EntityManager,
+  entities: Record<string, EntityClass>
+) => {
+  const repos: Record<string, Repository<any>> = {};
+  const proxy = new Proxy(target, {
+    get(target, p, receiver) {
+      if (typeof p === "string" && p in entities) {
+        const repo =
+          repos[p] ??
+          (repos[p] = new EntityRepository<any>(em.getRepository(entities[p])));
+        return repo;
+      }
+      const value = Reflect.get(target, p);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+    has(target, p) {
+      return p in entities || Reflect.has(target, p);
+    },
+    ownKeys(target) {
+      return [...Reflect.ownKeys(target), ...Object.keys(entities)];
+    },
+  });
+  return proxy;
+};
+
+export const createClient = <
+  E extends Entity,
+  T extends Record<string, EntityClass<E>>
+>(
+  options: ClientOptions,
+  entities: T
+): ConnectionClient<EntityClient<T>> => {
+  const { url, sync: synchronize } = options;
+  const ds = createDataSource({
+    type: "postgres",
+    url,
+    synchronize,
+    entities: Object.values(entities),
+  });
+
+  const conn = new Connection(ds, (em) => {
+    const client = new Client(em);
+    const proxy = createClientProxy(client, em, entities);
+    return proxy;
+  });
+
+  return createClientProxy(conn, ds.manager, entities) as any;
+};
+
+type ClientFactory = (em: typeorm.EntityManager) => Client;
+
+class Client implements QueryClient {
+  #manager;
+
+  constructor(manager: typeorm.EntityManager) {
+    this.#manager = manager;
+  }
+
+  async $raw(query: string, ...params: any[]): Promise<unknown> {
+    return await this.#manager.query(query, params);
+  }
+}
+
+class Connection extends Client implements ConnectionClient<Client> {
+  #dataSource;
+  #factory;
+  constructor(dataSource: typeorm.DataSource, factory: ClientFactory) {
+    super(dataSource.manager);
+    this.#dataSource = dataSource;
+    this.#factory = factory;
+  }
+
+  async $sync(drop?: boolean): Promise<void> {
+    return await this.#dataSource.synchronize(drop);
+  }
+
+  async $connect(): Promise<void> {
+    await this.#dataSource.initialize();
+  }
+
+  async $disconnect(): Promise<void> {
+    await this.#dataSource.destroy();
+  }
+
+  async $transaction<R>(job: (client: Client) => Promise<R>): Promise<R> {
+    return await this.#dataSource.transaction(async (em) => {
+      const client = this.#factory(em);
+      return job(client);
+    });
+  }
+}
+
+class EntityRepository<T extends Entity> implements Repository<T> {
+  #repo: typeorm.Repository<T>;
+
+  constructor(repo: typeorm.Repository<T>) {
+    this.#repo = repo;
+  }
+
+  async find(args: QueryOptions<T>): Promise<QueryPayload<T>> {
+    return {
+      data: [],
+    };
+  }
+
+  async findOne(args: WhereOptions<T>): Promise<Payload<T>> {
+    return {};
+  }
+
+  async create(args: CreateOptions<T, Omit<T, keyof Entity>>): Promise<T> {
+    return {} as T;
+  }
+
+  async update(args: UpdateOptions<T, Omit<T, keyof Entity>>): Promise<T> {
+    return {} as T;
+  }
+
+  async delete(args: DeleteOptions<T>): Promise<ID> {
+    return 0;
+  }
+
+  async updateAll(args: BulkUpdateOptions<T>): Promise<ID> {
+    return 0;
+  }
+
+  async deleteAll(args: BulkDeleteOptions<T>): Promise<ID> {
+    return 0;
+  }
+}
