@@ -9,10 +9,8 @@ import {
   ID,
   Payload,
   QueryOptions,
-  QueryPayload,
   Repository,
   UpdateOptions,
-  WhereOptions,
 } from "./types";
 
 export type QueryClient = {
@@ -139,33 +137,39 @@ class EntityRepository<T extends Entity> implements Repository<T> {
     this.#repo = repo;
   }
 
-  async find(args: QueryOptions<T>): Promise<QueryPayload<T>> {
-    return {
-      data: [],
-    };
+  async find<Options extends QueryOptions<T>>(
+    args: QueryOptions<T>
+  ): Promise<Payload<T, Options>[]> {
+    throw new Error("Not implemented yet!");
   }
 
-  async findOne(args: WhereOptions<T>): Promise<Payload<T>> {
-    return {};
+  async findOne<Options extends QueryOptions<T>>(
+    args: QueryOptions<T>
+  ): Promise<Payload<T, Options>> {
+    throw new Error("Not implemented yet!");
   }
 
-  async create(args: CreateOptions<T, Omit<T, keyof Entity>>): Promise<T> {
-    return {} as T;
+  async create<Options extends CreateOptions<T>>(
+    args: CreateOptions<T>
+  ): Promise<Payload<T, Options>> {
+    throw new Error("Not implemented yet!");
   }
 
-  async update(args: UpdateOptions<T, Omit<T, keyof Entity>>): Promise<T> {
-    return {} as T;
+  async update<Options extends UpdateOptions<T>>(
+    args: UpdateOptions<T>
+  ): Promise<Payload<T, Options>> {
+    throw new Error("Not implemented yet!");
   }
 
   async delete(args: DeleteOptions<T>): Promise<ID> {
-    return 0;
+    throw new Error("Not implemented yet!");
   }
 
   async updateAll(args: BulkUpdateOptions<T>): Promise<ID> {
-    return 0;
+    throw new Error("Not implemented yet!");
   }
 
   async deleteAll(args: BulkDeleteOptions<T>): Promise<ID> {
-    return 0;
+    throw new Error("Not implemented yet!");
   }
 }

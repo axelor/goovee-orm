@@ -97,31 +97,53 @@ export type QueryOptions<T extends Entity> = {
   skip?: number;
 };
 
-export type PayloadArg<T> = T extends Array<infer P>
-  ? P extends Entity
-    ? QueryPayload<P>
-    : T
-  : T extends Entity
-  ? Payload<T>
-  : T;
+export type SelectKeys<T, S> = Pick<
+  T,
+  {
+    [K in keyof T]: K extends keyof S
+      ? S[K] extends undefined | null | false
+        ? never
+        : K
+      : never;
+  }[keyof T]
+>;
 
-export type Payload<T extends Entity> = {
-  [K in keyof T]?: PayloadArg<T[K]>;
+type PayloadSelect<T, Select> = {
+  [K in keyof SelectKeys<T, Select>]: K extends keyof Select & keyof T
+    ? PayloadSelectArg<T[K], Select[K]>
+    : never;
 };
 
-export type QueryPayload<T extends Entity> = {
-  data: Payload<T>[];
-  startCursor?: Cursor<T>;
-};
+type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
+  ? never
+  : Arg extends true // simple or relation
+  ? T
+  : T extends Array<infer A> // ToMany
+  ? Arg extends { select: infer Select }
+    ? A extends Entity
+      ? PayloadSelect<A, Select>[]
+      : never
+    : never
+  : T extends Entity // ToOne
+  ? Arg extends object
+    ? PayloadSelect<T, Arg>
+    : never
+  : T; // everything else
+
+export type PayloadSimple<T> = OmitType<T, Entity | Entity[] | undefined>;
+
+export type Payload<T extends Entity, Q> = Q extends { select: infer S }
+  ? PayloadSelect<T, S>
+  : PayloadSimple<T>;
 
 export type NestedCreateArg<T extends Entity> = {
   select?: WhereOptions<T>;
-  create?: CreateOptions<T>;
+  create?: CreateArgs<T>;
 };
 
 export type NestedCreateManyArg<T extends Entity> = {
   select?: WhereOptions<T> | WhereOptions<T>[];
-  create?: CreateOptions<T> | CreateOptions<T>[];
+  create?: CreateArgs<T> | CreateArgs<T>[];
 };
 
 export type CreateArg<T> = T extends Array<infer P>
@@ -132,8 +154,13 @@ export type CreateArg<T> = T extends Array<infer P>
   ? NestedCreateArg<T>
   : T;
 
-export type CreateOptions<T extends Entity, U = Omit<T, keyof Entity>> = {
-  [K in keyof U]: CreateArg<U[K]>;
+export type CreateArgs<T extends Entity> = {
+  [K in keyof T]: CreateArg<T[K]>;
+};
+
+export type CreateOptions<T extends Entity> = {
+  data: CreateArgs<T>;
+  select?: SelectOptions<T>;
 };
 
 export type NotNull<T> = T extends undefined ? never : T;
@@ -145,14 +172,14 @@ export type Identity<T extends Entity> = {
 
 export type NestedUpdateArg<T extends Entity> = {
   select?: WhereOptions<T>;
-  create?: CreateOptions<T>;
-  update?: UpdateOptions<T>;
+  create?: CreateArgs<T>;
+  update?: UpdateArgs<T>;
 };
 
 export type NestedUpdateManyArg<T extends Entity> = {
   select?: WhereOptions<T> | WhereOptions<T>[];
-  create?: CreateOptions<T> | CreateOptions<T>[];
-  update?: UpdateOptions<T> | UpdateOptions<T>[];
+  create?: CreateArgs<T> | CreateArgs<T>[];
+  update?: UpdateArgs<T> | UpdateArgs<T>[];
 };
 
 export type UpdateArg<T> = T extends Array<infer P>
@@ -163,11 +190,13 @@ export type UpdateArg<T> = T extends Array<infer P>
   ? NestedUpdateArg<T>
   : T;
 
-export type UpdateOptions<
-  T extends Entity,
-  U = Omit<T, keyof Entity>
-> = Identity<T> & {
-  [K in keyof U]?: UpdateArg<U[K]>;
+export type UpdateArgs<T extends Entity> = Identity<T> & {
+  [K in keyof T]?: UpdateArg<T[K]>;
+};
+
+export type UpdateOptions<T extends Entity> = {
+  data: UpdateArgs<T>;
+  select?: SelectOptions<T>;
 };
 
 export type DeleteOptions<T extends Entity> = Identity<T>;
@@ -205,10 +234,18 @@ export type BulkDeleteOptions<T extends Entity> = {
 };
 
 export interface Repository<T extends Entity> {
-  find(args: QueryOptions<T>): Promise<QueryPayload<T>>;
-  findOne(args: WhereOptions<T>): Promise<Payload<T>>;
-  create(args: CreateOptions<T>): Promise<T>;
-  update(args: UpdateOptions<T>): Promise<T>;
+  find<Options extends QueryOptions<T>>(
+    args: Options
+  ): Promise<Payload<T, Options>[]>;
+  findOne<Options extends QueryOptions<T>>(
+    args: Options
+  ): Promise<Payload<T, Options>>;
+  create<Options extends CreateOptions<T>>(
+    args: Options
+  ): Promise<Payload<T, Options>>;
+  update<Options extends UpdateOptions<T>>(
+    args: Options
+  ): Promise<Payload<T, Options>>;
   delete(args: DeleteOptions<T>): Promise<ID>;
   updateAll(args: BulkUpdateOptions<T>): Promise<ID>;
   deleteAll(args: BulkDeleteOptions<T>): Promise<ID>;
