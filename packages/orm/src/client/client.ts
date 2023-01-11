@@ -137,6 +137,10 @@ class EntityRepository<T extends Entity> implements Repository<T> {
     this.#repo = repo;
   }
 
+  unwrap() {
+    return this.#repo;
+  }
+
   async find<Options extends QueryOptions<T>>(
     args: QueryOptions<T>
   ): Promise<Payload<T, Options>[]> {

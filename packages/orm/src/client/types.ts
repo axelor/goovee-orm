@@ -1,4 +1,4 @@
-export type EQ<T> = { eq: T | null };
+export type EQ<T> = { eq: T | null } | T | null;
 export type NE<T> = { ne: T | null };
 export type GT<T> = { gt: T };
 export type GE<T> = { ge: T };
@@ -36,7 +36,7 @@ export type DecimalFilter = NumericFilter<string>;
 export type DateFilter = NumericFilter<Date | string>;
 export type IdFilter = NumericFilter<ID>;
 
-export type ID = string | number | bigint;
+export type ID = string | number;
 
 export interface Entity {
   readonly id?: ID;
