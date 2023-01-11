@@ -1,0 +1,19 @@
+{
+  "name": "Country",
+  "table": "contact_country",
+  "extends": "Model",
+  "fields": [
+    {
+      "type": "String",
+      "name": "code",
+      "unique": true,
+      "required": true
+    },
+    {
+      "type": "String",
+      "name": "name",
+      "unique": true,
+      "required": true
+    }
+  ]
+}

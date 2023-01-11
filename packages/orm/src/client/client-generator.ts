@@ -4,7 +4,7 @@ import { camelCase } from "typeorm/util/StringUtils";
 
 import pkg from "../../package.json";
 import { CodeFile } from "../code-generator/CodeFile";
-import { generateSchema } from "../schema/schema-generator";
+import { generateSchema, readSchema } from "../schema/schema-generator";
 
 const tsConfig = {
   compilerOptions: {
@@ -118,13 +118,7 @@ export const generateClient = (schemaDir: string, outDir: string) => {
   const entityDir = path.join(outDir, "src", "entity");
   const clientDir = path.join(outDir, "src", "client");
 
-  const schema = fs
-    .readdirSync(schemaDir, { withFileTypes: true })
-    .filter((x) => /\.(ts|json)$/.test(x.name))
-    .map((x) => path.join(schemaDir, x.name))
-    .map((x) => path.resolve(x))
-    .map((x) => (x.endsWith(".json") ? require(x) : require(x).default));
-
+  const schema = readSchema(schemaDir);
   const files: string[] = [];
   const names = schema.map((x) => x.name);
 

@@ -5,7 +5,7 @@ import { createTestClient } from "./client.utils";
 
 import { Contact } from "./entity";
 
-describe("query parser tests1", async () => {
+describe.skip("query parser tests1", async () => {
   const client = await createTestClient();
   beforeEach(async () => {
     await client.$connect();

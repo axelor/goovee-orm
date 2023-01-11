@@ -26,7 +26,6 @@ describe("client generator tests", () => {
   afterEach(cleanUp);
   it("should generate client files", () => {
     const files = generateProject(outDir);
-    console.log(files)
     expect(files).toHaveLength(expectedFiles.length);
     expect(files).toEqual(expect.arrayContaining(expectedFiles));
   });

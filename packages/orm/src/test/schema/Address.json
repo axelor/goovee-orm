@@ -1,0 +1,41 @@
+{
+  "name": "Address",
+  "table": "contact_address",
+  "extends": "Model",
+  "fields": [
+    {
+      "type": "ManyToOne",
+      "name": "contact",
+      "target": "Contact",
+      "required": true
+    },
+    {
+      "type": "String",
+      "name": "street",
+      "size": 255,
+      "required": true
+    },
+    {
+      "type": "String",
+      "name": "area",
+      "size": 255
+    },
+    {
+      "type": "String",
+      "name": "city"
+    },
+    {
+      "type": "String",
+      "name": "zip"
+    },
+    {
+      "type": "String",
+      "name": "state"
+    },
+    {
+      "type": "ManyToOne",
+      "name": "country",
+      "target": "Country"
+    }
+  ]
+}

@@ -470,6 +470,16 @@ const Model = defineEntity({
   ],
 });
 
+export const readSchema = (schemaDir: string) => {
+  const schema = fs
+    .readdirSync(schemaDir, { withFileTypes: true })
+    .filter((x) => /\.(ts|json)$/.test(x.name))
+    .map((x) => path.join(schemaDir, x.name))
+    .map((x) => path.resolve(x))
+    .map((x) => (x.endsWith(".json") ? require(x) : require(x).default));
+  return schema;
+};
+
 export const generateSchema = (outDir: string, schema: EntityOptions[]) => {
   let model = schema.find((x) => x.name === "Model");
   if (model) {

@@ -1,5 +1,7 @@
 import * as typeorm from "typeorm";
 import { createDataSource } from "../typeorm";
+import * as handler from "./handler";
+
 import {
   BulkDeleteOptions,
   BulkUpdateOptions,
@@ -150,23 +152,35 @@ class EntityRepository<T extends Entity> implements Repository<T> {
   async findOne<Options extends QueryOptions<T>>(
     args: QueryOptions<T>
   ): Promise<Payload<T, Options>> {
-    throw new Error("Not implemented yet!");
+    return await handler.handleFindOne(this.#repo, args);
   }
 
   async create<Options extends CreateOptions<T>>(
     args: CreateOptions<T>
   ): Promise<Payload<T, Options>> {
-    throw new Error("Not implemented yet!");
+    const { data, select } = args;
+    const res = await handler.handleCreate(this.#repo, data);
+    const { id } = res;
+    return await this.findOne({
+      select,
+      where: { id },
+    });
   }
 
   async update<Options extends UpdateOptions<T>>(
     args: UpdateOptions<T>
   ): Promise<Payload<T, Options>> {
-    throw new Error("Not implemented yet!");
+    const { data, select } = args;
+    const res = await handler.handleUpdate(this.#repo, data);
+    const { id } = res;
+    return await this.findOne({
+      select,
+      where: { id },
+    });
   }
 
   async delete(args: DeleteOptions<T>): Promise<ID> {
-    throw new Error("Not implemented yet!");
+    return await handler.handleDelete(this.#repo, args);
   }
 
   async updateAll(args: BulkUpdateOptions<T>): Promise<ID> {

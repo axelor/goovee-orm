@@ -1,7 +1,10 @@
 {
   "extends": "tsconfig/node-library.json",
   "compilerOptions": {
-    "resolveJsonModule": true
+    "target": "es2022",
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "include": ["src"],
   "exclude": ["dist", "build", "node_modules"]

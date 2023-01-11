@@ -1,0 +1,59 @@
+{
+  "name": "Contact",
+  "table": "contact_contact",
+  "extends": "Model",
+  "fields": [
+    {
+      "type": "ManyToOne",
+      "name": "title",
+      "target": "Title"
+    },
+    {
+      "type": "String",
+      "name": "firstName",
+      "required": true
+    },
+    {
+      "type": "String",
+      "name": "lastName",
+      "required": true
+    },
+    {
+      "type": "String",
+      "name": "fullName",
+      "computed": true,
+      "body": [
+        "if (this.title) {",
+        "  return `${this.title.name} ${this.firstName} ${this.lastName}`",
+        "}",
+        "return `${this.firstName} ${this.lastName}`"
+      ]
+    },
+    {
+      "type": "Date",
+      "name": "dateOfBirth"
+    },
+    {
+      "type": "Binary",
+      "name": "image"
+    },
+    {
+      "type": "Text",
+      "name": "notes"
+    },
+    {
+      "type": "String",
+      "name": "email"
+    },
+    {
+      "type": "String",
+      "name": "phone"
+    },
+    {
+      "type": "OneToMany",
+      "name": "addresses",
+      "target": "Address",
+      "mappedBy": "contact"
+    }
+  ]
+}
