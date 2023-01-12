@@ -362,9 +362,11 @@ class EntityGenerator implements CodeGenerator {
       abstract: options.abstract,
     });
 
-    const decorator = entity.decorator(newDecorator("Entity"));
-    if (table) {
-      decorator.arg(table);
+    if (!options.abstract) {
+      const decorator = entity.decorator(newDecorator("Entity"));
+      if (table) {
+        decorator.arg(table);
+      }
     }
 
     for (const field of fields) {

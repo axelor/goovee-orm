@@ -1,6 +1,5 @@
-import { Entity, PrimaryColumn, VersionColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { PrimaryColumn, VersionColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
 
-@Entity("model")
 export abstract class Model {
   @PrimaryColumn({ type: "bigint" })
   id?: string;
