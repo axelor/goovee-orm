@@ -146,7 +146,7 @@ class EntityRepository<T extends Entity> implements Repository<T> {
   async find<Options extends QueryOptions<T>>(
     args: QueryOptions<T>
   ): Promise<Payload<T, Options>[]> {
-    throw new Error("Not implemented yet!");
+    return await handler.handleFindMany(this.#repo, args);
   }
 
   async findOne<Options extends QueryOptions<T>>(
