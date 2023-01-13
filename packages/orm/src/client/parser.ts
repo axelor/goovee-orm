@@ -110,39 +110,37 @@ export const parseQuery = <T extends Entity>(
     let select: Record<string, any> = {};
     let collections: Record<string, any> = {};
     let references: Record<string, any> = {};
+    let joins: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(opts)) {
       const name = makeName(prefix, key);
       const alias = makeAlias(prefix, key);
+      const relation = repo.metadata.findRelationWithPropertyPath(key);
+      if (relation) {
+        if (value === true) {
+          const names = relation.inverseEntityMetadata.columns
+            .map((x) => x.propertyName)
+            .reduce((prev, name) => ({ ...prev, [name]: true }), {});
+          const nested = processSelect(names, alias);
 
-      if (typeof value === "object") {
-        const relation = repo.metadata.findRelationWithPropertyPath(key);
-        if (!relation) {
+          Object.assign(select, nested.select);
+          joins[name] = alias;
           continue;
         }
-
         const rRepo: any = repo.manager.getRepository(relation.type);
-        const inverseField: any = relation.inverseSidePropertyPath;
-
         if (isCollectionSelect(value)) {
           const v: any = value;
           const vResult: any = parseQuery(rRepo, v);
-          if (inverseField) {
-            vResult.mappedBy = inverseField;
-          }
           collections[key] = vResult;
         } else {
           const nested: any = processSelect(value, "self");
-          if (inverseField) {
-            nested.mappedBy = inverseField;
-          }
           references[key] = nested;
         }
       } else {
         select[name] = alias;
       }
     }
-    return { select, references, collections };
+    return { select, joins, references, collections };
   };
 
   const acceptWhereCauses = (items: any[], joiner: string = "AND") => {
@@ -189,12 +187,22 @@ export const parseQuery = <T extends Entity>(
 
   const { select: selection = {}, where: conditions = {} } = query;
 
-  const { select, references, collections } = processSelect(selection, "self");
-  const { where, params, joins } = processWhere(conditions, "self") ?? {};
+  const {
+    select,
+    joins: selectJoins,
+    references,
+    collections,
+  } = processSelect(selection, "self");
+
+  const {
+    where,
+    params,
+    joins: whereJoins,
+  } = processWhere(conditions, "self") ?? {};
 
   const result = {
     select,
-    joins,
+    joins: { ...selectJoins, ...whereJoins },
     where,
     params,
     references,
