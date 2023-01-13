@@ -113,7 +113,7 @@ export type SelectKeys<T, S> = Pick<
   }[keyof T]
 >;
 
-type PayloadSelect<T, Select> = {
+type PayloadSelect<T extends Entity, Select> = ResultIdentity<T> & {
   [K in keyof SelectKeys<T, Select>]: K extends keyof Select & keyof T
     ? PayloadSelectArg<T[K], Select[K]>
     : never;
@@ -135,7 +135,8 @@ type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
     : never
   : T; // everything else
 
-export type PayloadSimple<T> = OmitType<T, Entity | Entity[] | undefined>;
+export type PayloadSimple<T extends Entity> = ResultIdentity<T> &
+  OmitType<T, Entity | Entity[] | undefined>;
 
 export type Payload<T extends Entity, Q> = Q extends { select: infer S }
   ? PayloadSelect<T, S>
@@ -170,8 +171,13 @@ export type CreateOptions<T extends Entity> = {
 
 export type NotNull<T> = T extends undefined ? never : T;
 
-export type Identity<T extends Entity> = {
+export type InputIdentity<T extends Entity> = {
   id: ID;
+  version: number;
+};
+
+export type ResultIdentity<T extends Entity> = {
+  id: NotNull<T["id"]>;
   version: number;
 };
 
@@ -195,7 +201,7 @@ export type UpdateArg<T> = T extends Array<infer P>
   ? NestedUpdateArg<T>
   : T;
 
-export type UpdateArgs<T extends Entity> = Identity<T> & {
+export type UpdateArgs<T extends Entity> = InputIdentity<T> & {
   [K in keyof T]?: UpdateArg<T[K]>;
 };
 
@@ -204,7 +210,7 @@ export type UpdateOptions<T extends Entity> = {
   select?: SelectOptions<T>;
 };
 
-export type DeleteOptions<T extends Entity> = Identity<T>;
+export type DeleteOptions<T extends Entity> = InputIdentity<T>;
 
 export type BulkSetArg<T> = T extends Array<infer P>
   ? P extends Entity
