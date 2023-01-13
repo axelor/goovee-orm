@@ -250,5 +250,6 @@ export interface Repository<T extends Entity> {
   count(): Promise<ID>;
   count<Options extends QueryOptions<T>>(args: Options): Promise<ID>;
   updateAll(args: BulkUpdateOptions<T>): Promise<ID>;
+  deleteAll(): Promise<ID>;
   deleteAll(args: BulkDeleteOptions<T>): Promise<ID>;
 }

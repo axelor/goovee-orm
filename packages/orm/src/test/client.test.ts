@@ -114,5 +114,14 @@ describe("client tests", async () => {
     expect(afterBulkUpdate).toBeDefined();
     expect(afterBulkUpdate.lastName).toBe("NAME");
     expect(afterBulkUpdate.title).toBeNull();
+
+    const bulkDeleted = await client.title.deleteAll({
+      where: {
+        code: "mrs"
+      }
+    });
+
+    expect(bulkDeleted).toBe(1);
+
   });
 });

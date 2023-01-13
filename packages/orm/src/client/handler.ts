@@ -7,6 +7,7 @@ import {
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
 import { parseQuery, ParseResult } from "./parser";
 import {
+  BulkDeleteOptions,
   BulkUpdateOptions,
   DeleteOptions,
   ID,
@@ -363,5 +364,21 @@ export const handleBulkUpdate = async (
     {}
   );
   const { affected } = await qb.update(updateSet).execute();
+  return affected ?? 0;
+};
+
+export const handleBulkDelete = async (
+  repo: Repository<any>,
+  data: BulkDeleteOptions<any>
+): Promise<ID> => {
+  const { where } = data;
+  const qb = createBulkQuery(repo, where);
+
+  // https://github.com/typeorm/typeorm/issues/5931
+  const [query, params] = qb.select("*").getQueryAndParameters();
+  const raw = query.replace(/^SELECT \* FROM/, "DELETE FROM");
+
+  const [_, affected] = await repo.manager.query(raw, params);
+
   return affected ?? 0;
 };
