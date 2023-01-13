@@ -65,7 +65,7 @@ const createSelectQuery = (
   options: ParseResult
 ) => {
   const {
-    select = {},
+    select,
     where,
     params = {},
     joins = {},
@@ -74,9 +74,11 @@ const createSelectQuery = (
     cursor,
   } = options;
 
-  const sq = builder.select("self.id").addSelect("self.version");
+  const sq = select
+    ? builder.select("self.id").addSelect("self.version")
+    : builder.select();
 
-  Object.entries(select)
+  Object.entries(select ?? {})
     .filter(([name]) => name !== "self.id" && name !== "self.version")
     .forEach(([name, alias]) => sq.addSelect(name, alias));
 
@@ -86,6 +88,7 @@ const createSelectQuery = (
 
   if (take) sq.take(parseInt(`${take}`));
   if (skip) sq.skip(parseInt(`${skip}`));
+
   return sq;
 };
 
