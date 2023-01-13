@@ -316,7 +316,9 @@ const handleCollection = async (
   const rMeta = relation.inverseEntityMetadata;
   const rRepo = repo.manager.getRepository(rMeta.name);
 
-  const link = inverseField ? { [inverseField]: obj } : {};
+  const link = inverseField
+    ? { [inverseField]: { select: { id: obj.id } } }
+    : {};
 
   const builder = repo.createQueryBuilder().relation(field).of(obj);
 
@@ -327,7 +329,9 @@ const handleCollection = async (
   if (create) {
     for (const item of createAll) {
       const res = await handleCreate(rRepo, { ...item, ...link });
-      builder.add(res);
+      if (!inverseField) {
+        builder.add(res);
+      }
     }
   }
 
