@@ -12,6 +12,12 @@ export const generateCode = () => {
   }
 };
 
+export type TestClient = ReturnType<typeof createTestClient> extends Promise<
+  infer T
+>
+  ? T
+  : never;
+
 export const createTestClient = async () => {
   const { Title } = await import("./entity/Title");
   const { Country } = await import("./entity/Country");
