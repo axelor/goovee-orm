@@ -197,13 +197,62 @@ export const handleCreate = async (
   return obj;
 };
 
+const isValueSame = (a: any, b: any): boolean => {
+  if (a === null || a === undefined) a = null;
+  if (b === null || b === undefined) b = null;
+  if (a === b) return true;
+  if (a === null || b === null) return false;
+
+  if (a instanceof Date && b instanceof Date) {
+    return a.toISOString() === b.toISOString();
+  }
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    return a.every((v, i) => isValueSame(v, b[i]));
+  }
+
+  if (typeof a === "object" && typeof b === "object") {
+    if ("id" in a && "id" in b) {
+      return a.id === b.id;
+    }
+  }
+
+  return a === b;
+};
+
 export const handleUpdate = async (
   repo: Repository<any>,
   data: Record<string, any>
 ) => {
   const { id, version, ...rest } = data;
+
+  const meta = repo.metadata;
+  const attrs: Record<string, any> = {};
+
+  const relations: Record<string, any> = {};
+  const select: Record<string, any> = {
+    id: true,
+    version: true,
+  };
+
+  for (const [name, value] of Object.entries(rest)) {
+    const relation = meta.findRelationWithPropertyPath(name);
+    if (relation?.isOneToMany || relation?.isManyToMany) {
+      continue;
+    }
+    if (relation && value) {
+      select[name] = { id: true };
+      relations[name] = true;
+    } else {
+      select[name] = true;
+    }
+  }
+
   // first check if record exists with same version
   const obj = await repo.findOne({
+    select,
+    relations,
     where: { id },
     lock: {
       mode: "optimistic",
@@ -211,15 +260,12 @@ export const handleUpdate = async (
     },
   });
 
-  const meta = repo.metadata;
-  const attrs: Record<string, any> = {};
-
   for (const [name, value] of Object.entries(rest)) {
     const relation = meta.findRelationWithPropertyPath(name);
     if (relation && value) {
       if (relation.isManyToOne) {
         const item = await handleReference(repo, relation, value);
-        if (item !== undefined) {
+        if (!isValueSame(item, obj[name])) {
           attrs[name] = item;
         }
       }
@@ -231,7 +277,10 @@ export const handleUpdate = async (
     }
   }
 
-  const changed = Object.keys(attrs).some((x) => attrs[x] !== obj[x]);
+  const changed = Object.keys(attrs).some(
+    (x) => !isValueSame(attrs[x], obj[x])
+  );
+
   if (!changed) {
     return obj;
   }
