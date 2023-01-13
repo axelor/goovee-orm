@@ -43,12 +43,18 @@ describe.skip("client tests", async () => {
             code: "mr",
           },
         },
+        addresses: {
+          create: [{
+            contact: {},
+            street: "My Home"
+          }]
+        }
       },
     });
 
     await client.address.create({
       data: {
-        street: "My HOME",
+        street: "My Office",
         contact: {
           select: {
             firstName: "Some",
@@ -88,7 +94,7 @@ describe.skip("client tests", async () => {
     expect(res.id).toBeTruthy();
     expect(res.fullName).toBe("Mr. Some Name");
     expect(res.title).toBeDefined();
-    expect(res.addresses).toHaveLength(1);
+    expect(res.addresses).toHaveLength(2);
 
     const bulkUpdated = await client.contact.updateAll({
       set: {

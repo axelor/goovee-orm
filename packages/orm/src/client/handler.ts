@@ -317,15 +317,19 @@ const handleCollection = async (
 
   const builder = repo.createQueryBuilder().relation(field).of(obj);
 
+  const selectAll = Array.isArray(select) ? select : [select];
+  const createAll = Array.isArray(create) ? create : [create];
+  const updateAll = Array.isArray(update) ? update : [update];
+
   if (create) {
-    for (const item of create) {
+    for (const item of createAll) {
       const res = await handleCreate(rRepo, { ...item, ...link });
       builder.add(res);
     }
   }
 
   if (select) {
-    for (const where of select) {
+    for (const where of selectAll) {
       const item = await handleSelect(rRepo, where);
       if (item) {
         builder.addAndRemove(item, item);
@@ -334,7 +338,7 @@ const handleCollection = async (
   }
 
   if (update) {
-    for (const attrs of update) {
+    for (const attrs of updateAll) {
       const item = await handleUpdate(rRepo, attrs);
       if (item) {
         builder.addAndRemove(item, item);
