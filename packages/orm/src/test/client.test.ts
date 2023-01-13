@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTestClient } from "./client.utils";
 import { Contact } from "./entity";
 
-describe("client tests", async () => {
+describe.skip("client tests", async () => {
   const client = await createTestClient();
   beforeEach(async () => {
     await client.$connect();

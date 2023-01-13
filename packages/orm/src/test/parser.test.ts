@@ -5,7 +5,7 @@ import { createTestClient } from "./client.utils";
 
 import { Contact } from "./entity";
 
-describe.skip("query parser tests1", async () => {
+describe.skip("query parser tests", async () => {
   const client = await createTestClient();
   beforeEach(async () => {
     await client.$connect();
@@ -114,7 +114,7 @@ describe.skip("query parser tests1", async () => {
 
     const res = parseQuery(contact, opts);
     expect(res).toMatchObject({
-      where: "NOT(self.id = :p0) AND self.firstName LIKE :p1",
+      where: "self.id != :p0 AND self.firstName LIKE :p1",
       params: { p0: 1, p1: "some" },
     });
   });
@@ -143,7 +143,7 @@ describe.skip("query parser tests1", async () => {
     const res = parseQuery(contact, opts);
     expect(res).toMatchObject({
       where:
-        "self.id = :p0 AND self.firstName LIKE :p1 AND (self.firstName LIKE :p2 OR self.lastName LIKE :p3 OR (self.version > :p4 AND NOT(self.id = :p5) AND NOT(self.version = :p6 AND self.id = :p7)))",
+        "self.id = :p0 AND self.firstName LIKE :p1 AND (self.firstName LIKE :p2 OR self.lastName LIKE :p3 OR (self.version > :p4 AND self.id != :p5 AND NOT(self.version = :p6 AND self.id = :p7)))",
       params: {
         p0: 1,
         p1: "some",
@@ -184,6 +184,52 @@ describe.skip("query parser tests1", async () => {
         p0: "Mr.",
         p1: "Paris",
         p2: "fr",
+      },
+    });
+  });
+
+  it("should handle `in, notIn, like, notLike, between, notBetween`", () => {
+    const opts: QueryOptions<Contact> = {
+      where: {
+        id: {
+          in: [1, 2, 3],
+        },
+        version: {
+          notIn: [-1, 0],
+        },
+        firstName: {
+          like: "some",
+        },
+        lastName: {
+          notLike: "some",
+        },
+        OR: [
+          {
+            id: {
+              between: [10, 20],
+            },
+          },
+          {
+            version: {
+              notBetween: [10, 20],
+            },
+          },
+        ],
+      },
+    };
+    const res = parseQuery(contact, opts);
+    expect(res).toMatchObject({
+      where:
+        "self.id IN (:...p0) AND self.version NOT IN (:...p1) AND self.firstName LIKE :p2 AND self.lastName NOT LIKE :p3 AND (self.id BETWEEN :p4 AND :p5 OR self.version NOT BETWEEN :p6 AND :p7)",
+      params: {
+        p0: [1, 2, 3],
+        p1: [-1, 0],
+        p2: "some",
+        p3: "some",
+        p4: 10,
+        p5: 20,
+        p6: 10,
+        p7: 20,
       },
     });
   });

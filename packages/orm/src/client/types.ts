@@ -7,7 +7,9 @@ export type LE<T> = { le: T };
 export type IN<T> = { in: T[] };
 export type BETWEEN<T> = { between: [T, T] };
 export type LIKE<T> = { like: T };
-export type NOT<T> = { not: IN<T> | BETWEEN<T> | LIKE<T> };
+export type NOT_IN<T> = { notIn: T[] };
+export type NOT_BETWEEN<T> = { notBetween: [T, T] };
+export type NOT_LIKE<T> = { notLike: T };
 
 export type NumericFilter<T> =
   | EQ<T>
@@ -19,14 +21,17 @@ export type NumericFilter<T> =
   | IN<T>
   | BETWEEN<T>
   | LIKE<T>
-  | NOT<T>;
+  | NOT_IN<T>
+  | NOT_BETWEEN<T>
+  | NOT_LIKE<T>;
 
 export type StringFilter =
   | EQ<string>
   | NE<string>
   | IN<string>
   | LIKE<string>
-  | NOT<string>;
+  | NOT_IN<string>
+  | NOT_LIKE<string>;
 
 export type BooleanFilter = EQ<boolean> | NE<boolean>;
 

@@ -17,7 +17,20 @@ export const parseQuery = <T extends Entity>(
   repo: Repository<any>,
   query: QueryOptions<T> = {}
 ): ParseResult => {
-  const opAttrs = ["eq", "ne", "gt", "ge", "lt", "le", "like", "in", "between"];
+  const opAttrs = [
+    "eq",
+    "ne",
+    "gt",
+    "ge",
+    "lt",
+    "le",
+    "like",
+    "in",
+    "between",
+    "notLike",
+    "notIn",
+    "notBetween",
+  ];
   const collectionAttrs = ["select", "where", "take", "skip"];
 
   const isJoin = (opts: any) => {
@@ -61,22 +74,35 @@ export const parseQuery = <T extends Entity>(
 
     for (const [key, value] of Object.entries(arg)) {
       let op = "=";
+
       if (key === "eq") op = "=";
+      if (key === "ne") op = "!=";
+
       if (key === "gt") op = ">";
       if (key === "ge") op = ">=";
+
       if (key === "lt") op = "<";
       if (key === "le") op = "<=";
-      if (key === "in") op = "IN";
+
       if (key === "like") op = "LIKE";
-      if (key === "between") op = "BETWEEN";
+      if (key === "notLike") op = "NOT LIKE";
 
       result.where = `${name} ${op} :${param}`;
       result.params = { [param]: value };
 
-      // special case for `ne`
-      if (key === "ne") result.where = `NOT(${result.where})`;
+      if (Array.isArray(value)) {
+        if (key === "in" || key === "notIn") {
+          op = key === "in" ? "IN" : "NOT IN";
+          result.where = `${name} ${op} (:...${param})`;
+        }
+        if (key === "between" || key === "notBetween") {
+          op = key === "between" ? "BETWEEN" : "NOT BETWEEN";
+          const param2 = `p${counter++}`;
+          result.where = `${name} ${op} :${param} AND :${param2}`;
+          result.params = { [param]: value[0], [param2]: value[1] };
+        }
+      }
     }
-
     return result;
   };
 
