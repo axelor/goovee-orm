@@ -2,11 +2,17 @@ import {
   EntityManager,
   EntityMetadata,
   QueryBuilder,
-  Repository
+  Repository,
 } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
 import { parseQuery, ParseResult } from "./parser";
-import { DeleteOptions, ID, QueryOptions } from "./types";
+import {
+  BulkUpdateOptions,
+  DeleteOptions,
+  ID,
+  QueryOptions,
+  WhereOptions,
+} from "./types";
 
 const relationQuery = (manager: EntityManager, relation: RelationMetadata) => {
   const entityTable = relation.entityMetadata.tableName;
@@ -334,4 +340,28 @@ const handleCollection = async (
       }
     }
   }
+};
+
+const createBulkQuery = (repo: Repository<any>, where?: WhereOptions<any>) => {
+  const opts = parseQuery(repo, { where });
+  const qb = repo.createQueryBuilder("self");
+  const sq = createSelectQuery(qb, opts);
+  return sq;
+};
+
+const valueOrID = (value: any) =>
+  value && typeof value === "object" && "id" in value ? value.id : value;
+
+export const handleBulkUpdate = async (
+  repo: Repository<any>,
+  data: BulkUpdateOptions<any>
+): Promise<ID> => {
+  const { set, where } = data;
+  const qb = createBulkQuery(repo, where);
+  const updateSet = Object.entries(set).reduce(
+    (prev, [k, v]) => ({ ...prev, [k]: valueOrID(v) }),
+    {}
+  );
+  const { affected } = await qb.update(updateSet).execute();
+  return affected ?? 0;
 };

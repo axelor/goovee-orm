@@ -188,7 +188,7 @@ class EntityRepository<T extends Entity> implements Repository<T> {
   }
 
   async updateAll(args: BulkUpdateOptions<T>): Promise<ID> {
-    throw new Error("Not implemented yet!");
+    return await handler.handleBulkUpdate(this.#repo, args);
   }
 
   async deleteAll(args: BulkDeleteOptions<T>): Promise<ID> {

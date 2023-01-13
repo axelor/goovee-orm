@@ -89,5 +89,30 @@ describe("client tests", async () => {
     expect(res.fullName).toBe("Mr. Some Name");
     expect(res.title).toBeDefined();
     expect(res.addresses).toHaveLength(1);
+
+    const bulkUpdated = await client.contact.updateAll({
+      set: {
+        lastName: "NAME",
+        title: {
+          id: null,
+        },
+      },
+    });
+
+    expect(bulkUpdated).toBe(1);
+
+    const afterBulkUpdate = await client.contact.findOne({
+      select: {
+        lastName: true,
+        title: {
+          id: true,
+        },
+      },
+      where: { id: res.id },
+    });
+
+    expect(afterBulkUpdate).toBeDefined();
+    expect(afterBulkUpdate.lastName).toBe("NAME");
+    expect(afterBulkUpdate.title).toBeNull();
   });
 });
