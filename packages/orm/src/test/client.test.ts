@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTestClient } from "./client.utils";
 import { Contact } from "./entity";
 
-describe.skip("client tests", async () => {
+describe("client tests", async () => {
   const client = await createTestClient();
   beforeEach(async () => {
     await client.$connect();
@@ -17,6 +17,13 @@ describe.skip("client tests", async () => {
       data: {
         code: "mr",
         name: "Mr.",
+      },
+    });
+
+    await client.title.create({
+      data: {
+        code: "mrs",
+        name: "Mrs.",
       },
     });
 
@@ -73,6 +80,9 @@ describe.skip("client tests", async () => {
         id: 1,
       },
     });
+
+    const titleCount = await client.title.count();
+    expect(titleCount).toBe(2);
 
     expect(res).toBeInstanceOf(Contact);
     expect(res.id).toBeTruthy();

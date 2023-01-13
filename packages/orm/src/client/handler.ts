@@ -2,7 +2,7 @@ import {
   EntityManager,
   EntityMetadata,
   QueryBuilder,
-  Repository,
+  Repository
 } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
 import { parseQuery, ParseResult } from "./parser";
@@ -53,8 +53,7 @@ const relationQuery = (manager: EntityManager, relation: RelationMetadata) => {
   throw new Error(`Invalid relation: ${relation.propertyName}`);
 };
 
-const load = async (
-  repo: Repository<any>,
+const createSelectQuery = (
   builder: QueryBuilder<any>,
   options: ParseResult
 ) => {
@@ -63,8 +62,6 @@ const load = async (
     where,
     params = {},
     joins = {},
-    references = {},
-    collections = {},
     take,
     skip,
     cursor,
@@ -82,7 +79,16 @@ const load = async (
 
   if (take) sq.take(parseInt(`${take}`));
   if (skip) sq.skip(parseInt(`${skip}`));
+  return sq;
+};
 
+const load = async (
+  repo: Repository<any>,
+  builder: QueryBuilder<any>,
+  options: ParseResult
+) => {
+  const { references = {}, collections = {} } = options;
+  const sq = createSelectQuery(builder, options);
   const records = await sq.getMany();
 
   const relations = [
@@ -136,6 +142,16 @@ export const handleFindOne = async (
     skip: 0,
   });
   return result?.[0] ?? null;
+};
+
+export const handleCount = async (
+  repo: Repository<any>,
+  args: QueryOptions<any>
+) => {
+  const opts = parseQuery(repo, args);
+  const qb = repo.createQueryBuilder("self");
+  const sq = createSelectQuery(qb, opts);
+  return await sq.getCount();
 };
 
 export const handleCreate = async (

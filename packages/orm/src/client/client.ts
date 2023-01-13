@@ -155,6 +155,10 @@ class EntityRepository<T extends Entity> implements Repository<T> {
     return await handler.handleFindOne(this.#repo, args);
   }
 
+  async count<Options extends QueryOptions<T>>(args?: Options) {
+    return await handler.handleCount(this.#repo, args ?? {});
+  }
+
   async create<Options extends CreateOptions<T>>(
     args: CreateOptions<T>
   ): Promise<Payload<T, Options>> {
