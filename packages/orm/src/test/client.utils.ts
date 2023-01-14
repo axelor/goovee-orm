@@ -4,10 +4,25 @@ import path from "node:path";
 import { createClient } from "../client";
 import { generateSchema, readSchema } from "../schema/schema-generator";
 
+const getLastChangeTime = (dir: string) => {
+  if (fs.existsSync(dir)) {
+    const mtimes = fs
+      .readdirSync(dir, { withFileTypes: true })
+      .filter((x) => x.name.endsWith(".ts") || x.name.endsWith(".json"))
+      .map((x) => fs.statSync(path.join(dir, x.name)).mtimeMs);
+    return mtimes.length ? Math.max(...mtimes) : 0;
+  }
+  return 0;
+};
+
 export const generateCode = () => {
   const schemaDir = path.join(__dirname, "schema");
   const entityDir = path.join(__dirname, "entity");
-  if (!fs.existsSync(path.join(entityDir, "Contact.ts"))) {
+
+  const lastGenerateTime = getLastChangeTime(entityDir);
+  const lastChangeTime = getLastChangeTime(schemaDir);
+
+  if (lastChangeTime > lastGenerateTime) {
     generateSchema(entityDir, readSchema(schemaDir));
   }
 };
