@@ -136,11 +136,20 @@ class EnumFieldGenerator extends FieldGenerator<EnumProperty> {
   }
 
   protected decorators(options: EnumProperty) {
-    const { selectionList, enumType, default: defaultValue } = options;
+    const {
+      required,
+      selectionList,
+      enumType,
+      default: defaultValue,
+    } = options;
     const decorator = newDecorator("Column");
     const args: Record<string, any> = {
       enum: decorator.unquote(enumType),
     };
+
+    if (!required) {
+      args.nullable = true;
+    }
 
     if (typeof selectionList?.[0]?.value === "number") {
       args.type = "integer";
