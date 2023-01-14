@@ -57,7 +57,8 @@ const createData = async (client: TestClient) => {
   });
 };
 
-describe.skip("client tests", async () => {
+
+describe("client tests", async () => {
   const client = await createTestClient();
   beforeEach(async () => {
     await client.$connect();

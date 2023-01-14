@@ -5,7 +5,7 @@ import { createTestClient } from "./client.utils";
 
 import { Contact } from "./entity";
 
-describe.skip("query parser tests", async () => {
+describe("query parser tests", async () => {
   const client = await createTestClient();
   beforeEach(async () => {
     await client.$connect();
@@ -83,7 +83,6 @@ describe.skip("query parser tests", async () => {
               },
             },
           },
-          mappedBy: "contact",
         },
       },
     });
