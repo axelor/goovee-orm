@@ -1,22 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { parseQuery } from "../client/parser";
 import { QueryOptions } from "../client/types";
-import { createTestClient } from "./client.utils";
+import { getTestClient } from "./client.utils";
 
 import { Contact } from "./entity";
 
 describe("query parser tests", async () => {
-  const client = await createTestClient();
-  beforeEach(async () => {
-    await client.$connect();
-    await client.$sync(true);
-  });
-  afterEach(async () => {
-    await client.$disconnect();
-  });
+  const client = await getTestClient();
 
   // access the internal typeorm repo for testing
-  const contact = (client.contact as any).unwrap();
+  const getContactRepo = () => (client.contact as any).unwrap();
 
   it("should parse simple `select` options", () => {
     const opts: QueryOptions<Contact> = {
@@ -27,7 +20,8 @@ describe("query parser tests", async () => {
       },
     };
 
-    const res = parseQuery(contact, opts);
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
     expect(res.select).toMatchObject({
       "self.id": "self_id",
       "self.firstName": "self_first_name",
@@ -56,7 +50,8 @@ describe("query parser tests", async () => {
       },
     };
 
-    const res = parseQuery(contact, opts);
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
     expect(res).toMatchObject({
       select: {
         "self.id": "self_id",
@@ -96,7 +91,8 @@ describe("query parser tests", async () => {
       },
     };
 
-    const res = parseQuery(contact, opts);
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
     expect(res).toMatchObject({
       where: "self.id = :p0 AND self.firstName = :p1",
       params: { p0: 1, p1: "some" },
@@ -111,7 +107,8 @@ describe("query parser tests", async () => {
       },
     };
 
-    const res = parseQuery(contact, opts);
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
     expect(res).toMatchObject({
       where: "self.id != :p0 AND self.firstName LIKE :p1",
       params: { p0: 1, p1: "some" },
@@ -139,7 +136,8 @@ describe("query parser tests", async () => {
       },
     };
 
-    const res = parseQuery(contact, opts);
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
     expect(res).toMatchObject({
       where:
         "self.id = :p0 AND self.firstName LIKE :p1 AND (self.firstName LIKE :p2 OR self.lastName LIKE :p3 OR (self.version > :p4 AND self.id != :p5 AND NOT(self.version = :p6 AND self.id = :p7)))",
@@ -170,7 +168,8 @@ describe("query parser tests", async () => {
         },
       },
     };
-    const res = parseQuery(contact, opts);
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
     expect(res).toMatchObject({
       joins: {
         "self.title": "self_title",
@@ -216,7 +215,8 @@ describe("query parser tests", async () => {
         ],
       },
     };
-    const res = parseQuery(contact, opts);
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
     expect(res).toMatchObject({
       where:
         "self.id IN (:...p0) AND self.version NOT IN (:...p1) AND self.firstName LIKE :p2 AND self.lastName NOT LIKE :p3 AND (self.id BETWEEN :p4 AND :p5 OR self.version NOT BETWEEN :p6 AND :p7)",

@@ -12,12 +12,6 @@ export const generateCode = () => {
   }
 };
 
-export type TestClient = ReturnType<typeof createTestClient> extends Promise<
-  infer T
->
-  ? T
-  : never;
-
 export const createTestClient = async () => {
   const { Title } = await import("./entity/Title");
   const { Country } = await import("./entity/Country");
@@ -37,4 +31,16 @@ export const createTestClient = async () => {
   };
 
   return createClient(options, entities);
+};
+
+export type TestClient = ReturnType<typeof createTestClient> extends Promise<
+  infer T
+>
+  ? T
+  : never;
+
+let client: TestClient;
+
+export const getTestClient = async () => {
+  return client ?? (client = await createTestClient());
 };

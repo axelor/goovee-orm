@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createTestClient, TestClient } from "./client.utils";
+import { describe, expect, it } from "vitest";
+import { getTestClient, TestClient } from "./client.utils";
 import { Contact } from "./entity";
 
 const createData = async (client: TestClient) => {
@@ -57,17 +57,8 @@ const createData = async (client: TestClient) => {
   });
 };
 
-
 describe("client tests", async () => {
-  const client = await createTestClient();
-  beforeEach(async () => {
-    await client.$connect();
-    await client.$sync(true);
-  });
-  afterEach(async () => {
-    await client.$disconnect();
-  });
-
+  const client = await getTestClient();
   it("should create a record", async () => {
     const res = await client.title.create({
       data: {
