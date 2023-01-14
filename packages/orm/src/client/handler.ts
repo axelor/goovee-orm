@@ -25,13 +25,23 @@ const relationQuery = (manager: EntityManager, relation: RelationMetadata) => {
   const joinColumn = relation.joinColumns?.[0]?.databaseName;
   const inverseJoinColumn = relation.inverseJoinColumns?.[0]?.databaseName;
 
-  if (relation.isManyToOne || relation.isOneToOne) {
+  if (relation.isManyToOne || (relation.isOneToOne && joinColumn)) {
     return manager
       .createQueryBuilder()
       .from(targetTable, "self")
       .select("self.id")
       .addSelect("self.version")
       .innerJoin(entityTable, "joined", `joined.${joinColumn} = self.id`)
+      .where("joined.id = :__parent");
+  }
+
+  if (relation.isOneToOne && !joinColumn) {
+    return manager
+      .createQueryBuilder()
+      .from(targetTable, "self")
+      .select("self.id")
+      .addSelect("self.version")
+      .innerJoin(entityTable, "joined", `joined.id = self.${mappedBy}`)
       .where("joined.id = :__parent");
   }
 
@@ -175,7 +185,7 @@ export const handleCreate = async (
   for (const [name, value] of Object.entries(data)) {
     const relation = meta.findRelationWithPropertyPath(name);
     if (relation) {
-      if (value && relation.isManyToOne) {
+      if (value && (relation.isManyToOne || relation.isOneToOne)) {
         attrs[name] = await handleReference(repo, relation, value);
       }
     } else {

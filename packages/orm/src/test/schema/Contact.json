@@ -59,6 +59,11 @@
       "type": "ManyToMany",
       "name": "circles",
       "target": "Circle"
+    },
+    {
+      "type": "OneToOne",
+      "name": "bio",
+      "target": "Bio"
     }
   ]
 }

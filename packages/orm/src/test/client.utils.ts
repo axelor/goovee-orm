@@ -28,9 +28,12 @@ export const generateCode = () => {
 };
 
 export const createTestClient = async () => {
-  const { Title, Country, Circle, Address, Contact } = await import("./entity");
+  const { Bio, Title, Country, Circle, Address, Contact } = await import(
+    "./entity"
+  );
 
   const entities = {
+    bio: Bio,
     title: Title,
     country: Country,
     circle: Circle,

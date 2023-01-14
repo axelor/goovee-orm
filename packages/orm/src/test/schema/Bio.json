@@ -1,0 +1,17 @@
+{
+  "name": "Bio",
+  "table": "contact_bio",
+  "extends": "Model",
+  "fields": [
+    {
+      "type": "OneToOne",
+      "name": "contact",
+      "target": "Contact",
+      "mappedBy": "bio"
+    },
+    {
+      "type": "String",
+      "name": "content"
+    }
+  ]
+}
