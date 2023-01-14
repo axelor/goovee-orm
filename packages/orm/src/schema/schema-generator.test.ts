@@ -55,9 +55,9 @@ const Address = defineEntity({
     {
       name: "type",
       type: "Enum",
-      enumType: "AddressType",
       default: "home",
-      selectionList: [
+      enumType: "AddressType",
+      enumList: [
         {
           name: "HOME",
           value: 100,
@@ -153,9 +153,9 @@ const Contact = defineEntity({
     {
       name: "type",
       type: "Enum",
-      enumType: "ContactType",
       default: 1,
-      selectionList: [
+      enumType: "ContactType",
+      enumList: [
         {
           name: "PARTNER",
           value: 1,
@@ -204,7 +204,7 @@ export class Contact extends Model {
   @JoinTable({ name: "contacts_circles", joinColumn: { name: "contacts" }, inverseJoinColumn: { name: "circles" } })
   circles?: Circle[];
 
-  @Column({ enum: ContactType, type: "integer", default: ContactType.PARTNER })
+  @Column({ enum: ContactType, nullable: true, type: "integer", default: ContactType.PARTNER })
   type?: ContactType;
 }
 `;

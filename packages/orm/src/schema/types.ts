@@ -95,7 +95,7 @@ export interface EnumItem {
 export interface EnumProperty extends SimpleProperty {
   type: "Enum";
   enumType: string;
-  selectionList: EnumItem[];
+  enumList: EnumItem[];
 }
 
 export interface DecimalProperty extends SimpleProperty {

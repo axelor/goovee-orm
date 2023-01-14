@@ -138,8 +138,8 @@ class EnumFieldGenerator extends FieldGenerator<EnumProperty> {
   protected decorators(options: EnumProperty) {
     const {
       required,
-      selectionList,
       enumType,
+      enumList,
       default: defaultValue,
     } = options;
     const decorator = newDecorator("Column");
@@ -151,14 +151,14 @@ class EnumFieldGenerator extends FieldGenerator<EnumProperty> {
       args.nullable = true;
     }
 
-    if (typeof selectionList?.[0]?.value === "number") {
+    if (typeof enumList?.[0]?.value === "number") {
       args.type = "integer";
     } else {
       args.type = "varchar";
       args.length = 255;
     }
 
-    let defaultItem = selectionList.find(
+    let defaultItem = enumList.find(
       (item) => item.name === defaultValue || item.value === defaultValue
     );
     if (defaultItem) {
@@ -439,8 +439,8 @@ const save = (
 };
 
 const generateEnum = (outDir: string, options: EnumProperty) => {
-  const { enumType, selectionList } = options;
-  const type = new EnumGenerator(enumType, selectionList);
+  const { enumType, enumList } = options;
+  const type = new EnumGenerator(enumType, enumList);
   return save(outDir, type);
 };
 

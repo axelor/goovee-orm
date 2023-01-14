@@ -13,7 +13,7 @@
       "type": "Enum",
       "name": "type",
       "enumType": "AddressType",
-      "selectionList": [
+      "enumList": [
         {
           "name": "Home",
           "value": "home"
