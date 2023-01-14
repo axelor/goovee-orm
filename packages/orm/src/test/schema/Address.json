@@ -10,6 +10,21 @@
       "required": true
     },
     {
+      "type": "Enum",
+      "name": "type",
+      "enumType": "AddressType",
+      "selectionList": [
+        {
+          "name": "Home",
+          "value": "home"
+        },
+        {
+          "name": "Office",
+          "value": "office"
+        }
+      ]
+    },
+    {
       "type": "String",
       "name": "street",
       "size": 255,

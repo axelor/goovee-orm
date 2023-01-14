@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getTestClient, TestClient } from "./client.utils";
-import { Contact } from "./entity";
+import { AddressType, Contact } from "./entity";
 
 const createData = async (client: TestClient) => {
   await client.title.create({
@@ -108,10 +108,12 @@ describe("client tests", async () => {
             {
               contact: {},
               street: "My HOME",
+              type: AddressType.Home,
             },
             {
               contact: {},
               street: "My Office",
+              type: AddressType.Office,
             },
           ],
         },
@@ -125,6 +127,7 @@ describe("client tests", async () => {
         },
         addresses: {
           select: {
+            type: true,
             street: true,
           },
         },
@@ -155,11 +158,13 @@ describe("client tests", async () => {
         {
           id: "1",
           version: 1,
+          type: "home",
           street: "My HOME",
         },
         {
           id: "2",
           version: 1,
+          type: "office",
           street: "My Office",
         },
       ],
