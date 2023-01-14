@@ -1,7 +1,8 @@
-import { Entity, ManyToOne, Column, OneToMany, BeforeInsert, BeforeUpdate } from "typeorm";
+import { Entity, ManyToOne, Column, OneToMany, ManyToMany, JoinTable, BeforeInsert, BeforeUpdate } from "typeorm";
 import { Model } from "./Model";
 import { Title } from "./Title";
 import { Address } from "./Address";
+import { Circle } from "./Circle";
 
 @Entity("contact_contact")
 export class Contact extends Model {
@@ -34,6 +35,10 @@ export class Contact extends Model {
 
   @OneToMany(() => Address, (x) => x.contact)
   addresses?: Address[];
+
+  @ManyToMany(() => Circle)
+  @JoinTable({ name: "contact_contact_circles", joinColumn: { name: "contact_contact" }, inverseJoinColumn: { name: "circles" } })
+  circles?: Circle[];
 
   @BeforeInsert()
   @BeforeUpdate()

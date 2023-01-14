@@ -54,6 +54,11 @@
       "name": "addresses",
       "target": "Address",
       "mappedBy": "contact"
+    },
+    {
+      "type": "ManyToMany",
+      "name": "circles",
+      "target": "Circle"
     }
   ]
 }

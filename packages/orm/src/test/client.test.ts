@@ -117,6 +117,18 @@ describe("client tests", async () => {
             },
           ],
         },
+        circles: {
+          create: [
+            {
+              code: "family",
+              name: "Family",
+            },
+            {
+              code: "friemds",
+              name: "Friends",
+            },
+          ],
+        },
       },
       select: {
         firstName: true,
@@ -129,6 +141,11 @@ describe("client tests", async () => {
           select: {
             type: true,
             street: true,
+          },
+        },
+        circles: {
+          select: {
+            name: true,
           },
         },
       },
@@ -168,6 +185,18 @@ describe("client tests", async () => {
           street: "My Office",
         },
       ],
+      circles: [
+        {
+          id: "1",
+          version: 1,
+          name: "Family",
+        },
+        {
+          id: "2",
+          version: 1,
+          name: "Friends",
+        },
+      ],
     });
   });
 
@@ -176,6 +205,12 @@ describe("client tests", async () => {
       data: {
         code: "mr",
         name: "Mr.",
+      },
+    });
+    await client.circle.create({
+      data: {
+        code: "family",
+        name: "Family",
       },
     });
     const res = await client.contact.create({
@@ -187,6 +222,13 @@ describe("client tests", async () => {
             code: "mr",
           },
         },
+        circles: {
+          select: [
+            {
+              code: "family",
+            },
+          ],
+        },
       },
       select: {
         firstName: true,
@@ -194,6 +236,11 @@ describe("client tests", async () => {
         title: {
           code: true,
           name: true,
+        },
+        circles: {
+          select: {
+            name: true,
+          },
         },
       },
     });
@@ -208,6 +255,13 @@ describe("client tests", async () => {
         code: "mr",
         name: "Mr.",
       },
+      circles: [
+        {
+          id: "1",
+          version: 1,
+          name: "Family",
+        },
+      ],
     });
   });
 

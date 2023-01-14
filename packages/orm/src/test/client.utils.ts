@@ -13,14 +13,12 @@ export const generateCode = () => {
 };
 
 export const createTestClient = async () => {
-  const { Title } = await import("./entity/Title");
-  const { Country } = await import("./entity/Country");
-  const { Address } = await import("./entity/Address");
-  const { Contact } = await import("./entity/Contact");
+  const { Title, Country, Circle, Address, Contact } = await import("./entity");
 
   const entities = {
     title: Title,
     country: Country,
+    circle: Circle,
     address: Address,
     contact: Contact,
   };
