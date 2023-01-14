@@ -45,6 +45,11 @@ export class Decorator {
   }
 
   private emitObject(file: CodeFile, arg: any) {
+    if (arg instanceof ImportName) {
+      arg.emit(file);
+      return;
+    }
+
     const items = Object.entries(arg)
       .filter(([k, v]) => v !== null)
       .filter(([k, v]) => v !== undefined);
@@ -61,12 +66,27 @@ export class Decorator {
       if (value instanceof UnQuotedString) {
         file.write(value.toString());
       } else {
-        if (typeof value !== "object") this.emitString(file, value);
-        if (typeof value === "object") this.emitObject(file, value);
+        if (Array.isArray(value)) this.emitArray(file, value);
+        else if (typeof value !== "object") this.emitString(file, value);
+        else if (typeof value === "object") this.emitObject(file, value);
       }
       count += 1;
     }
     file.write(" }");
+  }
+
+  private emitArray(file: CodeFile, arg: any[]) {
+    file.write("[");
+    let count = 0;
+    for (const value of arg) {
+      if (Array.isArray(value)) this.emitArray(file, value);
+      else if (typeof value !== "object") this.emitString(file, value);
+      else if (typeof value === "object") this.emitObject(file, value);
+      if (count++ < arg.length - 1) {
+        file.write(', ')
+      }
+    }
+    file.write("]");
   }
 
   emit(file: CodeFile) {
@@ -78,8 +98,9 @@ export class Decorator {
 
     for (const arg of args) {
       if (count > 0 && count < args.length) file.write(", ");
-      if (typeof arg !== "object") this.emitString(file, arg);
-      if (typeof arg === "object") this.emitObject(file, arg);
+      if (Array.isArray(arg)) this.emitArray(file, arg);
+      else if (typeof arg !== "object") this.emitString(file, arg);
+      else if (typeof arg === "object") this.emitObject(file, arg);
       count += 1;
     }
 
