@@ -133,7 +133,7 @@ export const parseQuery = <T extends Entity>(
           const vResult: any = parseQuery(rRepo, v);
           collections[key] = vResult;
         } else {
-          const nested: any = processSelect(value, "self");
+          const nested: any = parseQuery(rRepo, { select: value });
           references[key] = nested;
         }
       } else {
