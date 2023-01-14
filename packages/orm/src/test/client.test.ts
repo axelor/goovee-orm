@@ -453,6 +453,59 @@ describe("client tests", async () => {
     });
   });
 
+  it("should handle bi-directional many-to-many", async () => {
+    const client = await getTestClient();
+    const res = await client.circle.create({
+      data: {
+        code: "friends",
+        name: "Friends",
+        contacts: {
+          create: [
+            {
+              firstName: "Some",
+              lastName: "Name",
+            },
+            {
+              firstName: "Another",
+              lastName: "Name",
+            },
+          ],
+        },
+      },
+      select: {
+        code: true,
+        name: true,
+        contacts: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    expect(res).toMatchObject({
+      id: "1",
+      version: 1,
+      code: "friends",
+      name: "Friends",
+      contacts: [
+        {
+          id: "1",
+          version: 1,
+          firstName: "Some",
+          lastName: "Name",
+        },
+        {
+          id: "2",
+          version: 1,
+          firstName: "Another",
+          lastName: "Name",
+        },
+      ],
+    });
+  });
+
   it("should find", async () => {
     await createData(client);
     const res = await client.contact.findOne({

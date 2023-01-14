@@ -54,7 +54,8 @@ const relationQuery = (manager: EntityManager, relation: RelationMetadata) => {
       .where(`self.${mappedBy} = :__parent`);
   }
 
-  if (relation.isManyToMany) {
+  // owner side many-to-many
+  if (relation.isManyToMany && joinColumn) {
     return manager
       .createQueryBuilder()
       .from(targetTable, "self")
@@ -64,6 +65,23 @@ const relationQuery = (manager: EntityManager, relation: RelationMetadata) => {
         joinTable,
         "joined",
         `joined.${joinColumn} = :__parent AND joined.${inverseJoinColumn} = self.id`
+      );
+  }
+
+  // non-owning side many-to-many
+  if (relation.isManyToMany && relation.inverseRelation && mappedBy) {
+    const inverse = relation.inverseRelation;
+    const joinTable = inverse.joinTableName;
+    const inverseJoinColumn = inverse.inverseJoinColumns?.[0].databaseName;
+    return manager
+      .createQueryBuilder()
+      .from(targetTable, "self")
+      .select("self.id")
+      .addSelect("self.version")
+      .innerJoin(
+        joinTable,
+        "joined",
+        `joined.${mappedBy} = self.id AND joined.${inverseJoinColumn} = :__parent`
       );
   }
 
