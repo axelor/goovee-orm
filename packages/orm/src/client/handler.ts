@@ -389,7 +389,7 @@ const handleCollection = async (
     for (const item of createAll) {
       const res = await handleCreate(rRepo, { ...item, ...link });
       if (!inverseField) {
-        builder.add(res);
+        await builder.add(res);
       }
     }
   }
@@ -398,7 +398,7 @@ const handleCollection = async (
     for (const where of selectAll) {
       const item = await handleSelect(rRepo, where);
       if (item) {
-        builder.addAndRemove(item, item);
+        await builder.addAndRemove(item, item);
       }
     }
   }
@@ -407,7 +407,7 @@ const handleCollection = async (
     for (const attrs of updateAll) {
       const item = await handleUpdate(rRepo, attrs);
       if (item) {
-        builder.addAndRemove(item, item);
+        await builder.addAndRemove(item, item);
       }
     }
   }
