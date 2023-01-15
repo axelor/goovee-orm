@@ -45,10 +45,10 @@ const Types: Record<string, string> = {
   Date: "Date",
   Time: "Date",
   DateTime: "Date",
-  Binary: "string",
   Decimal: "string",
-  Text: "string",
-  JSON: "string",
+  Binary: "Binary",
+  Text: "Text",
+  JSON: "Json",
 };
 
 interface CodeGenerator {
@@ -66,13 +66,25 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
     this.options = options;
   }
 
+  protected importNameInternal(name: string) {
+    const pkg = require("../../package.json");
+    const pkgName = `${pkg.name}/client`;
+    const resolve = this.entity.config.resolve ?? ((value: string) => value);
+    const modName = resolve(pkgName);
+    return new ImportName(name, modName);
+  }
+
   protected get actualType(): string | ImportName {
     const { type } = this.options;
+    if (type === "JSON") return this.importNameInternal("type Json");
+    if (type === "Text") return this.importNameInternal("type Text");
+    if (type === "Binary") return this.importNameInternal("type Binary");
     return Types[type] ?? type;
   }
 
   protected decorators(options: P) {
     const {
+      type,
       primary,
       version,
       column,
@@ -102,6 +114,13 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
     if (version) decorator = "VersionColumn";
     if (auditColumn === "CreateDate") decorator = "CreateDateColumn";
     if (auditColumn === "UpdateDate") decorator = "UpdateDateColumn";
+
+    if (decorator === "Column" && ["JSON", "Text", "Binary"].includes(type)) {
+      if (type === "Text") arg.type = "text";
+      if (type === "JSON") arg.type = "jsonb";
+      if (type === "Binary") arg.type = "bytea";
+      arg.select = false;
+    }
 
     return [newDecorator(decorator).arg(arg)];
   }
@@ -332,6 +351,7 @@ class EnumGenerator implements CodeGenerator {
 export type GeneratorConfig = {
   schema: EntityOptions[];
   naming?: "goovee" | "default";
+  resolve?: (module: string) => string;
 };
 
 class EntityGenerator implements CodeGenerator {

@@ -195,6 +195,18 @@ const Contact = defineEntity({
         },
       ],
     },
+    {
+      name: "notes",
+      type: "Text",
+    },
+    {
+      name: "photo",
+      type: "Binary",
+    },
+    {
+      name: "attrs",
+      type: "JSON",
+    },
   ],
 });
 
@@ -206,6 +218,7 @@ import { Bio } from "./Bio";
 import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
+import { type Text, type Binary, type Json } from "@goovee/orm/client";
 
 @Entity()
 export class Contact extends Model {
@@ -240,6 +253,15 @@ export class Contact extends Model {
 
   @Column({ enum: ContactType, nullable: true, type: "integer", default: ContactType.PARTNER })
   type?: ContactType;
+
+  @Column({ nullable: true, type: "text", select: false })
+  notes?: Text;
+
+  @Column({ nullable: true, type: "bytea", select: false })
+  photo?: Binary;
+
+  @Column({ nullable: true, type: "jsonb", select: false })
+  attrs?: Json;
 }
 `;
 
@@ -251,6 +273,7 @@ import { Bio } from "./Bio";
 import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
+import { type Text, type Binary, type Json } from "@goovee/orm/client";
 
 @Entity("contact")
 export class Contact extends Model {
@@ -285,6 +308,15 @@ export class Contact extends Model {
 
   @Column({ enum: ContactType, nullable: true, type: "integer", default: ContactType.PARTNER })
   type?: ContactType;
+
+  @Column({ nullable: true, type: "text", select: false })
+  notes?: Text;
+
+  @Column({ nullable: true, type: "bytea", select: false })
+  photo?: Binary;
+
+  @Column({ nullable: true, type: "jsonb", select: false })
+  attrs?: Json;
 }
 `;
 

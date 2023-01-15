@@ -1,3 +1,5 @@
+import { Binary, Json, Text } from "./fields";
+
 export type EQ<T> = { eq: T | null } | T | null;
 export type NE<T> = { ne: T | null };
 export type GT<T> = { gt: T };
@@ -136,7 +138,7 @@ type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
   : T; // everything else
 
 export type PayloadSimple<T extends Entity> = ResultIdentity<T> &
-  OmitType<T, Entity | Entity[] | undefined>;
+  OmitType<T, Json | Text | Binary | Entity | Entity[] | undefined>;
 
 export type Payload<T extends Entity, Q> = Q extends { select: infer S }
   ? PayloadSelect<T, S>

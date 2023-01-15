@@ -577,4 +577,33 @@ describe("client tests", async () => {
     });
     expect(bulkDeleted).toBe(1);
   });
+
+  it("should handle text, json and binary fields", async () => {
+    const c = await client.contact.create({
+      data: {
+        firstName: "some",
+        lastName: "name",
+        attrs: JSON.stringify({
+          some: "name",
+          thing: [1, 2, 3],
+        }),
+        notes: "Some Notes",
+        image: Buffer.from("Hello!!!", "ascii"),
+      },
+      select: {
+        attrs: true,
+        notes: true,
+        image: true,
+      },
+    });
+
+    expect(c.image).toBeDefined();
+    expect(c.image?.toString()).toBe("Hello!!!");
+    expect(c.notes).toBe("Some Notes");
+    expect(c.attrs).toBeDefined();
+    expect(JSON.parse(c.attrs ?? "{}")).toMatchObject({
+      some: "name",
+      thing: [1, 2, 3],
+    });
+  });
 });

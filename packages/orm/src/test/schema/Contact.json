@@ -34,14 +34,6 @@
       "name": "dateOfBirth"
     },
     {
-      "type": "Binary",
-      "name": "image"
-    },
-    {
-      "type": "Text",
-      "name": "notes"
-    },
-    {
       "type": "String",
       "name": "email"
     },
@@ -64,6 +56,18 @@
       "type": "OneToOne",
       "name": "bio",
       "target": "Bio"
+    },
+    {
+      "type": "Binary",
+      "name": "image"
+    },
+    {
+      "type": "Text",
+      "name": "notes"
+    },
+    {
+      "type": "JSON",
+      "name": "attrs"
     }
   ]
 }
