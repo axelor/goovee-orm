@@ -136,12 +136,7 @@ class EnumFieldGenerator extends FieldGenerator<EnumProperty> {
   }
 
   protected decorators(options: EnumProperty) {
-    const {
-      required,
-      enumType,
-      enumList,
-      default: defaultValue,
-    } = options;
+    const { required, enumType, enumList, default: defaultValue } = options;
     const decorator = newDecorator("Column");
     const args: Record<string, any> = {
       enum: decorator.unquote(enumType),
@@ -195,7 +190,7 @@ class RelationalField<
 
 class OneToOneFieldGenerator extends RelationalField<OneToOneProperty> {
   protected decorators(options: OneToOneProperty) {
-    const { name, target, mappedBy, column } = options;
+    const { column, target, mappedBy } = options;
     const m = newDecorator("OneToOne").arg(`() => ${target}`);
 
     if (mappedBy) {
@@ -203,11 +198,12 @@ class OneToOneFieldGenerator extends RelationalField<OneToOneProperty> {
       return [m];
     }
 
-    const j = newDecorator("JoinColumn").arg({
-      name: column ?? toSnakeCase(name),
-    });
+    const c = newDecorator("JoinColumn");
+    if (column) {
+      c.arg({ name: column });
+    }
 
-    return [m, j];
+    return [m, c];
   }
 }
 
@@ -239,24 +235,33 @@ class OneToManyFieldGenerator extends RelationalField<OneToManyProperty> {
 
 class ManyToManyFieldGenerator extends RelationalField<ManyToManyProperty> {
   protected decorators(options: ManyToManyProperty) {
-    const { target, mappedBy } = options;
-    const { name, table, column, inverseColumn } = options;
+    const { name, target, mappedBy } = options;
     const { entity } = this;
-
     const m = newDecorator("ManyToMany").arg(`() => ${target}`);
-    const j = newDecorator("JoinTable");
 
     if (mappedBy) {
       m.arg(`(x) => x.${mappedBy}`);
+      return [m];
     }
 
-    j.arg({
-      name: table ?? `${entity.table}_${toSnakeCase(name)}`,
-      joinColumn: { name: column ?? entity.table },
-      inverseJoinColumn: { name: inverseColumn ?? toSnakeCase(name) },
-    });
+    let { table, column, inverseColumn } = options;
+    if (entity.config.naming === "goovee") {
+      table = table ?? `${entity.table}_${toSnakeCase(name)}`;
+      column = column ?? entity.table;
+      inverseColumn = inverseColumn ?? toSnakeCase(name);
+    }
 
-    return mappedBy ? [m] : [m, j];
+    const j = newDecorator("JoinTable");
+
+    if (table || column || inverseColumn) {
+      const jarg: any = {};
+      if (table) jarg.name = table;
+      if (column) jarg.joinColumn = { name: column };
+      if (inverseColumn) jarg.inverseJoinColumn = { name: inverseColumn };
+      j.arg(jarg);
+    }
+
+    return [m, j];
   }
 }
 
@@ -305,15 +310,19 @@ class EnumGenerator implements CodeGenerator {
   }
 }
 
+export type GeneratorConfig = {
+  schema: EntityOptions[];
+  naming?: "goovee" | "default";
+};
+
 class EntityGenerator implements CodeGenerator {
   private options: EntityOptions;
 
-  constructor(options: EntityOptions) {
-    this.options = options;
-  }
+  readonly config: GeneratorConfig;
 
-  get isAbstract() {
-    return this.options.abstract;
+  constructor(options: EntityOptions, config: GeneratorConfig) {
+    this.options = options;
+    this.config = config;
   }
 
   get name() {
@@ -321,7 +330,8 @@ class EntityGenerator implements CodeGenerator {
   }
 
   get table() {
-    return this.options.table ?? toSnakeCase(this.name);
+    if (this.options.table) this.options.table;
+    if (this.config.naming === "goovee") return toSnakeCase(this.name);
   }
 
   private toComputed(field: SimpleProperty) {
@@ -444,8 +454,12 @@ const generateEnum = (outDir: string, options: EnumProperty) => {
   return save(outDir, type);
 };
 
-const generateEntity = (outDir: string, options: EntityOptions) => {
-  const type = new EntityGenerator(options);
+const generateEntity = (
+  outDir: string,
+  options: EntityOptions,
+  config: GeneratorConfig
+) => {
+  const type = new EntityGenerator(options, config);
   return save(outDir, type);
 };
 
@@ -491,7 +505,8 @@ export const readSchema = (schemaDir: string) => {
   return schema;
 };
 
-export const generateSchema = (outDir: string, schema: EntityOptions[]) => {
+export const generateSchema = (outDir: string, config: GeneratorConfig) => {
+  const { schema } = config;
   let model = schema.find((x) => x.name === "Model");
   if (model) {
     const fields = [...(Model.fields ?? [])];
@@ -522,7 +537,7 @@ export const generateSchema = (outDir: string, schema: EntityOptions[]) => {
   const files = [];
 
   // generate base model
-  files.push(generateEntity(outDir, model));
+  files.push(generateEntity(outDir, model, config));
 
   // find enums
   const enums = schema
@@ -536,7 +551,7 @@ export const generateSchema = (outDir: string, schema: EntityOptions[]) => {
   // generate all other entities
   for (const opts of schema) {
     if (opts.name !== Model.name) {
-      files.push(generateEntity(outDir, opts));
+      files.push(generateEntity(outDir, opts, config));
     }
   }
 

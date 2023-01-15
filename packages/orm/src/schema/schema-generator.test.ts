@@ -177,7 +177,7 @@ import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
 
-@Entity("contacts")
+@Entity()
 export class Contact extends Model {
   @ManyToOne(() => Title)
   title?: Title;
@@ -201,7 +201,47 @@ export class Contact extends Model {
   addresses?: Address[];
 
   @ManyToMany(() => Circle)
-  @JoinTable({ name: "contacts_circles", joinColumn: { name: "contacts" }, inverseJoinColumn: { name: "circles" } })
+  @JoinTable()
+  circles?: Circle[];
+
+  @Column({ enum: ContactType, nullable: true, type: "integer", default: ContactType.PARTNER })
+  type?: ContactType;
+}
+`;
+
+const expectedCodeGooveeNaming = `\
+import { Entity, ManyToOne, Column, OneToMany, ManyToMany, JoinTable } from "typeorm";
+import { Model } from "./Model";
+import { Title } from "./Title";
+import { Address } from "./Address";
+import { Circle } from "./Circle";
+import { ContactType } from "./ContactType";
+
+@Entity("contact")
+export class Contact extends Model {
+  @ManyToOne(() => Title)
+  title?: Title;
+
+  @Column()
+  firstName!: string;
+
+  @Column()
+  lastName!: string;
+
+  @Column({ nullable: true })
+  dateOfBirth?: Date;
+
+  @Column({ nullable: true })
+  Phone?: string;
+
+  @Column({ nullable: true })
+  email?: string;
+
+  @OneToMany(() => Address, (x) => x.contact)
+  addresses?: Address[];
+
+  @ManyToMany(() => Circle)
+  @JoinTable({ name: "contact_circles", joinColumn: { name: "contact" }, inverseJoinColumn: { name: "circles" } })
   circles?: Circle[];
 
   @Column({ enum: ContactType, nullable: true, type: "integer", default: ContactType.PARTNER })
@@ -218,7 +258,7 @@ const expectedFiles = [
   "Circle.ts",
   "Address.ts",
   "Contact.ts",
-  "index.ts"
+  "index.ts",
 ];
 
 const outDir = path.join("node_modules", "code-gen");
@@ -237,14 +277,10 @@ const cleanUp = () => {
 
 describe("schema generator tests", () => {
   afterEach(cleanUp);
-  it("should generate entity classes", () => {
-    const files = generateSchema(outDir, [
-      Title,
-      Country,
-      Circle,
-      Address,
-      Contact,
-    ]);
+  it("should generate entity classes with default naming", () => {
+    const files = generateSchema(outDir, {
+      schema: [Title, Country, Circle, Address, Contact],
+    });
 
     expect(files).toHaveLength(expectedFiles.length);
     expect(files).toEqual(expect.arrayContaining(expectedFiles));
@@ -254,5 +290,17 @@ describe("schema generator tests", () => {
     });
 
     expect(code).toBe(expectedCode);
+  });
+
+  it("should generate entity classes with goovee naming", () => {
+    generateSchema(outDir, {
+      schema: [Title, Country, Circle, Address, Contact],
+      naming: "goovee",
+    });
+    const code = fs.readFileSync(path.join(outDir, "Contact.ts"), {
+      encoding: "utf-8",
+    });
+
+    expect(code).toBe(expectedCodeGooveeNaming);
   });
 });

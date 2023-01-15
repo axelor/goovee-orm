@@ -23,7 +23,8 @@ export const generateCode = () => {
   const lastChangeTime = getLastChangeTime(schemaDir);
 
   if (lastChangeTime > lastGenerateTime) {
-    generateSchema(entityDir, readSchema(schemaDir));
+    const schema = readSchema(schemaDir);
+    generateSchema(entityDir, { schema, naming: "goovee" });
   }
 };
 

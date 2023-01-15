@@ -122,7 +122,7 @@ export const generateClient = (schemaDir: string, outDir: string) => {
   const files: string[] = [];
   const names = schema.map((x) => x.name);
 
-  files.push(...generateSchema(entityDir, schema));
+  files.push(...generateSchema(entityDir, { schema }));
   files.push(...generateProject(outDir));
 
   create(clientDir, "index.ts", createClient(names));
