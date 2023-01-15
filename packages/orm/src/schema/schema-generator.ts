@@ -186,11 +186,18 @@ class RelationalField<
     const collection = type.endsWith("ToMany");
     return new RelationImportName(collection, target, `./${target}`);
   }
+  protected get inverseRelation() {
+    const { name, type, target } = this.options;
+    const inverse = this.entity.config.schema
+      .find((x) => x.name === target)
+      ?.fields?.find((x: any) => x.type === type && x.mappedBy == name);
+    return inverse;
+  }
 }
 
 class OneToOneFieldGenerator extends RelationalField<OneToOneProperty> {
   protected decorators(options: OneToOneProperty) {
-    const { column, target, mappedBy } = options;
+    const { name, column, target, mappedBy } = options;
     const m = newDecorator("OneToOne").arg(`() => ${target}`);
 
     if (mappedBy) {
@@ -201,6 +208,12 @@ class OneToOneFieldGenerator extends RelationalField<OneToOneProperty> {
     const c = newDecorator("JoinColumn");
     if (column) {
       c.arg({ name: column });
+    }
+
+    // if there is any bi-directional one-to-one defined
+    const inverse = this.inverseRelation;
+    if (inverse) {
+      m.arg(`(x) => x.${inverse.name}`);
     }
 
     return [m, c];
@@ -259,6 +272,12 @@ class ManyToManyFieldGenerator extends RelationalField<ManyToManyProperty> {
       if (column) jarg.joinColumn = { name: column };
       if (inverseColumn) jarg.inverseJoinColumn = { name: inverseColumn };
       j.arg(jarg);
+    }
+
+    // if there is any bi-directional many-to-many defined
+    const inverse = this.inverseRelation;
+    if (inverse) {
+      m.arg(`(x) => x.${inverse.name}`);
     }
 
     return [m, j];

@@ -104,6 +104,30 @@ const Circle = defineEntity({
       type: "String",
       required: true,
     },
+    {
+      name: "contacts",
+      type: "ManyToMany",
+      target: "Contact",
+      mappedBy: "circles",
+    },
+  ],
+});
+
+const Bio = defineEntity({
+  name: "Bio",
+  table: "bio",
+  extends: "Model",
+  fields: [
+    {
+      name: "contact",
+      type: "OneToOne",
+      target: "Contact",
+      mappedBy: "bio",
+    },
+    {
+      name: "content",
+      type: "String",
+    },
   ],
 });
 
@@ -140,6 +164,11 @@ const Contact = defineEntity({
       type: "String",
     },
     {
+      name: "bio",
+      type: "OneToOne",
+      target: "Bio",
+    },
+    {
       name: "addresses",
       type: "OneToMany",
       target: "Address",
@@ -170,9 +199,10 @@ const Contact = defineEntity({
 });
 
 const expectedCode = `\
-import { Entity, ManyToOne, Column, OneToMany, ManyToMany, JoinTable } from "typeorm";
+import { Entity, ManyToOne, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
 import { Model } from "./Model";
 import { Title } from "./Title";
+import { Bio } from "./Bio";
 import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
@@ -197,10 +227,14 @@ export class Contact extends Model {
   @Column({ nullable: true })
   email?: string;
 
+  @OneToOne(() => Bio, (x) => x.contact)
+  @JoinColumn()
+  bio?: Bio;
+
   @OneToMany(() => Address, (x) => x.contact)
   addresses?: Address[];
 
-  @ManyToMany(() => Circle)
+  @ManyToMany(() => Circle, (x) => x.contacts)
   @JoinTable()
   circles?: Circle[];
 
@@ -210,9 +244,10 @@ export class Contact extends Model {
 `;
 
 const expectedCodeGooveeNaming = `\
-import { Entity, ManyToOne, Column, OneToMany, ManyToMany, JoinTable } from "typeorm";
+import { Entity, ManyToOne, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
 import { Model } from "./Model";
 import { Title } from "./Title";
+import { Bio } from "./Bio";
 import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
@@ -237,10 +272,14 @@ export class Contact extends Model {
   @Column({ nullable: true })
   email?: string;
 
+  @OneToOne(() => Bio, (x) => x.contact)
+  @JoinColumn()
+  bio?: Bio;
+
   @OneToMany(() => Address, (x) => x.contact)
   addresses?: Address[];
 
-  @ManyToMany(() => Circle)
+  @ManyToMany(() => Circle, (x) => x.contacts)
   @JoinTable({ name: "contact_circles", joinColumn: { name: "contact" }, inverseJoinColumn: { name: "circles" } })
   circles?: Circle[];
 
@@ -256,6 +295,7 @@ const expectedFiles = [
   "Title.ts",
   "Country.ts",
   "Circle.ts",
+  "Bio.ts",
   "Address.ts",
   "Contact.ts",
   "index.ts",
@@ -279,7 +319,7 @@ describe("schema generator tests", () => {
   afterEach(cleanUp);
   it("should generate entity classes with default naming", () => {
     const files = generateSchema(outDir, {
-      schema: [Title, Country, Circle, Address, Contact],
+      schema: [Title, Country, Circle, Bio, Address, Contact],
     });
 
     expect(files).toHaveLength(expectedFiles.length);
@@ -294,7 +334,7 @@ describe("schema generator tests", () => {
 
   it("should generate entity classes with goovee naming", () => {
     generateSchema(outDir, {
-      schema: [Title, Country, Circle, Address, Contact],
+      schema: [Title, Country, Circle, Bio, Address, Contact],
       naming: "goovee",
     });
     const code = fs.readFileSync(path.join(outDir, "Contact.ts"), {
