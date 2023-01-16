@@ -5,6 +5,7 @@ import {
   Repository,
 } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
+import { createLob, readLob } from "./lob";
 import { parseQuery, ParseResult } from "./parser";
 import {
   BulkDeleteOptions,
@@ -125,7 +126,7 @@ const load = async (
   builder: QueryBuilder<any>,
   options: ParseResult
 ) => {
-  const { references = {}, collections = {} } = options;
+  const { references = {}, collections = {}, select = {} } = options;
   const sq = createSelectQuery(builder, options);
   const records = await sq.getMany();
 
@@ -154,6 +155,17 @@ const load = async (
             ? related[0]
             : null
           : related;
+    }
+  }
+
+  // load large objects
+  for (const [name] of Object.entries(select)) {
+    const prop = name.replace("self.", "");
+    if (isLob(repo, prop)) {
+      for (const record of records) {
+        const oid = record[prop];
+        record[prop] = await readLob(repo.manager, oid);
+      }
     }
   }
 
@@ -192,6 +204,12 @@ export const handleCount = async (
   return await sq.getCount();
 };
 
+const isLob = (repo: Repository<any>, name: string) => {
+  const column = repo.metadata.findColumnWithPropertyName(name);
+  const type = column?.type as any;
+  return type === "oid";
+};
+
 export const handleCreate = async (
   repo: Repository<any>,
   data: Record<string, any>
@@ -207,7 +225,9 @@ export const handleCreate = async (
         attrs[name] = await handleReference(repo, relation, value);
       }
     } else {
-      attrs[name] = value;
+      attrs[name] = isLob(repo, name)
+        ? await createLob(repo.manager, value)
+        : value;
     }
   }
 
@@ -233,6 +253,10 @@ const isValueSame = (a: any, b: any): boolean => {
 
   if (a instanceof Date && b instanceof Date) {
     return a.toISOString() === b.toISOString();
+  }
+
+  if (a instanceof Buffer && b instanceof Buffer) {
+    return a.equals(b);
   }
 
   if (Array.isArray(a) && Array.isArray(b)) {
@@ -301,7 +325,9 @@ export const handleUpdate = async (
         await handleCollection(repo, obj, relation, value);
       }
     } else {
-      attrs[name] = value;
+      attrs[name] = isLob(repo, name)
+        ? await createLob(repo.manager, value)
+        : value;
     }
   }
 

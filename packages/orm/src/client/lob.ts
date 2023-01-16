@@ -1,6 +1,5 @@
 import { Readable, Writable } from "node:stream";
 import { EntityManager } from "typeorm";
-import { QueryClient } from "./client";
 
 export enum Mode {
   WRITE = 0x00020000,
@@ -315,3 +314,25 @@ export class LargeObject {
     await this.#client.lo_truncate(this.#oid, this.#fd, length);
   }
 }
+
+export const createLob = async (em: EntityManager, buffer: Buffer) => {
+  if (!buffer || buffer.length === 0) return null;
+  const lm = new LargeObjectManager(em);
+  const oid = await lm.create();
+  const lob = await lm.open(oid);
+  await lob.write(buffer);
+  return oid;
+};
+
+export const readLob = async (em: EntityManager, oid: number) => {
+  if (oid === null || oid === undefined) return null;
+  const lm = new LargeObjectManager(em);
+  const lob = await lm.open(oid);
+  const size = await lob.size();
+  let buffer = await lob.read(1024);
+  while (buffer.length < size) {
+    const next = await lob.read(1024);
+    buffer = Buffer.concat([buffer, next]);
+  }
+  return buffer;
+};

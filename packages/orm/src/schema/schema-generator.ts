@@ -118,7 +118,7 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
     if (decorator === "Column" && ["JSON", "Text", "Binary"].includes(type)) {
       if (type === "Text") arg.type = "text";
       if (type === "JSON") arg.type = "jsonb";
-      if (type === "Binary") arg.type = "bytea";
+      if (type === "Binary") arg.type = "oid";
       arg.select = false;
     }
 

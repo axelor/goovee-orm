@@ -1,9 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
+import { Repository } from "typeorm";
 
 import { describe, expect, it } from "vitest";
 import { LargeObjectManager } from "../client/lob";
 import { getTestClient } from "./client.utils";
+import { Contact } from "./entity";
 
 describe("Lob tests", async () => {
   const client = await getTestClient();
@@ -100,6 +102,51 @@ describe("Lob tests", async () => {
       } finally {
         await lob.close();
       }
+    });
+  });
+
+  it("should handle binary fields", async () => {
+    await client.$transaction(async (c) => {
+      const repo = (c.contact as any).unwrap() as Repository<Contact>;
+
+      const res = await c.contact.create({
+        data: {
+          firstName: "Some",
+          lastName: "NAME",
+          image: Buffer.from("Hello!!!", "ascii"),
+        },
+        select: {
+          image: true,
+        },
+      });
+
+      expect(res.image?.toString()).toBe("Hello!!!");
+
+      const raw = await repo.findOne({
+        select: {
+          image: true,
+        },
+        where: {
+          id: res.id,
+        },
+      });
+
+      expect(raw?.image).toBeDefined();
+      expect(raw?.image).not.toBeInstanceOf(Buffer);
+      expect(raw?.image).toBeTypeOf("number");
+
+      const updated = await c.contact.update({
+        data: {
+          id: res.id,
+          version: res.version,
+          image: Buffer.from("World!!!", "ascii"),
+        },
+        select: {
+          image: true,
+        },
+      });
+
+      expect(updated.image?.toString()).toBe("World!!!");
     });
   });
 });

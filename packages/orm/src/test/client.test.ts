@@ -579,31 +579,34 @@ describe("client tests", async () => {
   });
 
   it("should handle text, json and binary fields", async () => {
-    const c = await client.contact.create({
-      data: {
-        firstName: "some",
-        lastName: "name",
-        attrs: JSON.stringify({
-          some: "name",
-          thing: [1, 2, 3],
-        }),
-        notes: "Some Notes",
-        image: Buffer.from("Hello!!!", "ascii"),
-      },
-      select: {
-        attrs: true,
-        notes: true,
-        image: true,
-      },
-    });
+    // when working with binary fields, always use transaction
+    await client.$transaction(async (c) => {
+      const res = await c.contact.create({
+        data: {
+          firstName: "some",
+          lastName: "name",
+          attrs: JSON.stringify({
+            some: "name",
+            thing: [1, 2, 3],
+          }),
+          notes: "Some Notes",
+          image: Buffer.from("Hello!!!", "ascii"),
+        },
+        select: {
+          attrs: true,
+          notes: true,
+          image: true,
+        },
+      });
 
-    expect(c.image).toBeDefined();
-    expect(c.image?.toString()).toBe("Hello!!!");
-    expect(c.notes).toBe("Some Notes");
-    expect(c.attrs).toBeDefined();
-    expect(JSON.parse(c.attrs ?? "{}")).toMatchObject({
-      some: "name",
-      thing: [1, 2, 3],
+      expect(res.image).toBeDefined();
+      expect(res.image?.toString()).toBe("Hello!!!");
+      expect(res.notes).toBe("Some Notes");
+      expect(res.attrs).toBeDefined();
+      expect(JSON.parse(res.attrs ?? "{}")).toMatchObject({
+        some: "name",
+        thing: [1, 2, 3],
+      });
     });
   });
 });
