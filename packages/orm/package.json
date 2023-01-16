@@ -28,6 +28,7 @@
   "devDependencies": {
     "@swc/core": "^1.3.26",
     "@types/node": "^18.11.18",
+    "@types/pg": "^8.6.6",
     "@types/yargs": "^17.0.19",
     "eslint": "^8.31.0",
     "eslint-config-custom": "workspace:*",
