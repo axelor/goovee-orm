@@ -115,14 +115,16 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
     if (auditColumn === "CreateDate") decorator = "CreateDateColumn";
     if (auditColumn === "UpdateDate") decorator = "UpdateDateColumn";
 
+    const d = newDecorator(decorator);
+
     if (decorator === "Column" && ["JSON", "Text", "Binary"].includes(type)) {
       if (type === "Text") arg.type = "text";
       if (type === "JSON") arg.type = "jsonb";
-      if (type === "Binary") arg.type = "oid";
+      if (type === "Binary") arg.type = d.unquote('"oid" as any');
       arg.select = false;
     }
 
-    return [newDecorator(decorator).arg(arg)];
+    return [d.arg(arg)];
   }
 
   toCode(file: CodeFile) {

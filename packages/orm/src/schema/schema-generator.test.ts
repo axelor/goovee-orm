@@ -257,7 +257,7 @@ export class Contact extends Model {
   @Column({ nullable: true, type: "text", select: false })
   notes?: Text;
 
-  @Column({ nullable: true, type: "bytea", select: false })
+  @Column({ nullable: true, type: "oid" as any, select: false })
   photo?: Binary;
 
   @Column({ nullable: true, type: "jsonb", select: false })
@@ -312,7 +312,7 @@ export class Contact extends Model {
   @Column({ nullable: true, type: "text", select: false })
   notes?: Text;
 
-  @Column({ nullable: true, type: "bytea", select: false })
+  @Column({ nullable: true, type: "oid" as any, select: false })
   photo?: Binary;
 
   @Column({ nullable: true, type: "jsonb", select: false })
