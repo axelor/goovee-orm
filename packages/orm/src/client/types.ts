@@ -138,7 +138,7 @@ type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
   : T; // everything else
 
 export type PayloadSimple<T extends Entity> = ResultIdentity<T> &
-  OmitType<T, Json | Text | Binary | Entity | Entity[] | undefined>;
+  OmitType<T, Binary | Entity | Entity[] | undefined>;
 
 export type Payload<T extends Entity, Q> = Q extends { select: infer S }
   ? PayloadSelect<T, S>
