@@ -600,11 +600,11 @@ describe("client tests", async () => {
         data: {
           firstName: "some",
           lastName: "name",
-          attrs: JSON.stringify({
+          attrs: Promise.resolve({
             some: "name",
             thing: [1, 2, 3],
           }),
-          notes: "Some Notes",
+          notes: Promise.resolve("Some Notes"),
           image: Promise.resolve(Buffer.from("Hello!!!", "ascii")),
         },
         select: {
@@ -614,11 +614,12 @@ describe("client tests", async () => {
         },
       });
 
-      expect(res.image).toBeDefined();
+      expect(res.image).toBeInstanceOf(Promise);
+      expect(res.notes).toBeInstanceOf(Promise);
+      expect(res.attrs).toBeInstanceOf(Promise);
       expect((await res.image)?.toString()).toBe("Hello!!!");
-      expect(res.notes).toBe("Some Notes");
-      expect(res.attrs).toBeDefined();
-      expect(JSON.parse(res.attrs ?? "{}")).toMatchObject({
+      expect(await res.notes).toBe("Some Notes");
+      expect(await res.attrs).toMatchObject({
         some: "name",
         thing: [1, 2, 3],
       });

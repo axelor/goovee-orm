@@ -5,7 +5,7 @@ import {
   Repository,
 } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
-import { ensureLazy, isLob, resolveLazy } from "./fields";
+import { ensureLazy, isLazy, resolveLazy } from "./fields";
 import { parseQuery, ParseResult } from "./parser";
 import {
   BulkDeleteOptions,
@@ -129,7 +129,14 @@ const load = async (
   options: ParseResult
 ) => {
   const { references = {}, collections = {}, select = {} } = options;
-  const sq = createSelectQuery(builder, options);
+
+  const lazyFields = Object.keys(select).filter((x) => isLazy(repo, x));
+  const normalSelect = Object.entries(select)
+    .filter(([x]) => !lazyFields.includes(x))
+    .reduce((prev, [k, v]) => ({ ...prev, [k]: v }), {});
+
+  const opts = options.select ? { ...options, select: normalSelect } : options;
+  const sq = createSelectQuery(builder, opts);
   const records = await sq.getMany();
 
   const relations = [
@@ -160,13 +167,10 @@ const load = async (
     }
   }
 
-  // load large objects
-  for (const [name] of Object.entries(select)) {
-    const prop = name.replace("self.", "");
-    if (isLob(repo, prop)) {
-      for (const record of records) {
-        ensureLazy(repo, record, prop);
-      }
+  // handle lazy fields
+  for (const field of lazyFields) {
+    for (const record of records) {
+      ensureLazy(repo, record, field);
     }
   }
 
