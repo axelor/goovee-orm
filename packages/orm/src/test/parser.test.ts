@@ -232,4 +232,56 @@ describe("query parser tests", async () => {
       },
     });
   });
+
+  it("should parse orderBy", async () => {
+    const opts: QueryOptions<Contact> = {
+      select: {
+        addresses: {
+          orderBy: {
+            city: "ASC",
+            contact: {
+              firstName: "DESC",
+            },
+          },
+        },
+      },
+      orderBy: {
+        firstName: "DESC",
+        title: {
+          name: "ASC",
+        },
+        addresses: {
+          country: {
+            code: "DESC",
+          },
+        },
+      },
+    };
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
+
+    expect(res).toMatchObject({
+      joins: {
+        "self.addresses": "self_addresses",
+        "self.title": "self_title",
+        "self_addresses.country": "self_addresses_country",
+      },
+      order: {
+        "self.firstName": "DESC",
+        "self_title.name": "ASC",
+        "self_addresses_country.code": "DESC",
+      },
+      collections: {
+        addresses: {
+          joins: {
+            "self.contact": "self_contact",
+          },
+          order: {
+            "self.city": "ASC",
+            "self_contact.firstName": "DESC",
+          },
+        },
+      },
+    });
+  });
 });

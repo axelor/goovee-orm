@@ -1,9 +1,16 @@
 import { Repository } from "typeorm";
-import { Entity, QueryOptions, SelectOptions, WhereOptions } from "./types";
+import {
+  Entity,
+  OrderByOptions,
+  QueryOptions,
+  SelectOptions,
+  WhereOptions,
+} from "./types";
 
 export type ParseResult = {
   select?: Record<string, string>;
   joins?: Record<string, string>;
+  order?: Record<string, string>;
   where?: string;
   params?: Record<string, any>;
   references?: Record<string, ParseResult>;
@@ -31,7 +38,7 @@ export const parseQuery = <T extends Entity>(
     "notIn",
     "notBetween",
   ];
-  const collectionAttrs = ["select", "where", "take", "skip"];
+  const collectionAttrs = ["select", "where", "orderBy", "take", "skip"];
 
   const isJoin = (opts: any) => {
     return (
@@ -185,7 +192,35 @@ export const parseQuery = <T extends Entity>(
     }
   };
 
-  const { select: selection = {}, where: conditions = {} } = query;
+  const processOrderBy = (
+    repo: Repository<any>,
+    opts: OrderByOptions<T>,
+    prefix: string
+  ) => {
+    let order: Record<string, any> = {};
+    let joins: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(opts)) {
+      const name = makeName(prefix, key);
+      const relation = repo.metadata.findRelationWithPropertyPath(key);
+      if (relation) {
+        const rRepo: any = repo.manager.getRepository(relation.type);
+        const alias = makeAlias(prefix, key);
+        const res = processOrderBy(rRepo, value as OrderByOptions<any>, alias);
+        joins = { [name]: alias, ...joins, ...res.joins };
+        order = { ...order, ...res.order };
+      } else {
+        order[name] = value;
+      }
+    }
+    return { order, joins };
+  };
+
+  const {
+    select: selection = {},
+    where: conditions = {},
+    orderBy = {},
+  } = query;
 
   const {
     select,
@@ -200,10 +235,14 @@ export const parseQuery = <T extends Entity>(
     joins: whereJoins,
   } = processWhere(conditions, "self") ?? {};
 
+  const { order, joins: orderJoins } =
+    processOrderBy(repo, orderBy, "self") ?? {};
+
   const result = {
     select,
-    joins: { ...selectJoins, ...whereJoins },
+    joins: { ...selectJoins, ...whereJoins, ...orderJoins },
     where,
+    order,
     params,
     references,
     collections,

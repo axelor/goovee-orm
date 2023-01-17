@@ -92,6 +92,22 @@ export type WhereOptions<T extends Entity> =
       NOT?: WhereOptions<T>[];
     };
 
+export type OrderBy = "ASC" | "DESC";
+
+export type OrderByArg<T> = T extends string | number | boolean | Date
+  ? OrderBy
+  : T extends Array<infer P>
+  ? P extends Entity
+    ? OrderByOptions<P>
+    : never
+  : T extends Entity
+  ? OrderByOptions<T>
+  : never;
+
+export type OrderByOptions<T extends Entity> = {
+  [K in keyof OmitType<T, Binary | undefined>]?: OrderByArg<T[K]>;
+};
+
 export type Cursor<T extends Entity> = {
   id: ID;
 };
@@ -99,6 +115,7 @@ export type Cursor<T extends Entity> = {
 export type QueryOptions<T extends Entity> = {
   select?: SelectOptions<T>;
   where?: WhereOptions<T>;
+  orderBy?: OrderByOptions<T>;
   cursor?: Cursor<T>;
   take?: number;
   skip?: number;

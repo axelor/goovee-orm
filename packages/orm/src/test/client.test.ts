@@ -525,6 +525,21 @@ describe("client tests", async () => {
       where: {
         id: 1,
       },
+      orderBy: {
+        firstName: "DESC",
+        title: {
+          name: "ASC",
+        },
+        addresses: {
+          city: "DESC",
+          country: {
+            name: "ASC",
+          },
+          contact: {
+            lastName: "DESC",
+          },
+        },
+      },
     });
 
     expect(res).toBeInstanceOf(Contact);

@@ -98,6 +98,7 @@ const createSelectQuery = (
     where,
     params = {},
     joins = {},
+    order,
     take,
     skip,
     cursor,
@@ -114,6 +115,7 @@ const createSelectQuery = (
   Object.entries(joins).forEach(([name, alias]) => sq.leftJoin(name, alias));
 
   if (where) sq.andWhere(where, params);
+  if (order) sq.orderBy(order as any);
 
   if (take) sq.take(parseInt(`${take}`));
   if (skip) sq.skip(parseInt(`${skip}`));
