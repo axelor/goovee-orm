@@ -605,7 +605,7 @@ describe("client tests", async () => {
             thing: [1, 2, 3],
           }),
           notes: "Some Notes",
-          image: Buffer.from("Hello!!!", "ascii"),
+          image: Promise.resolve(Buffer.from("Hello!!!", "ascii")),
         },
         select: {
           attrs: true,
@@ -615,7 +615,7 @@ describe("client tests", async () => {
       });
 
       expect(res.image).toBeDefined();
-      expect(res.image?.toString()).toBe("Hello!!!");
+      expect((await res.image)?.toString()).toBe("Hello!!!");
       expect(res.notes).toBe("Some Notes");
       expect(res.attrs).toBeDefined();
       expect(JSON.parse(res.attrs ?? "{}")).toMatchObject({

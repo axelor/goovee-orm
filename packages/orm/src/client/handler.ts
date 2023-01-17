@@ -5,7 +5,7 @@ import {
   Repository,
 } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
-import { createLob, readLob } from "./lob";
+import { ensureLazy, isLob, resolveLazy } from "./fields";
 import { parseQuery, ParseResult } from "./parser";
 import {
   BulkDeleteOptions,
@@ -165,8 +165,7 @@ const load = async (
     const prop = name.replace("self.", "");
     if (isLob(repo, prop)) {
       for (const record of records) {
-        const oid = record[prop];
-        record[prop] = await readLob(repo.manager, oid);
+        ensureLazy(repo, record, prop);
       }
     }
   }
@@ -206,12 +205,6 @@ export const handleCount = async (
   return await sq.getCount();
 };
 
-const isLob = (repo: Repository<any>, name: string) => {
-  const column = repo.metadata.findColumnWithPropertyName(name);
-  const type = column?.type as any;
-  return type === "oid";
-};
-
 export const handleCreate = async (
   repo: Repository<any>,
   data: Record<string, any>
@@ -227,9 +220,7 @@ export const handleCreate = async (
         attrs[name] = await handleReference(repo, relation, value);
       }
     } else {
-      attrs[name] = isLob(repo, name)
-        ? await createLob(repo.manager, value)
-        : value;
+      attrs[name] = await resolveLazy(repo, {}, name, value);
     }
   }
 
@@ -327,9 +318,7 @@ export const handleUpdate = async (
         await handleCollection(repo, obj, relation, value);
       }
     } else {
-      attrs[name] = isLob(repo, name)
-        ? await createLob(repo.manager, value)
-        : value;
+      attrs[name] = await resolveLazy(repo, obj, name, value);
     }
   }
 

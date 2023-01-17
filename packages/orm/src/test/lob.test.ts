@@ -113,14 +113,14 @@ describe("Lob tests", async () => {
         data: {
           firstName: "Some",
           lastName: "NAME",
-          image: Buffer.from("Hello!!!", "ascii"),
+          image: Promise.resolve(Buffer.from("Hello!!!", "ascii")),
         },
         select: {
           image: true,
         },
       });
 
-      expect(res.image?.toString()).toBe("Hello!!!");
+      expect((await res.image)?.toString()).toBe("Hello!!!");
 
       const raw = await repo.findOne({
         select: {
@@ -139,14 +139,14 @@ describe("Lob tests", async () => {
         data: {
           id: res.id,
           version: res.version,
-          image: Buffer.from("World!!!", "ascii"),
+          image: Promise.resolve(Buffer.from("World!!!", "ascii")),
         },
         select: {
           image: true,
         },
       });
 
-      expect(updated.image?.toString()).toBe("World!!!");
+      expect((await updated.image)?.toString()).toBe("World!!!");
     });
   });
 });
