@@ -12,6 +12,10 @@
     {
       "type": "String",
       "name": "content"
+    },
+    {
+      "type": "JSON",
+      "name": "me"
     }
   ]
 }

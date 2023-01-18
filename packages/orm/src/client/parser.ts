@@ -1,9 +1,11 @@
 import { Repository } from "typeorm";
 import {
   Entity,
+  JsonWhere,
   OrderByOptions,
   QueryOptions,
   SelectOptions,
+  WhereArg,
   WhereOptions,
 } from "./types";
 
@@ -157,14 +159,73 @@ export const parseQuery = <T extends Entity>(
     return { where, params, joins };
   };
 
-  const processWhere = (opts: WhereOptions<T>, prefix: string) => {
+  const jsonRegEx = /(?<path>[^:]+)::(?<type>.*)/;
+
+  const isJson = (repo: Repository<any>, name: string) => {
+    const column = repo.metadata.findColumnWithPropertyName(name);
+    return column && column.type === "jsonb";
+  };
+
+  const isJsonCondition = (key: string) => {
+    return jsonRegEx.test(key);
+  };
+
+  const processJsonCondition = (
+    key: string,
+    value: WhereArg<any>,
+    jsonField: string
+  ) => {
+    const where: any[] = [];
+    const match = jsonRegEx.exec(key);
+    if (match && match.groups) {
+      const path = match.groups.path.split(/\./g).map((x) => `'${x}'`);
+      const type = match.groups.type;
+      const args = path.join(", ");
+      const expr = `cast(nullif(jsonb_extract_path_text(${jsonField}, ${args}), '') as ${type})`;
+      const w = makeWhere(expr, value);
+      where.push(w);
+    }
+    return acceptWhereCauses(where);
+  };
+
+  const processJsonWhere = (opts: JsonWhere, prefix: string) => {
     const where: any[] = [];
     for (const [key, value] of Object.entries(opts)) {
       if (key === "OR" || key === "AND" || key === "NOT") {
         const joiner = key === "OR" ? "OR" : "AND";
         const wrap = key === "NOT" ? "NOT" : "";
         if (Array.isArray(value)) {
-          const ws = value.map((x) => processWhere(x, prefix));
+          const ws = value.map((x) => processJsonWhere(x, prefix));
+          const w = acceptWhereCauses(ws, joiner);
+          w.where = `${wrap}(${w.where})`;
+          where.push(w);
+        }
+        continue;
+      }
+
+      if (isJsonCondition(key)) {
+        const w = processJsonCondition(key, value, prefix);
+        where.push(w);
+      } else {
+        throw new Error(`Invalid json filter: ${key}`);
+      }
+    }
+
+    return acceptWhereCauses(where);
+  };
+
+  const processWhere = (
+    repo: Repository<any>,
+    opts: WhereOptions<T>,
+    prefix: string
+  ) => {
+    const where: any[] = [];
+    for (const [key, value] of Object.entries(opts)) {
+      if (key === "OR" || key === "AND" || key === "NOT") {
+        const joiner = key === "OR" ? "OR" : "AND";
+        const wrap = key === "NOT" ? "NOT" : "";
+        if (Array.isArray(value)) {
+          const ws = value.map((x) => processWhere(repo, x, prefix));
           const w = acceptWhereCauses(ws, joiner);
           w.where = `${wrap}(${w.where})`;
           where.push(w);
@@ -175,8 +236,16 @@ export const parseQuery = <T extends Entity>(
       const name = makeName(prefix, key);
       const alias = makeAlias(prefix, key);
 
-      if (isJoin(value)) {
-        const w = processWhere(value, alias);
+      if (isJson(repo, key)) {
+        const w = processJsonWhere(value, name);
+        where.push(w);
+        continue;
+      }
+
+      const relation = repo.metadata.findRelationWithPropertyPath(key);
+      if (relation) {
+        const rRepo: any = repo.manager.getRepository(relation.type);
+        const w = processWhere(rRepo, value, alias);
         if (w) {
           w.joins[name] = alias;
           where.push(w);
@@ -233,7 +302,7 @@ export const parseQuery = <T extends Entity>(
     where,
     params,
     joins: whereJoins,
-  } = processWhere(conditions, "self") ?? {};
+  } = processWhere(repo, conditions, "self") ?? {};
 
   const { order, joins: orderJoins } =
     processOrderBy(repo, orderBy, "self") ?? {};

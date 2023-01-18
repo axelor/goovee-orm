@@ -51,6 +51,10 @@
       "type": "ManyToOne",
       "name": "country",
       "target": "Country"
+    },
+    {
+      "type": "JSON",
+      "name": "props"
     }
   ]
 }

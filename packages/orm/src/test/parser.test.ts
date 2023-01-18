@@ -284,4 +284,48 @@ describe("query parser tests", async () => {
       },
     });
   });
+
+  it("should parse json where expressions", async () => {
+    const opts: QueryOptions<Contact> = {
+      where: {
+        attrs: {
+          "name::text": {
+            eq: "some",
+          },
+        },
+        bio: {
+          me: {
+            "some::integer": {
+              in: [1, 2, 3],
+            },
+          },
+        },
+        addresses: {
+          props: {
+            "some::timestamp": {
+              between: ["2022-01-01T00:00:00.000Z", "2023-01-01T00:00:00.000Z"],
+            },
+          },
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
+
+    expect(res).toMatchObject({
+      joins: {
+        "self.bio": "self_bio",
+        "self.addresses": "self_addresses",
+      },
+      where:
+        "cast(nullif(jsonb_extract_path_text(self.attrs, 'name'), '') as text) = :p0 AND cast(nullif(jsonb_extract_path_text(self_bio.me, 'some'), '') as integer) IN (:...p1) AND cast(nullif(jsonb_extract_path_text(self_addresses.props, 'some'), '') as timestamp) BETWEEN :p2 AND :p3",
+      params: {
+        p0: "some",
+        p1: [1, 2, 3],
+        p2: "2022-01-01T00:00:00.000Z",
+        p3: "2023-01-01T00:00:00.000Z",
+      },
+    });
+  });
 });

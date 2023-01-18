@@ -1,4 +1,4 @@
-import { Binary, Json, Text } from "./fields";
+import { Binary, Json, JsonType, Text } from "./fields";
 
 export type EQ<T> = { eq: T | null } | T | null;
 export type NE<T> = { ne: T | null };
@@ -64,6 +64,30 @@ export type SelectOptions<T extends Entity> = {
   -readonly [K in keyof T]?: SelectArg<T[K]>;
 };
 
+export type JsonKeyText = `${string}::text`;
+export type JsonKeyInteger = `${string}::integer`;
+export type JsonKeyBoolean = `${string}::boolean`;
+export type JsonKeyDecimal = `${string}::decimal`;
+export type JsonKeyDate = `${string}::timestamp`;
+
+export type JsonWhereText = { [K: JsonKeyText]: StringFilter };
+export type JsonWhereInteger = { [K: JsonKeyInteger]: IntFilter };
+export type JsonWhereBoolean = { [K: JsonKeyBoolean]: BooleanFilter };
+export type JsonWhereDecimal = { [K: JsonKeyDecimal]: DecimalFilter };
+export type JsonWhereDate = { [K: JsonKeyDate]: DateFilter };
+
+export type JsonWhere =
+  | JsonWhereText
+  | JsonWhereInteger
+  | JsonWhereBoolean
+  | JsonWhereDecimal
+  | JsonWhereDate
+  | {
+      OR?: JsonWhere[];
+      AND?: JsonWhere[];
+      NOT?: JsonWhere[];
+    };
+
 export type WhereArg<T> = T extends number
   ? IntFilter
   : T extends bigint
@@ -83,6 +107,8 @@ export type WhereArg<T> = T extends number
   : T extends Promise<infer S>
   ? S extends string
     ? StringFilter
+    : S extends JsonType
+    ? JsonWhere
     : never
   : never;
 
