@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import {
   Entity,
+  JsonOrder,
   JsonWhere,
   OrderByOptions,
   QueryOptions,
@@ -261,6 +262,21 @@ export const parseQuery = <T extends Entity>(
     }
   };
 
+  const processOrderByJson = (opts: JsonOrder, prefix: string) => {
+    const order: Record<string, any> = {};
+    for (const [key, value] of Object.entries(opts)) {
+      const match = jsonRegEx.exec(key);
+      if (match && match.groups) {
+        const path = match.groups.path.split(/\./g).map((x) => `'${x}'`);
+        const type = match.groups.type;
+        const args = path.join(", ");
+        const expr = `cast(nullif(jsonb_extract_path_text(${prefix}, ${args}), '') as ${type})`;
+        order[expr] = value;
+      }
+    }
+    return order;
+  };
+
   const processOrderBy = (
     repo: Repository<any>,
     opts: OrderByOptions<T>,
@@ -278,6 +294,9 @@ export const parseQuery = <T extends Entity>(
         const res = processOrderBy(rRepo, value as OrderByOptions<any>, alias);
         joins = { [name]: alias, ...joins, ...res.joins };
         order = { ...order, ...res.order };
+      } else if (isJson(repo, key)) {
+        const jsonOrder = processOrderByJson(value as JsonOrder, name);
+        Object.assign(order, jsonOrder);
       } else {
         order[name] = value;
       }

@@ -70,6 +70,7 @@ describe("json tests", async () => {
             me: Promise.resolve({
               expertSkill,
               skills,
+              age,
             }),
           },
         },
@@ -252,5 +253,27 @@ describe("json tests", async () => {
       expect(dates.every((x) => x >= uDate)).toBeTruthy();
       expect(dates.every((x) => x <= lDate)).toBeTruthy();
     }
+  });
+
+  it("should order on json field", async () => {
+    const res = await client.contact.find({
+      select: {
+        attrs: true,
+      },
+      orderBy: {
+        attrs: {
+          "age::integer": "DESC",
+        },
+      },
+    });
+
+    const data = await Promise.all(res.map((x) => x.attrs));
+    const vals = data.map((x: any) => x.age);
+
+    const max = vals[0];
+    const min = vals[vals.length - 1];
+
+    expect(Math.min(...vals)).toBe(min);
+    expect(Math.max(...vals)).toBe(max);
   });
 });

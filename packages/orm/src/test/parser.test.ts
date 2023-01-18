@@ -328,4 +328,32 @@ describe("query parser tests", async () => {
       },
     });
   });
+
+  it("should parse json orderBy expressions", async () => {
+    const opts: QueryOptions<Contact> = {
+      orderBy: {
+        attrs: {
+          "name::text": "DESC",
+        },
+        bio: {
+          me: {
+            "skill::text": "DESC",
+          },
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
+
+    expect(res).toMatchObject({
+      joins: { "self.bio": "self_bio" },
+      order: {
+        "cast(nullif(jsonb_extract_path_text(self.attrs, 'name'), '') as text)":
+          "DESC",
+        "cast(nullif(jsonb_extract_path_text(self_bio.me, 'skill'), '') as text)":
+          "DESC",
+      },
+    });
+  });
 });

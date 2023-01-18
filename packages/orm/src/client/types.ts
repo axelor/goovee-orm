@@ -88,6 +88,17 @@ export type JsonWhere =
       NOT?: JsonWhere[];
     };
 
+export type JsonOrder = {
+  [
+    K:
+      | JsonKeyText
+      | JsonKeyInteger
+      | JsonKeyBoolean
+      | JsonKeyDecimal
+      | JsonKeyDate
+  ]: OrderBy;
+};
+
 export type WhereArg<T> = T extends number
   ? IntFilter
   : T extends bigint
@@ -132,10 +143,14 @@ export type OrderByArg<T> = T extends string | number | boolean | Date
     : never
   : T extends Entity
   ? OrderByOptions<T>
+  : T extends Promise<infer S>
+  ? S extends JsonType
+    ? JsonOrder
+    : never
   : never;
 
 export type OrderByOptions<T extends Entity> = {
-  [K in keyof OmitType<T, Json | Text | Binary | undefined>]?: OrderByArg<T[K]>;
+  [K in keyof OmitType<T, Text | Binary | undefined>]?: OrderByArg<T[K]>;
 };
 
 export type Cursor<T extends Entity> = {
