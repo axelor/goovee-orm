@@ -80,6 +80,10 @@ export type WhereArg<T> = T extends number
     : never
   : T extends Entity
   ? WhereOptions<T>
+  : T extends Promise<infer S>
+  ? S extends string
+    ? StringFilter
+    : never
   : never;
 
 export type WhereOptions<T extends Entity> =
