@@ -27,18 +27,18 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^7.6.0",
-    "@swc/core": "^1.3.26",
+    "@swc/core": "^1.3.27",
     "@types/node": "^18.11.18",
     "@types/pg": "^8.6.6",
-    "@types/yargs": "^17.0.19",
-    "eslint": "^8.31.0",
+    "@types/yargs": "^17.0.20",
+    "eslint": "^8.32.0",
     "eslint-config-custom": "workspace:*",
-    "rimraf": "^3.0.2",
+    "rimraf": "^4.1.1",
     "testcontainers": "^9.1.1",
     "tsconfig": "workspace:*",
     "tsup": "^6.5.0",
     "typescript": "^4.9.4",
     "unplugin-swc": "^1.3.2",
-    "vitest": "^0.27.1"
+    "vitest": "^0.27.2"
   }
 }
