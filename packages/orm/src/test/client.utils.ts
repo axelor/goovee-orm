@@ -48,12 +48,12 @@ export const createTestClient = async () => {
     contact: Contact,
   };
 
-  const options = {
-    url: process.env.DATABASE_URL ?? "",
-    sync: true,
-  };
+  const url = process.env.DATABASE_URL;
+  if (url === undefined) {
+    throw new Error("No DATABASE_URL environment set");
+  }
 
-  return createClient(options, entities);
+  return createClient({ url, sync: true }, entities);
 };
 
 export type TestClient = ReturnType<typeof createTestClient> extends Promise<
