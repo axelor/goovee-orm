@@ -349,10 +349,8 @@ describe("query parser tests", async () => {
     expect(res).toMatchObject({
       joins: { "self.bio": "self_bio" },
       order: {
-        "cast(nullif(jsonb_extract_path_text(self.attrs, 'name'), '') as text)":
-          "DESC",
-        "cast(nullif(jsonb_extract_path_text(self_bio.me, 'skill'), '') as text)":
-          "DESC",
+        "cast(jsonb_extract_path_text(self.attrs, 'name') as text)": "DESC",
+        "cast(jsonb_extract_path_text(self_bio.me, 'skill') as text)": "DESC",
       },
     });
   });

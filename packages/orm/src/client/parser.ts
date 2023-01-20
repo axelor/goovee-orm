@@ -270,7 +270,7 @@ export const parseQuery = <T extends Entity>(
         const path = match.groups.path.split(/\./g).map((x) => `'${x}'`);
         const type = match.groups.type;
         const args = path.join(", ");
-        const expr = `cast(nullif(jsonb_extract_path_text(${prefix}, ${args}), '') as ${type})`;
+        const expr = `cast(jsonb_extract_path_text(${prefix}, ${args}) as ${type})`;
         order[expr] = value;
       }
     }
