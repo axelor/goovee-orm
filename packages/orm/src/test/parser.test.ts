@@ -319,12 +319,14 @@ describe("query parser tests", async () => {
         "self.addresses": "self_addresses",
       },
       where:
-        "cast(nullif(jsonb_extract_path_text(self.attrs, 'name'), '') as text) = :p0 AND cast(nullif(jsonb_extract_path_text(self_bio.me, 'some'), '') as integer) IN (:...p1) AND cast(nullif(jsonb_extract_path_text(self_addresses.props, 'some'), '') as timestamp) BETWEEN :p2 AND :p3",
+        "jsonb_path_exists(self.attrs, '$.name ? (@ == $p0)', jsonb_build_object('p0', cast(:p0 as text))) AND jsonb_path_exists(self_bio.me, '$.some ? (@ == $p1 || @ == $p2 || @ == $p3)', jsonb_build_object('p1', cast(:p1 as integer), 'p2', cast(:p2 as integer), 'p3', cast(:p3 as integer))) AND jsonb_path_exists(self_addresses.props, '$.some ? (@ >= $p4 && @ <= $p5)', jsonb_build_object('p4', cast(:p4 as timestamp), 'p5', cast(:p5 as timestamp)))",
       params: {
         p0: "some",
-        p1: [1, 2, 3],
-        p2: "2022-01-01T00:00:00.000Z",
-        p3: "2023-01-01T00:00:00.000Z",
+        p1: 1,
+        p2: 2,
+        p3: 3,
+        p4: "2022-01-01T00:00:00.000Z",
+        p5: "2023-01-01T00:00:00.000Z",
       },
     });
   });

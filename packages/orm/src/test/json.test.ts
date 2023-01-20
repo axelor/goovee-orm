@@ -47,6 +47,13 @@ describe("json tests", async () => {
       "Linux",
     ]);
 
+    const tags = faker.helpers.arrayElements([
+      { id: 1, color: "red", name: "Red" },
+      { id: 2, color: "blue", name: "Blue" },
+      { id: 3, color: "green", name: "Green" },
+      { id: 4, color: "yellow", name: "Yellow" },
+    ]);
+
     const street = faker.address.street();
     const city = faker.address.city();
     const altContact = faker.name.fullName();
@@ -62,6 +69,7 @@ describe("json tests", async () => {
           age,
           customer,
           salary,
+          tags,
           dateOfBirth: createDateOfBirth(age),
         }),
         bio: {
@@ -253,6 +261,27 @@ describe("json tests", async () => {
       expect(dates.every((x) => x >= uDate)).toBeTruthy();
       expect(dates.every((x) => x <= lDate)).toBeTruthy();
     }
+  });
+
+  it("should search on array json field", async () => {
+    const res = await client.contact.find({
+      where: {
+        attrs: {
+          "tags[*].color::text": {
+            eq: "red",
+          },
+        },
+      },
+      select: {
+        attrs: true,
+      },
+    });
+
+    const data = await Promise.all(res.map((x) => x.attrs));
+    const tags = data.map((x: any) => x.tags);
+
+    const matched = tags.every((x) => x.some((t: any) => t.color === "red"));
+    expect(matched).toBeTruthy();
   });
 
   it("should order on json field", async () => {
