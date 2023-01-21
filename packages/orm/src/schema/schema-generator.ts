@@ -68,7 +68,7 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
 
   protected importNameInternal(name: string) {
     const pkg = require("../../package.json");
-    const pkgName = `${pkg.name}/client`;
+    const pkgName = `${pkg.name}/dist/client`;
     const resolve = this.entity.config.resolve ?? ((value: string) => value);
     const modName = resolve(pkgName);
     return new ImportName(name, modName);

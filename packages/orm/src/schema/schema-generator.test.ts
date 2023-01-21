@@ -218,7 +218,7 @@ import { Bio } from "./Bio";
 import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
-import { type Text, type Binary, type Json } from "@goovee/orm/client";
+import { type Text, type Binary, type Json } from "@goovee/orm/dist/client";
 
 @Entity()
 export class Contact extends Model {
@@ -273,7 +273,7 @@ import { Bio } from "./Bio";
 import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
-import { type Text, type Binary, type Json } from "@goovee/orm/client";
+import { type Text, type Binary, type Json } from "@goovee/orm/dist/client";
 
 @Entity("contact")
 export class Contact extends Model {
