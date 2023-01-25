@@ -12,7 +12,7 @@ export class Type extends Container<TypeOptions> {
 
   protected emitBody(file: CodeFile): void {
     const { alias } = this.opts;
-    file.write("=> ");
+    file.write("= ");
     if (alias) {
       file.write(alias);
     } else {

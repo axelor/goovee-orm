@@ -16,7 +16,7 @@ describe("Type tests", () => {
     type.field("end", { type: "number" });
     const code = emit(type);
     expect(code).toBe(`\
-type Page => {
+type Page = {
   start?: number = 0;
   end?: number;
 }`);
@@ -28,6 +28,6 @@ type Page => {
       export: true,
     });
     const code = emit(type);
-    expect(code).toBe("export type Num => number | bigint");
+    expect(code).toBe("export type Num = number | bigint");
   });
 });
