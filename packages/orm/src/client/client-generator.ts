@@ -4,7 +4,8 @@ import { camelCase } from "typeorm/util/StringUtils";
 
 import pkg from "../../package.json";
 import { CodeFile } from "../code-generator/CodeFile";
-import { generateSchema, readSchema } from "../schema/schema-generator";
+import { generateSchema } from "../schema/schema-generator";
+import { readSchema } from "../schema/schema-utils";
 
 const tsConfig = {
   compilerOptions: {

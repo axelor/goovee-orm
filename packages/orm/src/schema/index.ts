@@ -1,3 +1,1 @@
-import { EntityOptions } from "./types";
-
-export const defineEntity = (entity: EntityOptions) => entity;
+export * from "./schema-utils";

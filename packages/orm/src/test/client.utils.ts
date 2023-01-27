@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { createClient } from "../client";
-import { generateSchema, readSchema } from "../schema/schema-generator";
+import { generateSchema } from "../schema/schema-generator";
+import { readSchema } from "../schema/schema-utils";
 
 const getLastChangeTime = (dir: string) => {
   if (fs.existsSync(dir)) {
@@ -23,7 +24,7 @@ export const generateCode = () => {
   const lastChangeTime = getLastChangeTime(schemaDir);
 
   const pkg = require("../../package.json");
-  const pkgName = `${pkg.name}/client`;
+  const pkgName = `${pkg.name}/dist/client`;
 
   const resolve = (value: string) =>
     value === pkgName ? "../../client" : value;
