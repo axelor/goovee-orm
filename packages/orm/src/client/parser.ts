@@ -353,6 +353,28 @@ export const parseQuery = <T extends Entity>(
     return { order, joins, select };
   };
 
+  const isNonNullUnique = (repo: Repository<any>, name: string) => {
+    const column = repo.metadata.findColumnWithPropertyName(name);
+    if (column?.isPrimary) return true;
+    if (column?.isNullable) return false;
+    return (
+      column &&
+      repo.metadata.uniques.some((x) => {
+        x.columns.length === 1 &&
+          x.columns[0].databaseName === column.databaseName;
+      })
+    );
+  };
+
+  const ensureUniqueOrderBy = (
+    repo: Repository<any>,
+    opts: OrderByOptions<T>
+  ) => {
+    return Object.keys(opts).some((name) => isNonNullUnique(repo, name))
+      ? {}
+      : { "self.id": "ASC" };
+  };
+
   const {
     select: selection = {},
     where: conditions = {},
@@ -379,6 +401,11 @@ export const parseQuery = <T extends Entity>(
   } = processOrderBy(repo, orderBy, "self") ?? {};
 
   const { take, skip, cursor } = query;
+
+  // if pagination query, ensure ordering by an unique index
+  if ((take && (take > 1 || take < -1)) || (skip && skip > 0)) {
+    Object.assign(order, ensureUniqueOrderBy(repo, orderBy));
+  }
 
   const result = {
     select: { ...select, ...orderSelect },
