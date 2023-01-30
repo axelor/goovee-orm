@@ -5,6 +5,56 @@ import { afterEach, describe, expect, it } from "vitest";
 import { defineEntity } from ".";
 import { generateSchema } from "./schema-generator";
 
+const UniqueTest = defineEntity({
+  name: "UniqueTest",
+  fields: [
+    {
+      name: "name",
+      type: "String",
+      unique: true,
+      index: true,
+    },
+    {
+      name: "some",
+      type: "String",
+      index: true,
+    },
+    {
+      name: "thing",
+      type: "String",
+      unique: true,
+    },
+    {
+      name: "another",
+      type: "String",
+    },
+    {
+      name: "one",
+      type: "String",
+    },
+  ],
+  uniques: [
+    {
+      columns: ["some", "thing"],
+    },
+    {
+      columns: ["some", "one"],
+      name: "uk_some_one",
+    },
+  ],
+  indexes: [
+    {
+      columns: ["another", "one"],
+      unique: true,
+    },
+    {
+      columns: ["some", "one"],
+      unique: true,
+      name: "idx_some_one",
+    },
+  ],
+});
+
 const Title = defineEntity({
   name: "Title",
   table: "titles",
@@ -320,6 +370,34 @@ export class Contact extends Model {
 }
 `;
 
+const expectedUniqueCode = `\
+import { Entity, Unique, Index, Column } from "typeorm";
+
+@Entity("unique_test")
+@Unique(["some", "thing"])
+@Unique("uk_some_one", ["some", "one"])
+@Index(["another", "one"], { unique: true })
+@Index("idx_some_one", ["some", "one"], { unique: true })
+export class UniqueTest {
+  @Index({ unique: true })
+  @Column({ nullable: true })
+  name?: string;
+
+  @Index()
+  @Column({ nullable: true })
+  some?: string;
+
+  @Column({ nullable: true, unique: true })
+  thing?: string;
+
+  @Column({ nullable: true })
+  another?: string;
+
+  @Column({ nullable: true })
+  one?: string;
+}
+`;
+
 const expectedFiles = [
   "Model.ts",
   "AddressType.ts",
@@ -330,6 +408,7 @@ const expectedFiles = [
   "Bio.ts",
   "Address.ts",
   "Contact.ts",
+  "UniqueTest.ts",
   "index.ts",
 ];
 
@@ -351,7 +430,7 @@ describe("schema generator tests", () => {
   afterEach(cleanUp);
   it("should generate entity classes with default naming", () => {
     const files = generateSchema(outDir, {
-      schema: [Title, Country, Circle, Bio, Address, Contact],
+      schema: [Title, Country, Circle, Bio, Address, Contact, UniqueTest],
     });
 
     expect(files).toHaveLength(expectedFiles.length);
@@ -366,7 +445,7 @@ describe("schema generator tests", () => {
 
   it("should generate entity classes with goovee naming", () => {
     generateSchema(outDir, {
-      schema: [Title, Country, Circle, Bio, Address, Contact],
+      schema: [Title, Country, Circle, Bio, Address, Contact, UniqueTest],
       naming: "goovee",
     });
     const code = fs.readFileSync(path.join(outDir, "Contact.ts"), {
@@ -374,5 +453,16 @@ describe("schema generator tests", () => {
     });
 
     expect(code).toBe(expectedCodeGooveeNaming);
+  });
+
+  it("should generate entity classes with unique constraints", () => {
+    generateSchema(outDir, {
+      schema: [Title, Country, Circle, Bio, Address, Contact, UniqueTest],
+      naming: "goovee",
+    });
+    const code = fs.readFileSync(path.join(outDir, "UniqueTest.ts"), {
+      encoding: "utf-8",
+    });
+    expect(code).toBe(expectedUniqueCode);
   });
 });

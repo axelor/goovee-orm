@@ -12,6 +12,7 @@ export interface SimpleProperty extends Property {
   hidden?: boolean;
   default?: string | boolean | number;
   unique?: boolean;
+  index?: boolean | string;
   nullable?: boolean;
   computed?: boolean;
   body?: string[];
@@ -156,6 +157,15 @@ export type PropertyOptions =
   | OneToManyProperty
   | ManyToManyProperty;
 
+export interface Unique {
+  columns: string[];
+  name?: string;
+}
+
+export interface Index extends Unique {
+  unique?: boolean;
+}
+
 export interface EntityOptions {
   name: string;
   table?: string;
@@ -163,4 +173,6 @@ export interface EntityOptions {
   extends?: string;
   implements?: string | string[];
   fields?: PropertyOptions[];
+  uniques?: Unique[];
+  indexes?: Index[];
 }

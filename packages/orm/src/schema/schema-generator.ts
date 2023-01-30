@@ -86,6 +86,8 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
       scale,
       precision,
       auditColumn,
+      index,
+      unique,
     } = options as any;
 
     const arg: Record<string, any> = {
@@ -116,7 +118,22 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
       arg.select = false;
     }
 
-    return [d.arg(arg)];
+    const decorators: Decorator[] = [];
+
+    if (index) {
+      const decorator = newDecorator("Index");
+      if (typeof index === "string") decorator.arg(index);
+      if (unique) decorator.arg({ unique: true });
+      decorators.push(decorator);
+    }
+
+    if (unique && decorator === "Column" && !index) {
+      arg.unique = true;
+    }
+
+    decorators.push(d.arg(arg));
+
+    return decorators;
   }
 
   toCode(file: CodeFile) {
@@ -405,7 +422,7 @@ class EntityGenerator implements CodeGenerator {
 
   toCode(file: CodeFile) {
     const { name, table, options } = this;
-    const { fields = [] } = options;
+    const { fields = [], uniques = [], indexes = [] } = options;
 
     const entity = new Class(name, {
       export: true,
@@ -419,6 +436,21 @@ class EntityGenerator implements CodeGenerator {
       if (table) {
         decorator.arg(table);
       }
+    }
+
+    for (const unique of uniques) {
+      const decorator = entity.decorator(newDecorator("Unique"));
+      if (unique.name) decorator.arg(unique.name);
+      decorator.arg(unique.columns);
+    }
+    for (const index of indexes) {
+      const decorator = entity.decorator(newDecorator("Index"));
+      if (index.name) decorator.arg(index.name);
+      decorator.arg(index.columns);
+      if (index.unique)
+        decorator.arg({
+          unique: true,
+        });
     }
 
     for (const field of fields) {
