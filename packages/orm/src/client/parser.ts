@@ -372,6 +372,8 @@ export const parseQuery = <T extends Entity>(
   const { order, joins: orderJoins } =
     processOrderBy(repo, orderBy, "self") ?? {};
 
+  const { take, skip, cursor } = query;
+
   const result = {
     select,
     joins: { ...selectJoins, ...whereJoins, ...orderJoins },
@@ -380,6 +382,9 @@ export const parseQuery = <T extends Entity>(
     params,
     references,
     collections,
+    take,
+    skip,
+    cursor,
   };
 
   return JSON.parse(
