@@ -330,6 +330,7 @@ export const parseQuery = <T extends Entity>(
   ) => {
     let order: Record<string, any> = {};
     let joins: Record<string, string> = {};
+    let select: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(opts)) {
       const name = makeName(prefix, key);
@@ -340,14 +341,16 @@ export const parseQuery = <T extends Entity>(
         const res = processOrderBy(rRepo, value as OrderByOptions<any>, alias);
         joins = { [name]: alias, ...joins, ...res.joins };
         order = { ...order, ...res.order };
+        select = { ...select, ...res.select };
       } else if (isJson(repo, key)) {
         const jsonOrder = processOrderByJson(value as JsonOrder, name);
         Object.assign(order, jsonOrder);
       } else {
+        select[name] = makeAlias(prefix, key);
         order[name] = value;
       }
     }
-    return { order, joins };
+    return { order, joins, select };
   };
 
   const {
@@ -369,13 +372,16 @@ export const parseQuery = <T extends Entity>(
     joins: whereJoins,
   } = processWhere(repo, conditions, "self") ?? {};
 
-  const { order, joins: orderJoins } =
-    processOrderBy(repo, orderBy, "self") ?? {};
+  const {
+    order,
+    joins: orderJoins,
+    select: orderSelect,
+  } = processOrderBy(repo, orderBy, "self") ?? {};
 
   const { take, skip, cursor } = query;
 
   const result = {
-    select,
+    select: { ...select, ...orderSelect },
     joins: { ...selectJoins, ...whereJoins, ...orderJoins },
     where,
     order,
