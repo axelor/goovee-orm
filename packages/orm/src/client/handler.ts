@@ -484,8 +484,10 @@ export const handleBulkDelete = async (
   const qb = createBulkQuery(repo, where);
 
   // https://github.com/typeorm/typeorm/issues/5931
-  const [query, params] = qb.select("*").getQueryAndParameters();
-  const raw = query.replace(/^SELECT \* FROM/, "DELETE FROM");
+  const [query, params] = qb.select("self.id").getQueryAndParameters();
+
+  // PostgreSQL doesn't support JOIN in DELETE query
+  const raw = `DELETE FROM "${repo.metadata.tableName}" "me" WHERE "me"."id" IN (${query})`;
 
   const [_, affected] = await repo.manager.query(raw, params);
 

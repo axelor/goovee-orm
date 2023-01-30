@@ -548,6 +548,29 @@ describe("client tests", async () => {
     expect(bulkDeleted).toBe(+count);
   });
 
+  it("should bulk delete with join", async () => {
+    await createData(client);
+    const count = await client.address.count({
+      where: {
+        country: {
+          code: {
+            eq: "fr",
+          },
+        },
+      },
+    });
+    const bulkDeleted = await client.address.deleteAll({
+      where: {
+        country: {
+          code: {
+            eq: "fr",
+          },
+        },
+      },
+    });
+    expect(bulkDeleted).toBe(+count);
+  });
+
   it("should handle text, json and binary fields", async () => {
     // when working with binary fields, always use transaction
     await client.$transaction(async (c) => {
