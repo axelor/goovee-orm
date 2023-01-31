@@ -153,17 +153,13 @@ export type OrderByOptions<T extends Entity> = {
   [K in keyof OmitType<T, Text | Binary | undefined>]?: OrderByArg<T[K]>;
 };
 
-export type Cursor<T extends Entity> = {
-  id: ID;
-};
-
 export type QueryOptions<T extends Entity> = {
   select?: SelectOptions<T>;
   where?: WhereOptions<T>;
   orderBy?: OrderByOptions<T>;
-  cursor?: Cursor<T>;
   take?: number;
   skip?: number;
+  cursor?: string;
 };
 
 export type SelectKeys<T, S> = Pick<

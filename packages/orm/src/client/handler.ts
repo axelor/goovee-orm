@@ -115,10 +115,10 @@ const createSelectQuery = (
   Object.entries(joins).forEach(([name, alias]) => sq.leftJoin(name, alias));
 
   if (where) sq.andWhere(where, params);
-  if (order) sq.orderBy(order as any);
+  if (order) sq.orderBy(order);
 
-  if (take) sq.take(parseInt(`${take}`));
-  if (skip) sq.skip(parseInt(`${skip}`));
+  if (take) sq.take(take);
+  if (skip) sq.skip(skip);
 
   return sq;
 };

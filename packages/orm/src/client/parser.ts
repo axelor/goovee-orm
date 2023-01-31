@@ -3,6 +3,7 @@ import {
   Entity,
   JsonOrder,
   JsonWhere,
+  OrderBy,
   OrderByOptions,
   QueryOptions,
   SelectOptions,
@@ -12,14 +13,14 @@ import {
 export type ParseResult = {
   select?: Record<string, string>;
   joins?: Record<string, string>;
-  order?: Record<string, string>;
+  order?: Record<string, OrderBy>;
   where?: string;
   params?: Record<string, any>;
   references?: Record<string, ParseResult>;
   collections?: Record<string, ParseResult>;
-  take?: string | number | bigint;
-  skip?: string | number | bigint;
-  cursor?: string | number | bigint;
+  take?: number;
+  skip?: number;
+  cursor?: string;
 };
 
 export const parseQuery = <T extends Entity>(
