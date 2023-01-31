@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { getTestClient } from "./client.utils";
 import { AddressType, Contact } from "./entity";
 import { createData } from "./fixture";
@@ -602,5 +602,69 @@ describe("client tests", async () => {
         thing: [1, 2, 3],
       });
     });
+  });
+});
+
+describe("client pagination tests", async () => {
+  const client = await getTestClient();
+
+  beforeEach(async () => createData(client, 20));
+
+  it("should do offset pagination", async () => {
+    const first = await client.contact.find({
+      select: { id: true },
+      take: 1,
+    });
+
+    expect(first).toHaveLength(1);
+    expect(first[0].id).toBe("1");
+
+    const first5 = await client.contact.find({
+      select: { id: true },
+      take: 5,
+    });
+
+    expect(first5).toHaveLength(5);
+    expect(first5.map((x) => x.id)).toMatchObject(["1", "2", "3", "4", "5"]);
+
+    const after6 = await client.contact.find({
+      select: { id: true },
+      take: 3,
+      skip: 6,
+    });
+
+    expect(after6).toHaveLength(3);
+    expect(after6.map((x) => x.id)).toMatchObject(["7", "8", "9"]);
+
+    const last = await client.contact.find({
+      select: { id: true },
+      take: -1,
+    });
+
+    expect(last).toHaveLength(1);
+    expect(last[0].id).toBe("20");
+
+    const last5 = await client.contact.find({
+      select: { id: true },
+      take: -5,
+    });
+
+    expect(last5).toHaveLength(5);
+    expect(last5.map((x) => x.id)).toMatchObject([
+      "16",
+      "17",
+      "18",
+      "19",
+      "20",
+    ]);
+
+    const before15 = await client.contact.find({
+      select: { id: true },
+      take: -3,
+      skip: 6,
+    });
+
+    expect(before15).toHaveLength(3);
+    expect(before15.map((x) => x.id)).toMatchObject(["12", "13", "14"]);
   });
 });

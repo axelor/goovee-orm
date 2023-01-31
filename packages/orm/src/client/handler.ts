@@ -93,16 +93,7 @@ const createSelectQuery = (
   builder: QueryBuilder<any>,
   options: ParseResult
 ) => {
-  const {
-    select,
-    where,
-    params = {},
-    joins = {},
-    order,
-    take,
-    skip,
-    cursor,
-  } = options;
+  const { select, where, params = {}, joins = {}, order } = options;
 
   const sq = select
     ? builder.select("self.id").addSelect("self.version")
@@ -116,9 +107,6 @@ const createSelectQuery = (
 
   if (where) sq.andWhere(where, params);
   if (order) sq.orderBy(order);
-
-  if (take) sq.take(take);
-  if (skip) sq.skip(skip);
 
   return sq;
 };
@@ -137,6 +125,22 @@ const load = async (
 
   const opts = options.select ? { ...options, select: normalSelect } : options;
   const sq = createSelectQuery(builder, opts);
+
+  let count = -1;
+  let { take = 0, skip = 0 } = options;
+  if (take > 1 || take < 0 || skip > 0) {
+    count = await sq.getCount();
+    skip = take < 0 ? count - skip + take : skip;
+    take = Math.abs(take);
+  }
+
+  if (count === 0) {
+    return [];
+  }
+
+  if (take > 0) sq.take(take);
+  if (skip > 0) sq.skip(skip);
+
   const records = await sq.getMany();
 
   const relations = [
