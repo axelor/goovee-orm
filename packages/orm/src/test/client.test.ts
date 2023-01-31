@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { QueryOptions } from "../client";
 import { getTestClient } from "./client.utils";
 import { AddressType, Contact } from "./entity";
 import { createData } from "./fixture";
@@ -666,5 +667,123 @@ describe("client pagination tests", async () => {
 
     expect(before15).toHaveLength(3);
     expect(before15.map((x) => x.id)).toMatchObject(["12", "13", "14"]);
+  });
+
+  it("should do cursor pagination", async () => {
+    const first5 = await client.contact.find({
+      select: {
+        firstName: true,
+        title: {
+          code: true,
+          name: true,
+        },
+      },
+      take: 5,
+    });
+
+    expect(first5).toHaveLength(5);
+
+    const fifth = first5[4];
+
+    expect(fifth).toHaveProperty("_count");
+    expect(fifth).toHaveProperty("_cursor");
+
+    const after5th = await client.contact.find({
+      select: {
+        firstName: true,
+        title: {
+          code: true,
+          name: true,
+        },
+      },
+      take: 3,
+      cursor: fifth._cursor,
+    });
+
+    expect(after5th).toHaveLength(3);
+    expect(after5th.map((x) => x.id)).toMatchObject(["6", "7", "8"]);
+
+    const after5thSkip2 = await client.contact.find({
+      select: {
+        firstName: true,
+        title: {
+          code: true,
+          name: true,
+        },
+      },
+      take: 3,
+      skip: 2,
+      cursor: fifth._cursor,
+    });
+
+    expect(after5thSkip2).toHaveLength(3);
+    expect(after5thSkip2.map((x) => x.id)).toMatchObject(["8", "9", "10"]);
+
+    const eighth = after5th[2];
+
+    const before8th = await client.contact.find({
+      select: {
+        firstName: true,
+        title: {
+          code: true,
+          name: true,
+        },
+      },
+      take: -3,
+      cursor: eighth._cursor,
+    });
+
+    expect(before8th).toHaveLength(3);
+    expect(before8th.map((x) => x.id)).toMatchObject(["5", "6", "7"]);
+  });
+
+  it("should do cursor pagination with complex ordering", async () => {
+    const opts: QueryOptions<Contact> = {
+      select: {
+        fullName: true,
+        title: {
+          code: true,
+          name: true,
+        },
+      },
+      orderBy: {
+        title: {
+          code: "ASC",
+        },
+        id: "DESC",
+      },
+    };
+
+    const all = await client.contact.find(opts);
+    const first = await client.contact.find({
+      ...opts,
+      take: 2,
+    });
+
+    expect(first).toHaveLength(2);
+    expect(first[0]).toMatchObject(all[0]);
+    expect(first[1]).toMatchObject(all[1]);
+
+    const next3 = await client.contact.find({
+      ...opts,
+      take: 3,
+      skip: 2,
+      cursor: first[1]._cursor,
+    });
+
+    expect(next3).toHaveLength(3);
+    expect(next3[0]).toMatchObject(all[4]);
+    expect(next3[1]).toMatchObject(all[5]);
+    expect(next3[2]).toMatchObject(all[6]);
+
+    const prev2 = await client.contact.find({
+      ...opts,
+      take: -2,
+      cursor: next3[0]._cursor,
+    });
+
+    expect(prev2).toHaveLength(2);
+    expect(prev2[0]).toMatchObject(all[2]);
+    expect(prev2[1]).toMatchObject(all[3]);
   });
 });

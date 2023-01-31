@@ -417,3 +417,108 @@ export const parseQuery = <T extends Entity>(
     })
   );
 };
+
+export type CursorTuple = [string, OrderBy, any];
+export type Cursor = CursorTuple[];
+
+export const encodeCursor = (cursor: Cursor) => {
+  const json = JSON.stringify(cursor);
+  const text = Buffer.from(json, "utf-8").toString("base64");
+  return text;
+};
+
+export const decodeCursor = (cursor: string): Cursor => {
+  const text = Buffer.from(cursor, "base64").toString("utf-8");
+  const json = JSON.parse(text);
+  return json;
+};
+
+const ID_SELECT: Record<string, string> = {
+  "self.id": "self_id",
+};
+
+export const createCursor = (
+  options: ParseResult,
+  rawValues: Record<string, any>
+) => {
+  const { select = {}, order = {} } = options;
+  const cur: Cursor = Object.keys(order).map((key) => {
+    const n = select[key] ?? ID_SELECT[key];
+    const o = order[key];
+    const v = rawValues[n];
+    return [key, o, v];
+  }, {});
+
+  return encodeCursor(cur);
+};
+
+const ORDER_OPS = {
+  ASC: ">",
+  DESC: "<",
+};
+
+const ORDER_OPS_INVERTED = {
+  ASC: "<",
+  DESC: ">",
+};
+
+const ORDER_INVERTED = {
+  ASC: "DESC",
+  DESC: "ASC",
+};
+
+export const parseCursor = (
+  options: ParseResult
+): Pick<ParseResult, "where" | "params" | "order"> => {
+  const { take, cursor, order: orderBy = {} } = options;
+
+  if (cursor === void 0) {
+    return {};
+  }
+
+  const cur = decodeCursor(cursor);
+  const orderChanged = cur.some(([k, o]) => orderBy[k] !== o);
+
+  if (orderChanged) {
+    return {};
+  }
+
+  let count = 0;
+
+  const makeWhere = (items: CursorTuple[], invert: boolean) => {
+    const [first, ...rest] = items;
+    const [key, order, value] = first;
+
+    let where: string;
+    let params: Record<string, any> = {};
+
+    const p = `q${count++}`;
+    params[p] = value;
+
+    const op = invert ? ORDER_OPS_INVERTED[order] : ORDER_OPS[order];
+
+    if (rest && rest.length) {
+      const next = makeWhere(rest, invert);
+      if (rest.length > 1) next.where = `(${next.where})`;
+      where = `${key} ${op} :${p} OR (${key} = :${p} AND ${next.where})`;
+      params = { ...params, ...next.params };
+    } else {
+      where = `${key} ${op} :${p}`;
+    }
+
+    return { where, params };
+  };
+
+  const invert = (take ?? 0) < 0;
+  const { where, params } = makeWhere(cur, invert);
+
+  if (invert) {
+    const order = Object.entries(orderBy).reduce(
+      (prev, [k, o]) => ({ ...prev, [k]: ORDER_INVERTED[o] }),
+      {}
+    );
+    return { where, params, order };
+  }
+
+  return { where, params };
+};

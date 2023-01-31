@@ -198,9 +198,16 @@ type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
 export type PayloadSimple<T extends Entity> = ResultIdentity<T> &
   OmitType<T, Json | Text | Binary | Entity | Entity[] | undefined>;
 
-export type Payload<T extends Entity, Q> = Q extends { select: infer S }
+export type PayloadArg<T extends Entity, Q> = Q extends { select: infer S }
   ? PayloadSelect<T, S>
   : PayloadSimple<T>;
+
+export type Payload<T extends Entity, Q> = PayloadArg<T, Q> & {
+  _count?: string;
+  _cursor?: string;
+  _hasNext?: boolean;
+  _hasPrev?: boolean;
+};
 
 export type NestedCreateArg<T extends Entity> = {
   select?: WhereOptions<T>;

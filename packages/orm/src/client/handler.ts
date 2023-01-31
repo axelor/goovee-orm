@@ -3,10 +3,11 @@ import {
   EntityMetadata,
   QueryBuilder,
   Repository,
+  SelectQueryBuilder,
 } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
 import { ensureLazy, isLazy, resolveLazy } from "./fields";
-import { parseQuery, ParseResult } from "./parser";
+import { createCursor, parseCursor, parseQuery, ParseResult } from "./parser";
 import {
   BulkDeleteOptions,
   BulkUpdateOptions,
@@ -127,10 +128,10 @@ const load = async (
   const sq = createSelectQuery(builder, opts);
 
   let count = -1;
-  let { take = 0, skip = 0 } = options;
+  let { take = 0, skip = 0, cursor } = options;
   if (take > 1 || take < 0 || skip > 0) {
     count = await sq.getCount();
-    skip = take < 0 ? count - skip + take : skip;
+    skip = take >= 0 || cursor ? skip : count - skip + take;
     take = Math.abs(take);
   }
 
@@ -141,7 +142,24 @@ const load = async (
   if (take > 0) sq.take(take);
   if (skip > 0) sq.skip(skip);
 
-  const records = await sq.getMany();
+  if (cursor) {
+    const cur = parseCursor(options);
+    if (cur.where) {
+      sq.andWhere(cur.where, cur.params);
+    }
+    if (cur.order) {
+      // when fetching previous page with a cursor we have to invert
+      // the original ordering first to get required data and finally
+      // return the result with the requested order.
+      const sub = new SelectQueryBuilder(sq).orderBy(cur.order);
+      const res = await sub.getMany();
+      const ids = res.map((x) => x.id);
+      if (ids.length === 0) return [];
+      sq.where("self.id IN (:...ids)", { ids }).take(undefined).skip(undefined);
+    }
+  }
+
+  const { entities: records, raw: rawRecords } = await sq.getRawAndEntities();
 
   const relations = [
     ...Object.entries(references),
@@ -176,6 +194,35 @@ const load = async (
     for (const record of records) {
       ensureLazy(repo, record, field);
     }
+  }
+
+  // enhance record with count and cursor
+  if (take > 1 || skip > 0) {
+    for (let i = 0; i < records.length; i++) {
+      const record = records[i];
+      const rawRecord = rawRecords[i];
+      const cur = createCursor(options, rawRecord);
+      record._count = count;
+      record._cursor = cur;
+    }
+
+    const start = records[0];
+    const startCursor = start?._cursor;
+    const end = records[records.length - 1];
+    const endCursor = end?._cursor;
+
+    const has = async (cursor: string, take: number) => {
+      const qb = repo.createQueryBuilder("self");
+      const res = await load(repo, qb, {
+        ...options,
+        cursor: startCursor,
+        take: -1,
+      });
+      return res.length === 1;
+    };
+
+    if (startCursor) start._hasPrev = await has(startCursor, -1);
+    if (endCursor) end._hasNext = await has(endCursor, 1);
   }
 
   return records;
