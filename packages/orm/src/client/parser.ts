@@ -41,19 +41,6 @@ export const parseQuery = <T extends Entity>(
     "notIn",
     "notBetween",
   ];
-  const collectionAttrs = ["select", "where", "orderBy", "take", "skip"];
-
-  const isJoin = (opts: any) => {
-    return (
-      opts &&
-      typeof opts === "object" &&
-      Object.keys(opts).every((k) => !opAttrs.includes(k))
-    );
-  };
-
-  const isCollectionSelect = (opts: any) => {
-    return collectionAttrs.some((x) => x in opts);
-  };
 
   const makeName = (prefix: string, name: string) => {
     return `${prefix}.${name}`;
@@ -138,7 +125,7 @@ export const parseQuery = <T extends Entity>(
           continue;
         }
         const rRepo: any = repo.manager.getRepository(relation.type);
-        if (isCollectionSelect(value)) {
+        if (relation.isOneToMany || relation.isManyToMany) {
           const v: any = value;
           const vResult: any = parseQuery(rRepo, v);
           collections[key] = vResult;

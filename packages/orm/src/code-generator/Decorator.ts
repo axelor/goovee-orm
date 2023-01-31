@@ -83,7 +83,7 @@ export class Decorator {
       else if (typeof value !== "object") this.emitString(file, value);
       else if (typeof value === "object") this.emitObject(file, value);
       if (count++ < arg.length - 1) {
-        file.write(', ')
+        file.write(", ");
       }
     }
     file.write("]");
