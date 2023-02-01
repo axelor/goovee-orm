@@ -13,7 +13,7 @@
     "clean": "rimraf dist",
     "lint": "eslint *.ts*",
     "test": "vitest",
-    "test:e2e": "vitest --config src/test/vitest.config.ts --no-threads"
+    "test:e2e": "vitest --mode e2e --no-threads"
   },
   "bin": {
     "goovee": "./dist/cli/index.js"
