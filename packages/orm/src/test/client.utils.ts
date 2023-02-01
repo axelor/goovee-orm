@@ -23,15 +23,9 @@ export const generateCode = () => {
   const lastGenerateTime = getLastChangeTime(entityDir);
   const lastChangeTime = getLastChangeTime(schemaDir);
 
-  const pkg = require("../../package.json");
-  const pkgName = `${pkg.name}/dist/client`;
-
-  const resolve = (value: string) =>
-    value === pkgName ? "../../client" : value;
-
   if (lastChangeTime > lastGenerateTime) {
     const schema = readSchema(schemaDir);
-    generateSchema(entityDir, { schema, naming: "goovee", resolve });
+    generateSchema(entityDir, { schema, naming: "goovee" });
   }
 };
 

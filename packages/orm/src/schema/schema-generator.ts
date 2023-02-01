@@ -60,9 +60,7 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
 
   protected importNameInternal(name: string) {
     const pkg = require("../../package.json");
-    const pkgName = `${pkg.name}/dist/client`;
-    const resolve = this.entity.config.resolve ?? ((value: string) => value);
-    const modName = resolve(pkgName);
+    const modName = `${pkg.name}/client`;
     return new ImportName(name, modName);
   }
 
@@ -362,7 +360,6 @@ class EnumGenerator implements CodeGenerator {
 export type GeneratorConfig = {
   schema: EntityOptions[];
   naming?: "goovee" | "default";
-  resolve?: (module: string) => string;
 };
 
 class EntityGenerator implements CodeGenerator {

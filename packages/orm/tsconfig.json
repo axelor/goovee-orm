@@ -4,7 +4,10 @@
     "target": "es2022",
     "resolveJsonModule": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "paths": {
+      "@goovee/orm/*": ["./src/*"]
+    }
   },
   "include": ["src"],
   "exclude": ["dist", "build", "node_modules"]
