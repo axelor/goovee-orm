@@ -2,19 +2,33 @@
   "name": "@goovee/orm",
   "version": "0.0.1",
   "license": "MIT",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+    ".": "./src/index.ts",
+    "./client": "./src/client/index.ts"
+  },
+  "bin": {
+    "goovee": "./src/cli/index-dev.mjs"
+  },
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "module": "./dist/index.ts",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.mjs",
+        "require": "./dist/index.js"
+      },
+      "./client": {
+        "types": "./dist/client/index.d.ts",
+        "import": "./dist/client/index.mjs",
+        "require": "./dist/client/index.js"
+      }
     },
-    "./client": {
-      "types": "./dist/client/index.d.ts",
-      "import": "./dist/client/index.mjs",
-      "require": "./dist/client/index.js"
+    "bin": {
+      "goovee": "./dist/cli/index.js"
     }
   },
   "scripts": {
@@ -23,9 +37,6 @@
     "lint": "eslint *.ts*",
     "test": "vitest",
     "test:e2e": "vitest --mode e2e --no-threads"
-  },
-  "bin": {
-    "goovee": "./dist/cli/index.js"
   },
   "dependencies": {
     "dotenv": "^16.0.3",
@@ -44,6 +55,7 @@
     "eslint-config-custom": "workspace:*",
     "rimraf": "^4.1.2",
     "testcontainers": "^9.1.1",
+    "ts-node": "^10.9.1",
     "tsconfig": "workspace:*",
     "tsup": "^6.5.0",
     "typescript": "^4.9.5",
