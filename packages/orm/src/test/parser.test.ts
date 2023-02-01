@@ -3,7 +3,7 @@ import { parseQuery } from "../client/parser";
 import { QueryOptions } from "../client/types";
 import { getTestClient } from "./client.utils";
 
-import { Contact } from "./entity";
+import { Contact } from "./db/models";
 
 describe("query parser tests", async () => {
   const client = await getTestClient();

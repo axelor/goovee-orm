@@ -507,7 +507,7 @@ const save = (
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(outFile, out, { encoding: "utf-8" });
 
-  return fileName;
+  return outFile;
 };
 
 const generateEnum = (outDir: string, options: EnumProperty) => {
@@ -607,7 +607,9 @@ export const generateSchema = (outDir: string, config: GeneratorConfig) => {
   }
 
   // generate index.ts
-  const names = files.map((x) => x.replace(".ts", ""));
+  const names = files
+    .map((x) => path.basename(x))
+    .map((x) => x.replace(".ts", ""));
   files.push(generateIndex(outDir, names));
 
   return files;

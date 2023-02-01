@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { QueryOptions } from "../client";
 import { getTestClient } from "./client.utils";
-import { AddressType, Contact } from "./entity";
+import { AddressType, Contact } from "./db/models";
 import { createData } from "./fixture";
 
 describe("client tests", async () => {

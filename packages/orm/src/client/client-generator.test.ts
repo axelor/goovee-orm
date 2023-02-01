@@ -1,32 +1,29 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
-import { generateProject } from "./client-generator";
+import { describe, expect, it } from "vitest";
+import { generateClient } from "./client-generator";
 
-const expectedFiles = ["package.json", "tsconfig.json", "src/index.ts"];
-const outDir = path.join("node_modules", "client-gen");
-
-const cleanUp = () => {
-  expectedFiles
-    .map((x) => path.join(outDir, x))
+const cleanUp = (outDir: string, files: string[]) => {
+  files.filter((x) => fs.existsSync(x)).forEach((x) => fs.rmSync(x));
+  files
+    .map((x) => path.dirname(x))
+    .filter((x, i, vals) => vals.indexOf(x) === i)
     .filter((x) => fs.existsSync(x))
-    .forEach((x) => {
-      fs.rmSync(x);
-    });
-  if (fs.existsSync(path.join(outDir, "src"))) {
-    fs.rmdirSync(path.join(outDir, "src"));
-  }
-  if (fs.existsSync(outDir)) {
+    .filter((x) => fs.readdirSync(x).length === 0)
+    .forEach((x) => fs.rmdirSync(x));
+
+  if (fs.readdirSync(outDir).length === 0) {
     fs.rmdirSync(outDir);
   }
 };
 
 describe("client generator tests", () => {
-  afterEach(cleanUp);
-  it("should generate client files", () => {
-    const files = generateProject(outDir);
-    expect(files).toHaveLength(expectedFiles.length);
-    expect(files).toEqual(expect.arrayContaining(expectedFiles));
+  it("should generate client", () => {
+    const schemaDir = path.join(__dirname, "..", "test", "schema");
+    const outDir = fs.mkdtempSync(path.join(__dirname, "db."));
+    const files = generateClient(schemaDir, outDir);
+    expect(files.length).toBeGreaterThan(0);
+    cleanUp(outDir, files);
   });
 });

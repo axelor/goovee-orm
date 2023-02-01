@@ -5,7 +5,7 @@ import { Repository } from "typeorm";
 import { describe, expect, it } from "vitest";
 import { LargeObjectManager } from "../client/lob";
 import { getTestClient } from "./client.utils";
-import { Contact } from "./entity";
+import { Contact } from "./db/models";
 
 describe("Lob tests", async () => {
   const client = await getTestClient();
