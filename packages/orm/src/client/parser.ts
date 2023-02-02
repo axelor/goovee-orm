@@ -391,7 +391,7 @@ export const parseQuery = <T extends Entity>(
   const { take, skip, cursor } = query;
 
   // if pagination query, ensure ordering by an unique index
-  if ((take && (take > 1 || take < -1)) || (skip && skip > 0)) {
+  if (isPageQuery(query)) {
     Object.assign(order, ensureUniqueOrderBy(repo, orderBy));
   }
 
@@ -416,6 +416,11 @@ export const parseQuery = <T extends Entity>(
       return v;
     })
   );
+};
+
+export const isPageQuery = (options: QueryOptions<any> | ParseResult) => {
+  const { take, skip } = options;
+  return (take && skip) || (take && skip === void 0);
 };
 
 export type CursorTuple = [string, OrderBy, any];

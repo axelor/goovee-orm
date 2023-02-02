@@ -1,0 +1,180 @@
+import {
+  FieldNode,
+  getNamedType,
+  GraphQLFieldResolver,
+  GraphQLObjectType,
+  GraphQLType,
+  isObjectType,
+  Kind,
+} from "graphql";
+
+import {
+  ConnectionClient,
+  Entity,
+  OrderByOptions,
+  QueryClient,
+  WhereOptions,
+} from "../client";
+
+import { toCamelCase } from "../schema";
+
+export type ResolverSource = Entity & {
+  [K: string]: any;
+};
+
+export type ResolverContext = {
+  client: ConnectionClient<QueryClient>;
+};
+
+export type ResolverArgs = {
+  where?: WhereOptions<ResolverSource>;
+  order?: OrderByOptions<ResolverSource>;
+  first?: number;
+  after?: string;
+  last?: number;
+  before?: string;
+};
+
+const isConnection = (type: GraphQLType) => {
+  return isObjectType(type) && type.name.endsWith("Connection");
+};
+
+const findField = (type: GraphQLObjectType, name: string) => {
+  const fields = type.getFields();
+  const field = fields[name];
+  return field;
+};
+
+const findOutputType = (type: GraphQLObjectType) => {
+  const edges = findField(type, "edges");
+  if (edges) {
+    const edge = getNamedType(edges.type) as GraphQLObjectType;
+    const node = findField(edge, "node");
+    return getNamedType(node.type) as GraphQLObjectType;
+  }
+  return getNamedType(type) as GraphQLObjectType;
+};
+
+const findSelect = (field: FieldNode, ownType: GraphQLObjectType) => {
+  const node = field.selectionSet?.selections
+    .filter((x) => x.kind === Kind.FIELD && x.name.value === "edges")
+    .flatMap((x) => (x as FieldNode).selectionSet?.selections ?? [])
+    .find((x) => x.kind === Kind.FIELD && x.name.value === "node");
+
+  const self = node && node.kind === Kind.FIELD ? node : field;
+  const select: Record<string, any> = {};
+
+  for (const x of self?.selectionSet?.selections ?? []) {
+    if (x.kind === Kind.FIELD) {
+      const name = x.name.value;
+      const prop = ownType.getFields()[name];
+      if (isConnection(prop.type)) {
+        continue;
+      }
+      if (isObjectType(prop.type)) {
+        select[name] = findSelect(x, findOutputType(prop.type));
+      } else {
+        select[name] = true;
+      }
+    }
+  }
+
+  return select;
+};
+
+const toRelayEdge = (node: any) => {
+  const cursor = node._cursor;
+  return {
+    node,
+    cursor,
+  };
+};
+
+const toPageInfo = async (res: any[]) => {
+  if (res.length === 0) return;
+  const first = res[0];
+  const last = res[res.length - 1];
+  const totalCount = first._count;
+  const startCursor = first._cursor;
+  const endCursor = last._cursor;
+  const hasPreviousPage = first._hasPrev;
+  const hasNextPage = last._hasNext;
+
+  return {
+    startCursor,
+    endCursor,
+    hasPreviousPage,
+    hasNextPage,
+    totalCount,
+  };
+};
+
+const toEdges = async (res: any[]) => {
+  return res.map((node) => toRelayEdge(node));
+};
+
+export const connectionResolver: GraphQLFieldResolver<
+  ResolverSource,
+  ResolverContext,
+  ResolverArgs
+> = async (source, args, context, info) => {
+  const { client } = context;
+  const { fieldName, fieldNodes } = info;
+
+  const ownType = findOutputType(info.returnType as any);
+  const field = fieldNodes[0];
+  const select = findSelect(field, ownType);
+
+  const entity = source ? toCamelCase(info.parentType.name) : fieldName;
+  const repo = Reflect.get(client, entity);
+
+  const where = args.where;
+  const orderBy = args.order;
+
+  const { first, after, last, before } = args;
+
+  const take = first ? first : last ? -last : undefined;
+  const cursor = after ?? before;
+
+  if (source) {
+    const rec = await repo.findOne({
+      where: {
+        id: { eq: source.id },
+      },
+      select: {
+        [fieldName]: {
+          select,
+          where,
+          orderBy,
+          take,
+          cursor,
+        },
+      },
+    });
+    const res = rec?.[fieldName] ?? [];
+
+    const edges = toEdges(res);
+    const pageInfo = toPageInfo(res);
+
+    return {
+      edges,
+      pageInfo,
+    };
+  }
+
+  const res = await repo.find({
+    select,
+    where,
+    orderBy,
+    take,
+    cursor,
+  });
+
+  const edges = toEdges(res);
+  const pageInfo = toPageInfo(res);
+
+  return {
+    edges,
+    pageInfo,
+  };
+};

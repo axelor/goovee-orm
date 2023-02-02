@@ -7,7 +7,13 @@ import {
 } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
 import { ensureLazy, isLazy, resolveLazy } from "./fields";
-import { createCursor, parseCursor, parseQuery, ParseResult } from "./parser";
+import {
+  createCursor,
+  isPageQuery,
+  parseCursor,
+  parseQuery,
+  ParseResult,
+} from "./parser";
 import {
   BulkDeleteOptions,
   BulkUpdateOptions,
@@ -129,7 +135,7 @@ const load = async (
 
   let count = -1;
   let { take = 0, skip = 0, cursor } = options;
-  if (take > 1 || take < 0 || skip > 0) {
+  if (isPageQuery(options)) {
     count = await sq.getCount();
     skip = take >= 0 || cursor ? skip : count - skip + take;
     take = Math.abs(take);
@@ -197,7 +203,7 @@ const load = async (
   }
 
   // enhance record with count and cursor
-  if (take > 1 || skip > 0) {
+  if (isPageQuery(options)) {
     for (let i = 0; i < records.length; i++) {
       const record = records[i];
       const rawRecord = rawRecords[i];
@@ -213,16 +219,13 @@ const load = async (
 
     const has = async (cursor: string, take: number) => {
       const qb = repo.createQueryBuilder("self");
-      const res = await load(repo, qb, {
-        ...options,
-        cursor: startCursor,
-        take: -1,
-      });
+      const opts = { ...options, cursor, take, skip: 0 };
+      const res = await load(repo, qb, opts);
       return res.length === 1;
     };
 
-    if (startCursor) start._hasPrev = await has(startCursor, -1);
-    if (endCursor) end._hasNext = await has(endCursor, 1);
+    start._hasPrev = count > 1 && startCursor && (await has(startCursor, -1));
+    end._hasNext = count > 1 && endCursor && (await has(endCursor, 1));
   }
 
   return records;
