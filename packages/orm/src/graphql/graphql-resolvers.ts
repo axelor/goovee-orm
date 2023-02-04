@@ -10,6 +10,7 @@ import {
 
 import {
   ConnectionClient,
+  CreateOptions,
   Entity,
   OrderByOptions,
   QueryClient,
@@ -168,6 +169,40 @@ export const connectionResolver: GraphQLFieldResolver<
     orderBy,
     take,
     cursor,
+  });
+
+  const edges = toEdges(res);
+  const pageInfo = toPageInfo(res);
+
+  return {
+    edges,
+    pageInfo,
+  };
+};
+
+export type CreateArgs = {
+  data: CreateOptions<any>;
+};
+
+export const createResolver: GraphQLFieldResolver<
+  ResolverSource,
+  ResolverContext,
+  CreateArgs
+> = async (source, args, context, info) => {
+  const { client } = context;
+  const { fieldName, fieldNodes } = info;
+  const { data } = args;
+  const ownType = findOutputType(info.returnType as any);
+  const field = fieldNodes[0];
+  const select = findSelect(field, ownType);
+
+  const entity = toCamelCase(fieldName.substring("create".length));
+  const repo = Reflect.get(client, entity);
+
+  const { id } = await repo.create({ data });
+  const res = await repo.find({
+    select,
+    where: { id: { eq: id } },
   });
 
   const edges = toEdges(res);

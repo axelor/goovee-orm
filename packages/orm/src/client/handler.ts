@@ -427,7 +427,7 @@ export const handleDelete = async (
 };
 
 const handleSelect = async (repo: Repository<any>, data: any) => {
-  const res = await repo.findOne({
+  const res = handleFindOne(repo, {
     where: data,
   });
   return res;
@@ -438,7 +438,11 @@ const handleReference = async (
   relation: RelationMetadata,
   data: any
 ) => {
-  const { select, create, update } = data;
+  // we will get arrays from graphql input
+  const select = Array.isArray(data.select) ? data.select[0] : data.select;
+  const create = Array.isArray(data.create) ? data.create[0] : data.create;
+  const update = Array.isArray(data.update) ? data.update[0] : data.update;
+
   const rMeta = relation.inverseEntityMetadata;
   const rRepo = repo.manager.getRepository(rMeta.name);
 

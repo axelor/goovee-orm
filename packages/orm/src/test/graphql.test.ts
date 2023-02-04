@@ -82,4 +82,79 @@ describe("GraphQL tests", async () => {
       expect(node.addresses.edges.length).toBeGreaterThan(0);
     });
   });
+
+  it("should create", async () => {
+    const mutation = /* GraphQL */ `
+      mutation {
+        createContact(
+          data: {
+            firstName: "Some"
+            lastName: "NAME"
+            title: { create: { code: "mr", name: "Mr." } }
+            addresses: { create: [{ contact: {}, street: "My HOME" }] }
+          }
+        ) {
+          edges {
+            node {
+              id
+              firstName
+              lastName
+              title {
+                id
+                code
+                name
+              }
+              addresses {
+                edges {
+                  node {
+                    id
+                    street
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const res: any = await graphql({
+      schema: schema,
+      source: mutation,
+      contextValue: {
+        client,
+      },
+    });
+
+    expect(res).toMatchObject({
+      data: {
+        createContact: {
+          edges: [
+            {
+              node: {
+                id: "1",
+                firstName: "Some",
+                lastName: "NAME",
+                title: {
+                  id: "1",
+                  code: "mr",
+                  name: "Mr.",
+                },
+                addresses: {
+                  edges: [
+                    {
+                      node: {
+                        id: "1",
+                        street: "My HOME",
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+    });
+  });
 });

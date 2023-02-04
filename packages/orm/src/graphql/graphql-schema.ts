@@ -15,7 +15,7 @@ import {
 import { toCamelCase } from "../schema";
 
 import { EntityOptions, EnumItem } from "../schema/types";
-import { connectionResolver } from "./graphql-resolvers";
+import { connectionResolver, createResolver } from "./graphql-resolvers";
 import {
   GraphQLBigInt,
   GraphQLBuffer,
@@ -505,6 +505,7 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
           [`create${name}`]: {
             type: findConnection(name),
             args: { data: { type: findCreateInput(name) } },
+            resolve: createResolver,
           },
           [`update${name}`]: {
             type: findConnection(name),
