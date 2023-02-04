@@ -213,3 +213,34 @@ export const createResolver: GraphQLFieldResolver<
     pageInfo,
   };
 };
+
+export const updateResolver: GraphQLFieldResolver<
+  ResolverSource,
+  ResolverContext,
+  CreateArgs
+> = async (source, args, context, info) => {
+  const { client } = context;
+  const { fieldName, fieldNodes } = info;
+  const { data } = args;
+  const ownType = findOutputType(info.returnType as any);
+  const field = fieldNodes[0];
+  const select = findSelect(field, ownType);
+
+  const entity = toCamelCase(fieldName.substring("update".length));
+  const repo = Reflect.get(client, entity);
+
+  const { id } = await repo.update({ data });
+
+  const res = await repo.find({
+    select,
+    where: { id: { eq: id } },
+  });
+
+  const edges = toEdges(res);
+  const pageInfo = toPageInfo(res);
+
+  return {
+    edges,
+    pageInfo,
+  };
+};

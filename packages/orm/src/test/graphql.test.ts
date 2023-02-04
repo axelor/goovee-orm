@@ -157,4 +157,53 @@ describe("GraphQL tests", async () => {
       },
     });
   });
+
+  it("should update", async () => {
+    await createData(client);
+    const mutation = /* GraphQL */ `
+      mutation {
+        updateContact(
+          data: {
+            id: 1
+            version: 1
+            lastName: "NAME"
+            title: { select: { code: { eq: "mrs" } } }
+            addresses: { create: { contact: {}, street: "Vacation Home" } }
+          }
+        ) {
+          edges {
+            node {
+              id
+              firstName
+              lastName
+              title {
+                code
+              }
+              addresses {
+                edges {
+                  node {
+                    street
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const res: any = await graphql({
+      schema: schema,
+      source: mutation,
+      contextValue: {
+        client,
+      },
+    });
+
+    const json = JSON.stringify(res, null, 2);
+
+    expect(json).toContain('"lastName": "NAME"');
+    expect(json).toContain('"code": "mrs"');
+    expect(json).toContain('"street": "Vacation Home"');
+  });
 });

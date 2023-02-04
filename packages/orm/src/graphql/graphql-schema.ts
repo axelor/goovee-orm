@@ -15,7 +15,11 @@ import {
 import { toCamelCase } from "../schema";
 
 import { EntityOptions, EnumItem } from "../schema/types";
-import { connectionResolver, createResolver } from "./graphql-resolvers";
+import {
+  connectionResolver,
+  createResolver,
+  updateResolver,
+} from "./graphql-resolvers";
 import {
   GraphQLBigInt,
   GraphQLBuffer,
@@ -417,7 +421,10 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
       name,
       fields() {
         const { fields: items = [] } = entity;
-        const fields = {};
+        const fields = {
+          id: { type: GraphQLID },
+          version: { type: GraphQLInt },
+        };
         for (const item of items as any[]) {
           let { type, target } = item;
           if (target) {
@@ -510,6 +517,7 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
           [`update${name}`]: {
             type: findConnection(name),
             args: { data: { type: findUpdateInput(name) } },
+            resolve: updateResolver,
           },
           [`delete${name}`]: {
             type: GraphQLInt,
