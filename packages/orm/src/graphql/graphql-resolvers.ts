@@ -244,3 +244,19 @@ export const updateResolver: GraphQLFieldResolver<
     pageInfo,
   };
 };
+
+export const deleteResolver: GraphQLFieldResolver<
+  ResolverSource,
+  ResolverContext,
+  CreateArgs
+> = async (source, args, context, info) => {
+  const { client } = context;
+  const { fieldName } = info;
+  const { data } = args;
+
+  const entity = toCamelCase(fieldName.substring("delete".length));
+  const repo = Reflect.get(client, entity);
+
+  const res = await repo.delete(data);
+  return res;
+};

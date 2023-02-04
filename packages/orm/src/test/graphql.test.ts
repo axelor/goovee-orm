@@ -206,4 +206,22 @@ describe("GraphQL tests", async () => {
     expect(json).toContain('"code": "mrs"');
     expect(json).toContain('"street": "Vacation Home"');
   });
+
+  it("should delete", async () => {
+    await createData(client);
+    const mutation = /* GraphQL */ `
+      mutation {
+        deleteAddress(data: { id: 1, version: 1 })
+      }
+    `;
+    const res: any = await graphql({
+      schema: schema,
+      source: mutation,
+      contextValue: {
+        client,
+      },
+    });
+
+    expect(res).toMatchObject({ data: { deleteAddress: 1 } });
+  });
 });

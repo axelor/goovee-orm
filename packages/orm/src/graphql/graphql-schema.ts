@@ -18,6 +18,7 @@ import { EntityOptions, EnumItem } from "../schema/types";
 import {
   connectionResolver,
   createResolver,
+  deleteResolver,
   updateResolver,
 } from "./graphql-resolvers";
 import {
@@ -522,6 +523,7 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
           [`delete${name}`]: {
             type: GraphQLInt,
             args: { data: { type: IdentityInput } },
+            resolve: deleteResolver,
           },
         };
       }, {});
