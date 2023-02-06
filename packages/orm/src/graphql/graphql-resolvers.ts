@@ -126,58 +126,60 @@ export const connectionResolver: GraphQLFieldResolver<
   const field = fieldNodes[0];
   const select = findSelect(field, ownType);
 
-  const entity = source ? toCamelCase(info.parentType.name) : fieldName;
-  const repo = Reflect.get(client, entity);
+  return await client.$transaction(async (client) => {
+    const entity = source ? toCamelCase(info.parentType.name) : fieldName;
+    const repo = Reflect.get(client, entity);
 
-  const where = args.where;
-  const orderBy = args.order;
+    const where = args.where;
+    const orderBy = args.order;
 
-  const { first, after, last, before } = args;
+    const { first, after, last, before } = args;
 
-  const take = first ? first : last ? -last : undefined;
-  const cursor = after ?? before;
+    const take = first ? first : last ? -last : undefined;
+    const cursor = after ?? before;
 
-  if (source) {
-    const rec = await repo.findOne({
-      where: {
-        id: { eq: source.id },
-      },
-      select: {
-        [fieldName]: {
-          select,
-          where,
-          orderBy,
-          take,
-          cursor,
+    if (source) {
+      const rec = await repo.findOne({
+        where: {
+          id: { eq: source.id },
         },
-      },
-    });
-    const res = rec?.[fieldName] ?? [];
+        select: {
+          [fieldName]: {
+            select,
+            where,
+            orderBy,
+            take,
+            cursor,
+          },
+        },
+      });
+      const res = rec?.[fieldName] ?? [];
 
-    const edges = toEdges(res);
-    const pageInfo = toPageInfo(res);
+      const edges = await toEdges(res);
+      const pageInfo = await toPageInfo(res);
+
+      return {
+        edges,
+        pageInfo,
+      };
+    }
+
+    const res = await repo.find({
+      select,
+      where,
+      orderBy,
+      take,
+      cursor,
+    });
+
+    const edges = await toEdges(res);
+    const pageInfo = await toPageInfo(res);
 
     return {
       edges,
       pageInfo,
     };
-  }
-
-  const res = await repo.find({
-    select,
-    where,
-    orderBy,
-    take,
-    cursor,
   });
-
-  const edges = toEdges(res);
-  const pageInfo = toPageInfo(res);
-
-  return {
-    edges,
-    pageInfo,
-  };
 };
 
 export type CreateArgs = {
@@ -196,22 +198,23 @@ export const createResolver: GraphQLFieldResolver<
   const field = fieldNodes[0];
   const select = findSelect(field, ownType);
 
-  const entity = toCamelCase(fieldName.substring("create".length));
-  const repo = Reflect.get(client, entity);
+  return await client.$transaction(async (c) => {
+    const entity = toCamelCase(fieldName.substring("create".length));
+    const repo = Reflect.get(c, entity);
 
-  const { id } = await repo.create({ data });
-  const res = await repo.find({
-    select,
-    where: { id: { eq: id } },
+    const { id } = await repo.create({ data });
+    const res = await repo.find({
+      select,
+      where: { id: { eq: id } },
+    });
+
+    const edges = await toEdges(res);
+    const pageInfo = await toPageInfo(res);
+    return {
+      edges,
+      pageInfo,
+    };
   });
-
-  const edges = toEdges(res);
-  const pageInfo = toPageInfo(res);
-
-  return {
-    edges,
-    pageInfo,
-  };
 };
 
 export const updateResolver: GraphQLFieldResolver<
@@ -226,23 +229,23 @@ export const updateResolver: GraphQLFieldResolver<
   const field = fieldNodes[0];
   const select = findSelect(field, ownType);
 
-  const entity = toCamelCase(fieldName.substring("update".length));
-  const repo = Reflect.get(client, entity);
+  return await client.$transaction(async (c) => {
+    const entity = toCamelCase(fieldName.substring("update".length));
+    const repo = Reflect.get(c, entity);
 
-  const { id } = await repo.update({ data });
+    const { id } = await repo.update({ data });
+    const res = await repo.find({
+      select,
+      where: { id: { eq: id } },
+    });
 
-  const res = await repo.find({
-    select,
-    where: { id: { eq: id } },
+    const edges = await toEdges(res);
+    const pageInfo = await toPageInfo(res);
+    return {
+      edges,
+      pageInfo,
+    };
   });
-
-  const edges = toEdges(res);
-  const pageInfo = toPageInfo(res);
-
-  return {
-    edges,
-    pageInfo,
-  };
 };
 
 export const deleteResolver: GraphQLFieldResolver<
@@ -254,9 +257,10 @@ export const deleteResolver: GraphQLFieldResolver<
   const { fieldName } = info;
   const { data } = args;
 
-  const entity = toCamelCase(fieldName.substring("delete".length));
-  const repo = Reflect.get(client, entity);
-
-  const res = await repo.delete(data);
-  return res;
+  return await client.$transaction(async (c) => {
+    const entity = toCamelCase(fieldName.substring("delete".length));
+    const repo = Reflect.get(c, entity);
+    const res = await repo.delete(data);
+    return res;
+  });
 };
