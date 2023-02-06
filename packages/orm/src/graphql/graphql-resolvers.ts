@@ -83,8 +83,16 @@ const findSelect = (field: FieldNode, ownType: GraphQLObjectType) => {
   return select;
 };
 
-const toRelayEdge = (node: any) => {
+const toRelayEdge = async (node: any) => {
   const cursor = node._cursor;
+  for (const name of Object.getOwnPropertyNames(node)) {
+    let value = node[name];
+    if (value instanceof Promise) {
+      // fetch all lazy fields
+      node[name] = await value;
+    }
+  }
+
   return {
     node,
     cursor,
@@ -111,7 +119,12 @@ const toPageInfo = async (res: any[]) => {
 };
 
 const toEdges = async (res: any[]) => {
-  return res.map((node) => toRelayEdge(node));
+  const edges: any[] = [];
+  for (const item of res) {
+    const edge = await toRelayEdge(item);
+    edges.push(edge);
+  }
+  return edges;
 };
 
 export const connectionResolver: GraphQLFieldResolver<

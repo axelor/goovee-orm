@@ -224,4 +224,161 @@ describe("GraphQL tests", async () => {
 
     expect(res).toMatchObject({ data: { deleteAddress: 1 } });
   });
+
+  it("should handle json fields", async () => {
+    const mutation = /* GraphQL */ `
+      mutation CreateContact($data: ContactCreateInput!) {
+        createContact(data: $data) {
+          edges {
+            node {
+              id
+              firstName
+              lastName
+              attrs
+            }
+          }
+        }
+      }
+    `;
+
+    const now = new Date();
+    const res = await graphql({
+      schema: schema,
+      source: mutation,
+      variableValues: {
+        data: {
+          firstName: "Some",
+          lastName: "NAME",
+          attrs: {
+            some: "name",
+            int: 1,
+            array: ["some", 1, 232.2, now],
+            nested: {
+              a: 1,
+              b: true,
+              c: "some",
+              d: now,
+            },
+          },
+        },
+      },
+      contextValue: {
+        client,
+      },
+    });
+
+    expect(res).toMatchObject({
+      data: {
+        createContact: {
+          edges: [
+            {
+              node: {
+                id: "1",
+                firstName: "Some",
+                lastName: "NAME",
+                attrs: {
+                  int: 1,
+                  some: "name",
+                  array: ["some", 1, 232.2, now.toISOString()],
+                  nested: {
+                    a: 1,
+                    b: true,
+                    c: "some",
+                    d: now.toISOString(),
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  it("should handle date fields", async () => {
+    const mutation = /* GraphQL */ `
+      mutation CreateContact($data: ContactCreateInput!) {
+        createContact(data: $data) {
+          edges {
+            node {
+              firstName
+              lastName
+              dateOfBirth
+            }
+          }
+        }
+      }
+    `;
+
+    const now = new Date();
+    const res: any = await graphql({
+      schema: schema,
+      source: mutation,
+      variableValues: {
+        data: {
+          firstName: "Some",
+          lastName: "NAME",
+          dateOfBirth: now,
+        },
+      },
+      contextValue: {
+        client,
+      },
+    });
+
+    expect(res).toMatchObject({
+      data: {
+        createContact: {
+          edges: [
+            {
+              node: {
+                firstName: "Some",
+                lastName: "NAME",
+                dateOfBirth: now,
+              },
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  it("should handle binary fields", async () => {
+    const mutation = /* GraphQL */ `
+      mutation CreateContact($data: ContactCreateInput!) {
+        createContact(data: $data) {
+          edges {
+            node {
+              firstName
+              lastName
+              image
+            }
+          }
+        }
+      }
+    `;
+
+    const buffer = Buffer.from("Hello World!!!", "utf-8");
+    const res: any = await graphql({
+      schema: schema,
+      source: mutation,
+      variableValues: {
+        data: {
+          firstName: "Some",
+          lastName: "NAME",
+          image: buffer,
+        },
+      },
+      contextValue: {
+        client,
+      },
+    });
+
+    expect(res).toBeDefined();
+    expect(res.data!.createContact.edges).toHaveLength(1);
+    expect(res.data!.createContact.edges[0].node.image).toBeInstanceOf(Buffer);
+    expect(res.data!.createContact.edges[0].node.image.toString("utf-8")).toBe(
+      "Hello World!!!"
+    );
+  });
 });
