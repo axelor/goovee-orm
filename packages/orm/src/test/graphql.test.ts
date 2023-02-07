@@ -1,15 +1,12 @@
 import { graphql } from "graphql";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildGraphQLSchema } from "../graphql/graphql-schema";
-import { readSchema } from "../schema";
 import { getTestClient } from "./client.utils";
+import { createSchema } from "./db/client";
 import { createData } from "./fixture";
 
 describe("GraphQL tests", async () => {
-  const entities = readSchema(path.join(__dirname, "schema"));
   const client = await getTestClient();
-  const schema = buildGraphQLSchema(entities);
+  const schema = createSchema();
   it("should query", async () => {
     await createData(client);
     const query = /* GraphQL */ `

@@ -6,6 +6,7 @@ import pkg from "../../package.json";
 import { CodeFile } from "../code-generator/CodeFile";
 import { generateSchema } from "../schema/schema-generator";
 import { readSchema } from "../schema/schema-utils";
+import { EntityOptions } from "../schema/types";
 
 const create = (outDir: string, fileName: string, content: any) => {
   const text =
@@ -18,7 +19,7 @@ const create = (outDir: string, fileName: string, content: any) => {
   return fileName;
 };
 
-const createClient = (names: string[]) => {
+const createClient = (schema: EntityOptions[], names: string[]) => {
   const file = new CodeFile("index.ts");
 
   file.write(`\
@@ -29,6 +30,10 @@ import {
   type EntityClient,
 } from "${pkg.name}/client";
 
+import { buildGraphQLSchema } from "${pkg.name}/graphql";
+import { type EntityOptions } from "${pkg.name}/schema";
+import { type GraphQLSchema } from "graphql";
+
 import {
 `);
 
@@ -37,6 +42,16 @@ import {
     file.write("\n");
   }
   file.write('} from "../models";');
+  file.write("\n");
+  file.write("\n");
+
+  file.write("const schemaDefs: EntityOptions[] = [");
+  file.write("\n");
+  for (const item of schema) {
+    file.write(JSON.stringify(item)).write(",");
+    file.write("\n");
+  }
+  file.write("];");
   file.write("\n");
   file.write("\n");
 
@@ -54,6 +69,7 @@ export type Client = EntityClient<typeof entities>;
 export type GooveeClient = ConnectionClient<Client>;
 
 export const createClient = (options: ClientOptions): GooveeClient => create(options, entities);
+export const createSchema = (): GraphQLSchema => buildGraphQLSchema(schemaDefs);
 `);
 
   return file.toJSON();
@@ -69,7 +85,7 @@ export const generateClient = (schemaDir: string, outDir: string) => {
 
   files.push(...generateSchema(modelsDir, { schema, naming: "goovee" }));
 
-  create(clientDir, "index.ts", createClient(names));
+  create(clientDir, "index.ts", createClient(schema, names));
   files.push(path.join(clientDir, "index.ts"));
 
   return files;
