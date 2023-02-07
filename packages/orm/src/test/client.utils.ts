@@ -9,12 +9,7 @@ export const generateCode = () => {
 
 const createTestClient = async () => {
   const { createClient } = await import("./db/client/index.js");
-  const url = process.env.DATABASE_URL;
-  if (url === undefined) {
-    throw new Error("No DATABASE_URL environment set");
-  }
-
-  return createClient({ url, sync: true });
+  return createClient();
 };
 
 export type TestClient = ReturnType<typeof createTestClient> extends Promise<

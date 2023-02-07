@@ -8,7 +8,7 @@ import { generateSchema } from "../schema/schema-generator";
 import { readSchema } from "../schema/schema-utils";
 import { EntityOptions } from "../schema/types";
 
-const create = (outDir: string, fileName: string, content: any) => {
+export const createFile = (outDir: string, fileName: string, content: any) => {
   const text =
     typeof content === "string" ? content : JSON.stringify(content, null, 2);
   const file = path.join(outDir, fileName);
@@ -31,10 +31,10 @@ import {
   type ClientOptions,
   type ConnectionClient,
   type EntityClient,
-} from "${pkg.name}/client";
+} from "${pkg.name}";
 
-import { buildGraphQLSchema } from "${pkg.name}/graphql";
-import { type EntityOptions } from "${pkg.name}/schema";
+import { buildGraphQLSchema } from "${pkg.name}";
+import { type EntityOptions } from "${pkg.name}";
 import { type GraphQLSchema } from "graphql";
 
 import {
@@ -71,14 +71,19 @@ import {
 export type Client = EntityClient<typeof entities>;
 export type GooveeClient = ConnectionClient<Client>;
 
-export const createClient = (options?: ClientOptions): GooveeClient => {
-  const { url = process.env.DATABASE_URL ?? "", sync = true } = options ?? {};
+export function createClient(): GooveeClient;
+export function createClient(options: ClientOptions): GooveeClient;
+export function createClient(options?: ClientOptions): GooveeClient {
+  const { url = process.env.DATABASE_URL ?? "", sync = false } = options ?? {};
   if (url) {
     return create({ url, sync }, entities);
   }
   throw new Error("No 'DATABASE_URL' environment variable defined.");
 };
-export const createSchema = (): GraphQLSchema => buildGraphQLSchema(schemaDefs);
+
+export function createSchema(): GraphQLSchema {
+  return  buildGraphQLSchema(schemaDefs);
+}
 `);
 
   return file.toJSON();
@@ -94,7 +99,7 @@ export const generateClient = (schemaDir: string, outDir: string) => {
 
   files.push(...generateSchema(modelsDir, { schema, naming: "goovee" }));
 
-  create(clientDir, "index.ts", createClient(schema, names));
+  createFile(clientDir, "index.ts", createClient(schema, names));
   files.push(path.join(clientDir, "index.ts"));
 
   return files;
