@@ -23,6 +23,9 @@ const createClient = (schema: EntityOptions[], names: string[]) => {
   const file = new CodeFile("index.ts");
 
   file.write(`\
+import dotenv from "dotenv";
+dotenv.config();
+
 import {
   createClient as create,
   type ClientOptions,
@@ -68,7 +71,13 @@ import {
 export type Client = EntityClient<typeof entities>;
 export type GooveeClient = ConnectionClient<Client>;
 
-export const createClient = (options: ClientOptions): GooveeClient => create(options, entities);
+export const createClient = (options?: ClientOptions): GooveeClient => {
+  const { url = process.env.DATABASE_URL ?? "", sync = true } = options ?? {};
+  if (url) {
+    return create({ url, sync }, entities);
+  }
+  throw new Error("No 'DATABASE_URL' environment variable defined.");
+};
 export const createSchema = (): GraphQLSchema => buildGraphQLSchema(schemaDefs);
 `);
 
