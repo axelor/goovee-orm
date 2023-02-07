@@ -1,5 +1,5 @@
 import * as typeorm from "typeorm";
-import { createDataSource } from "../typeorm";
+import { createDataSource } from "../typeorm/datasource";
 import * as handler from "./handler";
 
 import {

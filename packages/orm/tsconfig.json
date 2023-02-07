@@ -9,6 +9,6 @@
       "@goovee/orm/*": ["./src/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "tsup.config.ts"],
   "exclude": ["dist", "build", "node_modules"]
 }
