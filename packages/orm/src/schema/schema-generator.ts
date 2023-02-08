@@ -377,7 +377,7 @@ class EntityGenerator implements CodeGenerator {
   }
 
   get table() {
-    if (this.options.table) this.options.table;
+    if (this.options.table) return this.options.table;
     if (this.config.naming === "goovee") return toSnakeCase(this.name);
   }
 

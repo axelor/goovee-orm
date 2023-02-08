@@ -270,7 +270,7 @@ import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
 import { type Text, type Binary, type Json } from "@goovee/orm";
 
-@Entity()
+@Entity("contacts")
 export class Contact extends Model {
   @ManyToOne(() => Title)
   title?: Title;
@@ -325,7 +325,7 @@ import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
 import { type Text, type Binary, type Json } from "@goovee/orm";
 
-@Entity("contact")
+@Entity("contacts")
 export class Contact extends Model {
   @ManyToOne(() => Title)
   title?: Title;
@@ -353,7 +353,7 @@ export class Contact extends Model {
   addresses?: Address[];
 
   @ManyToMany(() => Circle, (x) => x.contacts)
-  @JoinTable({ name: "contact_circles", joinColumn: { name: "contact" }, inverseJoinColumn: { name: "circles" } })
+  @JoinTable({ name: "contacts_circles", joinColumn: { name: "contacts" }, inverseJoinColumn: { name: "circles" } })
   circles?: Circle[];
 
   @Column({ enum: ContactType, nullable: true, type: "integer", default: ContactType.PARTNER })
