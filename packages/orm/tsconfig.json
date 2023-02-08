@@ -6,7 +6,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "paths": {
-      "@goovee/orm/*": ["./src/*"]
+      "@goovee/orm": ["./src"]
     }
   },
   "include": ["src", "tsup.config.ts"],

@@ -60,7 +60,7 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
 
   protected importNameInternal(name: string) {
     const pkg = require("../../package.json");
-    const modName = `${pkg.name}/client`;
+    const modName = `${pkg.name}`;
     return new ImportName(name, modName);
   }
 
