@@ -258,6 +258,7 @@ export type NestedUpdateManyArg<T extends Entity> = {
   select?: WhereOptions<T> | WhereOptions<T>[];
   create?: CreateArgs<T> | CreateArgs<T>[];
   update?: UpdateArgs<T> | UpdateArgs<T>[];
+  remove?: ID | ID[];
 };
 
 export type UpdateArg<T> = T extends Array<infer P>

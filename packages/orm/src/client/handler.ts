@@ -466,7 +466,7 @@ const handleCollection = async (
   relation: RelationMetadata,
   data: any
 ) => {
-  const { select, create, update } = data;
+  const { select, create, update, remove } = data;
   const field = relation.propertyName;
   const inverseField = relation.inverseRelation?.propertyName;
   const rMeta = relation.inverseEntityMetadata;
@@ -481,6 +481,13 @@ const handleCollection = async (
   const selectAll = Array.isArray(select) ? select : [select];
   const createAll = Array.isArray(create) ? create : [create];
   const updateAll = Array.isArray(update) ? update : [update];
+  const removeAll = Array.isArray(remove) ? remove : [remove];
+
+  if (remove) {
+    for (const id of removeAll) {
+      await builder.remove(id);
+    }
+  }
 
   if (create) {
     for (const item of createAll) {

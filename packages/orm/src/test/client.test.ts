@@ -339,6 +339,58 @@ describe("client tests", async () => {
     expect(x.version).toBe(c.version + 1);
   });
 
+  it("should remove a collection field item with update", async () => {
+    const contact = await client.contact.create({
+      data: {
+        firstName: "Some",
+        lastName: "NAME",
+        addresses: {
+          create: {
+            contact: {},
+            street: "My HOME",
+          },
+        },
+      },
+      select: {
+        addresses: {
+          select: {
+            street: true,
+          },
+        },
+      },
+    });
+
+    expect(contact).toBeDefined();
+    expect(contact.addresses).toHaveLength(1);
+    expect(contact.addresses![0].street).toBe("My HOME");
+
+    const updated = await client.contact.update({
+      data: {
+        id: contact.id,
+        version: contact.version,
+        addresses: {
+          create: [
+            {
+              contact: {},
+              street: "My OFFICE",
+            },
+          ],
+          remove: contact.addresses![0].id,
+        },
+      },
+      select: {
+        addresses: {
+          select: {
+            street: true,
+          },
+        },
+      },
+    });
+
+    expect(updated.addresses).toHaveLength(1);
+    expect(updated.addresses![0].street).toBe("My OFFICE");
+  });
+
   it("should handle bi-directional one-to-one", async () => {
     const c = await client.contact.create({
       data: {
