@@ -312,9 +312,11 @@ export type BulkDeleteOptions<T extends Entity> = {
 };
 
 export interface Repository<T extends Entity> {
+  find<Options extends QueryOptions<T>>(): Promise<Payload<T, Options>[]>;
   find<Options extends QueryOptions<T>>(
     args: Options
   ): Promise<Payload<T, Options>[]>;
+  findOne<Options extends QueryOptions<T>>(): Promise<Payload<T, Options>>;
   findOne<Options extends QueryOptions<T>>(
     args: Options
   ): Promise<Payload<T, Options>>;

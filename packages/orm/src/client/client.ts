@@ -144,13 +144,13 @@ class EntityRepository<T extends Entity> implements Repository<T> {
   }
 
   async find<Options extends QueryOptions<T>>(
-    args: QueryOptions<T>
+    args: QueryOptions<T> = {}
   ): Promise<Payload<T, Options>[]> {
     return await handler.handleFindMany(this.#repo, args);
   }
 
   async findOne<Options extends QueryOptions<T>>(
-    args: QueryOptions<T>
+    args: QueryOptions<T> = {}
   ): Promise<Payload<T, Options>> {
     return await handler.handleFindOne(this.#repo, args);
   }
