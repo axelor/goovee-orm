@@ -128,7 +128,7 @@ describe("query parser tests", async () => {
               { version: { gt: 1 } },
               { id: { ne: 1 } },
               {
-                NOT: [{ version: null }, { id: 1 }],
+                NOT: [{ version: 1 }, { id: 1 }],
               },
             ],
           },
@@ -148,7 +148,7 @@ describe("query parser tests", async () => {
         p3: "else",
         p4: 1,
         p5: 1,
-        p6: null,
+        p6: 1,
         p7: 1,
       },
     });
@@ -230,6 +230,34 @@ describe("query parser tests", async () => {
         p6: 10,
         p7: 20,
       },
+    });
+  });
+
+  it("should parse IS NULL & NOT NULL", async () => {
+    const opts: QueryOptions<Contact> = {
+      where: {
+        version: {
+          eq: null,
+        },
+        email: null,
+        phone: {
+          ne: null,
+        },
+        title: {
+          id: null,
+        },
+        bio: {
+          id: {
+            ne: null,
+          },
+        },
+      },
+    };
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
+    expect(res).toMatchObject({
+      where:
+        "self.version IS NULL AND self.email IS NULL AND self.phone NOT NULL AND self.title IS NULL AND self.bio NOT NULL",
     });
   });
 

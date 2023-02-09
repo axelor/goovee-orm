@@ -57,19 +57,29 @@ export const parseQuery = <T extends Entity>(
   let counter = 0;
 
   const makeWhere = (name: string, arg: any) => {
-    const param = `p${counter++}`;
     const result: any = {
       where: "",
       params: {},
     };
 
+    if (arg === null) {
+      result.where = `${name} IS NULL`;
+      return result;
+    }
+
     if (!arg || typeof arg !== "object") {
+      const param = `p${counter++}`;
       result.where = `${name} = :${param}`;
       result.params = { [param]: arg };
       return result;
     }
 
     for (const [key, value] of Object.entries(arg)) {
+      if (value === null && (key === "eq" || key === "ne")) {
+        result.where = key === "eq" ? `${name} IS NULL` : `${name} NOT NULL`;
+        continue;
+      }
+
       let op = "=";
 
       if (key === "eq") op = "=";
@@ -83,6 +93,8 @@ export const parseQuery = <T extends Entity>(
 
       if (key === "like") op = "LIKE";
       if (key === "notLike") op = "NOT LIKE";
+
+      const param = `p${counter++}`;
 
       result.where = `${name} ${op} :${param}`;
       result.params = { [param]: value };
@@ -279,6 +291,16 @@ export const parseQuery = <T extends Entity>(
 
       const relation = repo.metadata.findRelationWithPropertyPath(key);
       if (relation) {
+        // is null
+        if (value?.id === null || value?.id?.eq === null) {
+          where.push({ where: `${name} IS NULL` });
+          continue;
+        }
+        // not null
+        if (value?.id?.ne === null) {
+          where.push({ where: `${name} NOT NULL` });
+          continue;
+        }
         const rRepo: any = repo.manager.getRepository(relation.type);
         const w = processWhere(rRepo, value, alias);
         if (w) {
