@@ -380,6 +380,7 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
         create: { type: new GraphQLList(findCreateInput(entity.name)) },
         update: { type: new GraphQLList(findUpdateInput(entity.name)) },
         select: { type: new GraphQLList(findFilter(entity.name)) },
+        remove: { type: new GraphQLList(GraphQLID) },
       },
     });
     return (nestedUpdateInputs[name] = input);

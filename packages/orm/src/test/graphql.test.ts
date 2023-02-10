@@ -156,16 +156,57 @@ describe("GraphQL tests", async () => {
   });
 
   it("should update", async () => {
-    await createData(client);
+    await client.title.create({
+      data: {
+        code: "mrs",
+        name: "Mrs.",
+      },
+    });
+    const contact = await client.contact.create({
+      data: {
+        firstName: "Some",
+        lastName: "Name",
+        title: {
+          create: {
+            code: "mr",
+            name: "Mr.",
+          },
+        },
+        addresses: {
+          create: [
+            {
+              contact: {},
+              street: "My Home",
+            },
+          ],
+        },
+      },
+      select: {
+        firstName: true,
+        lastName: true,
+        title: {
+          name: true,
+        },
+        addresses: {
+          select: {
+            street: true,
+          },
+        },
+      },
+    });
+
     const mutation = /* GraphQL */ `
       mutation {
         updateContact(
           data: {
-            id: 1
-            version: 1
+            id: ${contact.id}
+            version: ${contact.version}
             lastName: "NAME"
             title: { select: { code: { eq: "mrs" } } }
-            addresses: { create: { contact: {}, street: "Vacation Home" } }
+            addresses: {
+              create: { contact: {}, street: "My Office" }
+              remove: [ ${contact.addresses![0].id}]
+            }
           }
         ) {
           edges {
@@ -201,7 +242,8 @@ describe("GraphQL tests", async () => {
 
     expect(json).toContain('"lastName": "NAME"');
     expect(json).toContain('"code": "mrs"');
-    expect(json).toContain('"street": "Vacation Home"');
+    expect(json).toContain('"street": "My Office"');
+    expect(json).not.toContain('"street": "My Home"');
   });
 
   it("should delete", async () => {
