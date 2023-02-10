@@ -83,6 +83,53 @@ describe("query parser tests", async () => {
     });
   });
 
+  it("should select all simmple fields by default", async () => {
+    const repo = getContactRepo();
+    let opts: QueryOptions<Contact> = {};
+    let res = parseQuery(repo, opts);
+
+    expect(res.select).toBeDefined();
+    expect(res.select).toHaveProperty("self.id");
+    expect(res.select).toHaveProperty("self.fullName");
+    expect(res.select).not.toHaveProperty("self.image");
+    expect(res.select).not.toHaveProperty("self.attrs");
+
+    opts = { select: { title: true } };
+    res = parseQuery(repo, opts);
+
+    expect(res).toMatchObject({
+      select: {
+        "self_title.id": "self_title_id",
+        "self_title.version": "self_title_version",
+        "self_title.code": "self_title_code",
+        "self_title.name": "self_title_name",
+      },
+      joins: {
+        "self.title": "self_title",
+      },
+    });
+
+    opts = { select: { addresses: true } };
+    res = parseQuery(repo, opts);
+
+    expect(res).toMatchObject({
+      collections: {
+        addresses: {
+          select: {
+            "self.id": "self_id",
+            "self.version": "self_version",
+            "self.type": "self_type",
+            "self.street": "self_street",
+            "self.area": "self_area",
+            "self.city": "self_city",
+            "self.zip": "self_zip",
+            "self.state": "self_state",
+          },
+        },
+      },
+    });
+  });
+
   it("should parse simple `where` options", () => {
     const opts: QueryOptions<Contact> = {
       where: {

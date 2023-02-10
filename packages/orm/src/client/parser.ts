@@ -46,7 +46,7 @@ export const parseQuery = <T extends Entity>(
     return `${prefix}.${name}`;
   };
 
-  const makeAlias = (prefix: string, name: string) => {
+  const makeAlias = (repo: Repository<any>, prefix: string, name: string) => {
     const col = repo.metadata.findColumnWithPropertyName(name);
     const alt = col?.databaseName ?? name;
     const p = prefix.replace(/^[_]+/, "");
@@ -115,31 +115,46 @@ export const parseQuery = <T extends Entity>(
     return result;
   };
 
-  const processSelect = (opts: SelectOptions<T>, prefix: string) => {
+  const simpleSelect = (repo: Repository<any>) => {
+    const meta = repo.metadata;
+    const select = meta.columns
+      .filter((x) => !meta.findRelationWithPropertyPath(x.propertyName))
+      .filter((x) => !["oid", "text", "jsonb"].includes(x.type as any))
+      .map((x) => x.propertyName)
+      .reduce((prev, name) => ({ ...prev, [name]: true }), {});
+    return select;
+  };
+
+  const processSelect = (
+    repo: Repository<any>,
+    opts: SelectOptions<T>,
+    prefix: string
+  ) => {
     let select: Record<string, any> = {};
     let collections: Record<string, any> = {};
     let references: Record<string, any> = {};
     let joins: Record<string, string> = {};
 
+    // if no selection is give, select all simple fields
+    if (Object.keys(opts).length === 0) {
+      opts = simpleSelect(repo);
+    }
+
     for (const [key, value] of Object.entries(opts)) {
       const name = makeName(prefix, key);
-      const alias = makeAlias(prefix, key);
+      const alias = makeAlias(repo, prefix, key);
       const relation = repo.metadata.findRelationWithPropertyPath(key);
       if (relation) {
-        if (value === true) {
-          const names = relation.inverseEntityMetadata.columns
-            .map((x) => x.propertyName)
-            .reduce((prev, name) => ({ ...prev, [name]: true }), {});
-          const nested = processSelect(names, alias);
-
+        const rRepo: any = repo.manager.getRepository(relation.type);
+        if (value === true && (relation.isOneToOne || relation.isManyToOne)) {
+          const nested = processSelect(rRepo, simpleSelect(rRepo), alias);
           Object.assign(select, nested.select);
           joins[name] = alias;
           continue;
         }
-        const rRepo: any = repo.manager.getRepository(relation.type);
         if (relation.isOneToMany || relation.isManyToMany) {
-          const v: any = value;
-          const vResult: any = parseQuery(rRepo, v);
+          const v = value === true ? { select: simpleSelect(rRepo) } : value;
+          const vResult = parseQuery(rRepo, v);
           collections[key] = vResult;
         } else {
           const nested: any = parseQuery(rRepo, { select: value });
@@ -281,7 +296,7 @@ export const parseQuery = <T extends Entity>(
       }
 
       const name = makeName(prefix, key);
-      const alias = makeAlias(prefix, key);
+      const alias = makeAlias(repo, prefix, key);
 
       if (isJson(repo, key)) {
         const w = processJsonWhere(value, name);
@@ -347,7 +362,7 @@ export const parseQuery = <T extends Entity>(
       const relation = repo.metadata.findRelationWithPropertyPath(key);
       if (relation) {
         const rRepo: any = repo.manager.getRepository(relation.type);
-        const alias = makeAlias(prefix, key);
+        const alias = makeAlias(repo, prefix, key);
         const res = processOrderBy(rRepo, value as OrderByOptions<any>, alias);
         joins = { [name]: alias, ...joins, ...res.joins };
         order = { ...order, ...res.order };
@@ -356,7 +371,7 @@ export const parseQuery = <T extends Entity>(
         const jsonOrder = processOrderByJson(value as JsonOrder, name);
         Object.assign(order, jsonOrder);
       } else {
-        select[name] = makeAlias(prefix, key);
+        select[name] = makeAlias(repo, prefix, key);
         order[name] = value;
       }
     }
@@ -396,7 +411,7 @@ export const parseQuery = <T extends Entity>(
     joins: selectJoins,
     references,
     collections,
-  } = processSelect(selection, "self");
+  } = processSelect(repo, selection, "self");
 
   const {
     where,
