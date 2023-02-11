@@ -62,16 +62,8 @@ export const parseQuery = <T extends Entity>(
       params: {},
     };
 
-    if (arg === null) {
-      result.where = `${name} IS NULL`;
-      return result;
-    }
-
-    if (!arg || typeof arg !== "object") {
-      const param = `p${counter++}`;
-      result.where = `${name} = :${param}`;
-      result.params = { [param]: arg };
-      return result;
+    if (arg === null || typeof arg !== "object") {
+      arg = { eq: arg };
     }
 
     for (const [key, value] of Object.entries(arg)) {
@@ -259,7 +251,13 @@ export const parseQuery = <T extends Entity>(
       if (match && match.groups) {
         const path = match.groups.path;
         const type = match.groups.type;
-        for (const [op, value] of Object.entries(arg as any)) {
+
+        let argValue = arg;
+        if (argValue === null || typeof argValue !== "object") {
+          argValue = { eq: argValue };
+        }
+
+        for (const [op, value] of Object.entries(argValue)) {
           const { condition, vars, params } = processJsonCondition(
             op,
             value,
