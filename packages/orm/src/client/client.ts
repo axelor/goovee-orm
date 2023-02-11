@@ -9,6 +9,7 @@ import {
   DeleteOptions,
   Entity,
   ID,
+  Options,
   Payload,
   QueryOptions,
   Repository,
@@ -143,44 +144,38 @@ class EntityRepository<T extends Entity> implements Repository<T> {
     return this.#repo;
   }
 
-  async find<Options extends QueryOptions<T>>(
-    args: QueryOptions<T> = {}
-  ): Promise<Payload<T, Options>[]> {
-    return await handler.handleFindMany(this.#repo, args);
+  async find<U extends QueryOptions<T>>(
+    args?: Options<U, QueryOptions<T>>
+  ): Promise<Payload<T, U>[]> {
+    return await handler.handleFindMany(this.#repo, args ?? {});
   }
 
-  async findOne<Options extends QueryOptions<T>>(
-    args: QueryOptions<T> = {}
-  ): Promise<Payload<T, Options>> {
-    return await handler.handleFindOne(this.#repo, args);
+  async findOne<U extends QueryOptions<T>>(
+    args?: Options<U, QueryOptions<T>>
+  ): Promise<Payload<T, U>> {
+    return await handler.handleFindOne(this.#repo, args ?? {});
   }
 
-  async count<Options extends QueryOptions<T>>(args?: Options) {
+  async count(args?: QueryOptions<T>) {
     return await handler.handleCount(this.#repo, args ?? {});
   }
 
-  async create<Options extends CreateOptions<T>>(
-    args: CreateOptions<T>
-  ): Promise<Payload<T, Options>> {
+  async create<U extends CreateOptions<T>>(
+    args: Options<U, CreateOptions<T>>
+  ): Promise<Payload<T, U>> {
     const { data, select } = args;
-    const res = await handler.handleCreate(this.#repo, data);
-    const { id } = res;
-    return await this.findOne({
-      select,
-      where: { id },
-    });
+    const { id } = await handler.handleCreate(this.#repo, data);
+    const found = await this.findOne({ select, where: { id } });
+    return found as unknown as Payload<T, U>;
   }
 
-  async update<Options extends UpdateOptions<T>>(
-    args: UpdateOptions<T>
-  ): Promise<Payload<T, Options>> {
+  async update<U extends UpdateOptions<T>>(
+    args: Options<U, UpdateOptions<T>>
+  ): Promise<Payload<T, U>> {
     const { data, select } = args;
-    const res = await handler.handleUpdate(this.#repo, data);
-    const { id } = res;
-    return await this.findOne({
-      select,
-      where: { id },
-    });
+    const { id } = await handler.handleUpdate(this.#repo, data);
+    const found = await this.findOne({ select, where: { id } });
+    return found as unknown as Payload<T, U>;
   }
 
   async delete(args: DeleteOptions<T>): Promise<ID> {

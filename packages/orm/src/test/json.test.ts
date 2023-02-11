@@ -189,7 +189,7 @@ describe("json tests", async () => {
       where: {
         attrs: {
           "salary::decimal": {
-            between: [100, 300],
+            between: ["100.00", "300.00"],
           },
         },
       },

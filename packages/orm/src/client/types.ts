@@ -312,24 +312,28 @@ export type BulkDeleteOptions<T extends Entity> = {
   where?: WhereOptions<T>;
 };
 
+export type Options<T, U> = {
+  [K in keyof T]: K extends keyof U ? T[K] : never;
+};
+
 export interface Repository<T extends Entity> {
-  find<Options extends QueryOptions<T>>(): Promise<Payload<T, Options>[]>;
-  find<Options extends QueryOptions<T>>(
-    args: Options
-  ): Promise<Payload<T, Options>[]>;
-  findOne<Options extends QueryOptions<T>>(): Promise<Payload<T, Options>>;
-  findOne<Options extends QueryOptions<T>>(
-    args: Options
-  ): Promise<Payload<T, Options>>;
-  create<Options extends CreateOptions<T>>(
-    args: Options
-  ): Promise<Payload<T, Options>>;
-  update<Options extends UpdateOptions<T>>(
-    args: Options
-  ): Promise<Payload<T, Options>>;
+  find<U extends QueryOptions<T>>(): Promise<Payload<T, U>[]>;
+  find<U extends QueryOptions<T>>(
+    args: Options<U, QueryOptions<T>>
+  ): Promise<Payload<T, U>[]>;
+  findOne<U extends QueryOptions<T>>(): Promise<Payload<T, U>>;
+  findOne<U extends QueryOptions<T>>(
+    args: Options<U, QueryOptions<T>>
+  ): Promise<Payload<T, U>>;
+  create<U extends CreateOptions<T>>(
+    args: Options<U, CreateOptions<T>>
+  ): Promise<Payload<T, U>>;
+  update<U extends UpdateOptions<T>>(
+    args: Options<U, UpdateOptions<T>>
+  ): Promise<Payload<T, U>>;
   delete(args: DeleteOptions<T>): Promise<ID>;
   count(): Promise<ID>;
-  count<Options extends QueryOptions<T>>(args: Options): Promise<ID>;
+  count(args: QueryOptions<T>): Promise<ID>;
   updateAll(args: BulkUpdateOptions<T>): Promise<ID>;
   deleteAll(): Promise<ID>;
   deleteAll(args: BulkDeleteOptions<T>): Promise<ID>;
