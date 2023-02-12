@@ -84,11 +84,48 @@ const NumberFilter = new GraphQLInputObjectType({
   fields: createNumberFilterFields(GraphQLString),
 });
 
+const JsonTypeName = new GraphQLEnumType({
+  name: "JsonTypeName",
+  values: {
+    String: { value: "text" },
+    Int: { value: "integer" },
+    Date: { value: "timestamp" },
+    Boolean: { value: "boolean" },
+    Decimal: { value: "decimal" },
+  },
+});
+
+const JsonFilter = new GraphQLInputObjectType({
+  name: "JsonFilter",
+  fields() {
+    const fields = {
+      path: { type: new GraphQLNonNull(GraphQLString) },
+      type: { type: JsonTypeName },
+    };
+    const numOps = createNumberFilterFields(GraphQLJSON);
+    const strOps = createStringFilterFields(GraphQLJSON);
+    return {
+      ...fields,
+      ...numOps,
+      ...strOps,
+    };
+  },
+});
+
 const OrderBy = new GraphQLEnumType({
   name: "OrderBy",
   values: {
     ASC: { value: "ASC" },
     DESC: { value: "DESC" },
+  },
+});
+
+const JsonOrderBy = new GraphQLInputObjectType({
+  name: "JsonOrderByValue",
+  fields: {
+    path: { type: new GraphQLNonNull(GraphQLString) },
+    type: { type: JsonTypeName },
+    order: { type: OrderBy },
   },
 });
 
@@ -135,6 +172,7 @@ const FilterMap: Record<string, GraphQLInputType> = {
   Time: NumberFilter,
   DateTime: NumberFilter,
   Text: StringFilter,
+  JSON: JsonFilter,
 };
 
 export const buildGraphQLSchema = (entities: EntityOptions[]) => {
@@ -299,7 +337,7 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
         };
 
         for (const item of items as any[]) {
-          if (item.type === "Binary" || item.type === "JSON") continue;
+          if (item.type === "Binary") continue;
           let { type, target } = item;
           if (target) {
             type = findFilter(target);
@@ -342,8 +380,12 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
         };
 
         for (const item of items as any[]) {
-          if (item.type === "Binary" || item.type === "JSON") continue;
-          const type = item.target ? findOrder(item.target) : OrderBy;
+          if (item.type === "Binary") continue;
+          const type = item.target
+            ? findOrder(item.target)
+            : item.type === "JSON"
+            ? new GraphQLList(JsonOrderBy)
+            : OrderBy;
           Object.assign(fields, {
             [item.name]: { type },
           });

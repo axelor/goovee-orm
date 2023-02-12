@@ -332,6 +332,60 @@ describe("GraphQL tests", async () => {
         },
       },
     });
+
+    const next = await graphql({
+      schema: schema,
+      source: mutation,
+      variableValues: {
+        data: {
+          firstName: "Another",
+          lastName: "NAME",
+          attrs: {
+            some: "another name",
+            int: 1,
+            array: ["another", 2, 432.2, now],
+            nested: {
+              a: 1,
+              b: true,
+              c: "another",
+              d: now,
+            },
+          },
+        },
+      },
+      contextValue: {
+        client,
+      },
+    });
+
+    const query = /* GraphQL */ `
+      {
+        contact(where: { attrs: { path: "some", eq: "name" } }) {
+          edges {
+            node {
+              id
+              firstName
+              lastName
+              attrs
+            }
+          }
+        }
+      }
+    `;
+
+    const found = await graphql({
+      schema,
+      source: query,
+      contextValue: {
+        client,
+      },
+    });
+
+    const foundContact: any = found?.data?.contact;
+
+    expect(foundContact).toBeDefined();
+    expect(foundContact.edges).toHaveLength(1);
+    expect(foundContact.edges[0].node.attrs.some).toBe("name");
   });
 
   it("should handle date fields", async () => {
