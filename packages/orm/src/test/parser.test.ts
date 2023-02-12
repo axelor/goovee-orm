@@ -364,22 +364,19 @@ describe("query parser tests", async () => {
     const opts: QueryOptions<Contact> = {
       where: {
         attrs: {
-          "name::text": {
-            eq: "some",
-          },
+          path: "name",
+          eq: "some",
         },
         bio: {
           me: {
-            "some::integer": {
-              in: [1, 2, 3],
-            },
+            path: "some",
+            in: [1, 2, 3],
           },
         },
         addresses: {
           props: {
-            "some::timestamp": {
-              between: ["2022-01-01T00:00:00.000Z", "2023-01-01T00:00:00.000Z"],
-            },
+            path: "some",
+            between: ["2022-01-01T00:00:00.000Z", "2023-01-01T00:00:00.000Z"],
           },
         },
       },
@@ -409,13 +406,19 @@ describe("query parser tests", async () => {
   it("should parse json orderBy expressions", async () => {
     const opts: QueryOptions<Contact> = {
       orderBy: {
-        attrs: {
-          "name::text": "DESC",
-        },
-        bio: {
-          me: {
-            "skill::text": "DESC",
+        attrs: [
+          {
+            path: "name",
+            order: "DESC",
           },
+        ],
+        bio: {
+          me: [
+            {
+              path: "skill",
+              order: "DESC",
+            },
+          ],
         },
       },
     };

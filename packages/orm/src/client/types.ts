@@ -62,40 +62,58 @@ export type SelectOptions<T extends Entity> = {
   -readonly [K in keyof T]?: SelectArg<T[K]>;
 };
 
-export type JsonKeyText = `${string}::text`;
-export type JsonKeyInteger = `${string}::integer`;
-export type JsonKeyBoolean = `${string}::boolean`;
-export type JsonKeyDecimal = `${string}::decimal`;
-export type JsonKeyDate = `${string}::timestamp`;
-
-export type JsonWhereText = { [K: JsonKeyText]: StringFilter };
-export type JsonWhereInteger = { [K: JsonKeyInteger]: IntFilter };
-export type JsonWhereBoolean = { [K: JsonKeyBoolean]: BooleanFilter };
-export type JsonWhereDecimal = { [K: JsonKeyDecimal]: DecimalFilter };
-export type JsonWhereDate = { [K: JsonKeyDate]: DateFilter };
-
-export type JsonWhere =
-  | JsonWhereText
-  | JsonWhereInteger
-  | JsonWhereBoolean
-  | JsonWhereDecimal
-  | JsonWhereDate
-  | {
-      OR?: JsonWhere[];
-      AND?: JsonWhere[];
-      NOT?: JsonWhere[];
-    };
-
-export type JsonOrder = {
-  [
-    K:
-      | JsonKeyText
-      | JsonKeyInteger
-      | JsonKeyBoolean
-      | JsonKeyDecimal
-      | JsonKeyDate
-  ]: OrderBy;
+export type JsonStringPath = {
+  path: string;
+  type?: "String";
 };
+
+export type JsonIntPath = {
+  path: string;
+  type?: "Int";
+};
+
+export type JsonBooleanPath = {
+  path: string;
+  type?: "Boolean";
+};
+
+export type JsonDecimalPath = {
+  path: string;
+  type?: "Decimal";
+};
+
+export type JsonDatePath = {
+  path: string;
+  type?: "Date";
+};
+
+export type JsonPath =
+  | JsonStringPath
+  | JsonIntPath
+  | JsonBooleanPath
+  | JsonDecimalPath
+  | JsonDatePath;
+
+// discard non-object type from EQ filter
+export type JsonPathFilter<P, F> = F extends object ? P & Partial<F> : never;
+
+export type JsonStringFilter = JsonPathFilter<JsonStringPath, StringFilter>;
+export type JsonIntFilter = JsonPathFilter<JsonIntPath, IntFilter>;
+export type JsonBooleanFilter = JsonPathFilter<JsonBooleanPath, BooleanFilter>;
+export type JsonDecimalFilter = JsonPathFilter<JsonDecimalPath, DecimalFilter>;
+export type JsonDateFilter = JsonPathFilter<JsonDatePath, DateFilter>;
+
+export type JsonFilter =
+  | JsonStringFilter
+  | JsonIntFilter
+  | JsonBooleanFilter
+  | JsonDecimalFilter
+  | JsonDateFilter;
+
+export type JsonWhere = JsonFilter;
+
+export type JsonOrder = JsonPath & { order: OrderBy };
+export type JsonOrderBy = JsonOrder[];
 
 export type WhereArg<T> = T extends number
   ? IntFilter
@@ -143,7 +161,7 @@ export type OrderByArg<T> = T extends string | number | boolean | Date
   ? OrderByOptions<T>
   : T extends Promise<infer S>
   ? S extends JsonType
-    ? JsonOrder
+    ? JsonOrderBy
     : never
   : never;
 

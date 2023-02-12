@@ -111,20 +111,10 @@ describe("json tests", async () => {
   it("should search on text json field", async () => {
     const res = await client.contact.find({
       where: {
-        attrs: {
-          OR: [
-            {
-              "nick::text": {
-                like: "a%",
-              },
-            },
-            {
-              "nick::text": {
-                like: "%s%",
-              },
-            },
-          ],
-        },
+        OR: [
+          { attrs: { path: "nick", like: "a%" } },
+          { attrs: { path: "nick", like: "%s%" } },
+        ],
       },
       select: {
         attrs: true,
@@ -140,18 +130,10 @@ describe("json tests", async () => {
   it("should search on numeric json field", async () => {
     const res = await client.contact.find({
       where: {
-        attrs: {
-          "age::integer": {
-            ge: 30,
-          },
-          AND: [
-            {
-              "age::integer": {
-                lt: 50,
-              },
-            },
-          ],
-        },
+        AND: [
+          { attrs: { path: "age", ge: 30 } },
+          { attrs: { path: "age", lt: 50 } },
+        ],
       },
       select: {
         attrs: true,
@@ -168,11 +150,7 @@ describe("json tests", async () => {
   it("should search on boolean json field", async () => {
     const res = await client.contact.find({
       where: {
-        attrs: {
-          "customer::boolean": {
-            eq: true,
-          },
-        },
+        attrs: { path: "customer", eq: true },
       },
       select: {
         attrs: true,
@@ -187,11 +165,7 @@ describe("json tests", async () => {
   it("should search on decimal json field", async () => {
     const res = await client.contact.find({
       where: {
-        attrs: {
-          "salary::decimal": {
-            between: ["100.00", "300.00"],
-          },
-        },
+        attrs: { path: "salary", between: ["100.00", "300.00"] },
       },
       select: {
         attrs: true,
@@ -208,11 +182,7 @@ describe("json tests", async () => {
   it("should search on date json field", async () => {
     const upper = await client.contact.findOne({
       where: {
-        attrs: {
-          "age::integer": {
-            ge: 40,
-          },
-        },
+        attrs: { path: "age", ge: 40 },
       },
       select: {
         attrs: true,
@@ -221,11 +191,7 @@ describe("json tests", async () => {
 
     const lower = await client.contact.findOne({
       where: {
-        attrs: {
-          "age::integer": {
-            le: 30,
-          },
-        },
+        attrs: { path: "age", le: 30 },
       },
       select: {
         attrs: true,
@@ -241,11 +207,7 @@ describe("json tests", async () => {
 
       const res = await client.contact.find({
         where: {
-          attrs: {
-            "dateOfBirth::timestamp": {
-              between: [upperDate, lowerDate],
-            },
-          },
+          attrs: { path: "dateOfBirth", between: [upperDate, lowerDate] },
         },
         select: {
           attrs: true,
@@ -266,11 +228,7 @@ describe("json tests", async () => {
   it("should search on array json field", async () => {
     const res = await client.contact.find({
       where: {
-        attrs: {
-          "tags[*].color::text": {
-            eq: "red",
-          },
-        },
+        attrs: { path: "tags[*].color", eq: "red" },
       },
       select: {
         attrs: true,
@@ -290,9 +248,7 @@ describe("json tests", async () => {
         attrs: true,
       },
       orderBy: {
-        attrs: {
-          "age::integer": "DESC",
-        },
+        attrs: [{ path: "age", order: "DESC" }],
       },
     });
 

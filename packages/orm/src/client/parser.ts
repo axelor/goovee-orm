@@ -1,7 +1,7 @@
 import { Repository } from "typeorm";
 import {
   Entity,
-  JsonOrder,
+  JsonOrderBy,
   JsonWhere,
   OrderBy,
   OrderByOptions,
@@ -166,11 +166,30 @@ export const parseQuery = <T extends Entity>(
     return { where, params, joins };
   };
 
-  const jsonRegEx = /(?<path>[^:]+)::(?<type>.*)/;
-
   const isJson = (repo: Repository<any>, name: string) => {
     const column = repo.metadata.findColumnWithPropertyName(name);
     return column && column.type === "jsonb";
+  };
+
+  const jsonCastTypes = {
+    String: "text",
+    Int: "integer",
+    Boolean: "boolean",
+    Decimal: "decimal",
+    Date: "timestamp",
+  } as const;
+
+  const findJsonType = (value: any) => {
+    if (Array.isArray(value)) value = value[0];
+    if (typeof value === "number") return "Int";
+    if (typeof value === "boolean") return "Boolean";
+    if (/^(-)?(\d+)(\.\d+)?$/.test(value)) return "Decimal";
+    if (/^(\d{4})-(\d{2})-(\d{2}).*$/.test(value)) return "Date";
+    return "String";
+  };
+
+  const findJsonCastType = (type?: keyof typeof jsonCastTypes) => {
+    return jsonCastTypes[type ?? "String"];
   };
 
   const makeJsonParams = (value: any, type: string) => {
@@ -235,42 +254,27 @@ export const parseQuery = <T extends Entity>(
 
   const processJsonWhere = (opts: JsonWhere, prefix: string) => {
     const where: any[] = [];
-    for (const [key, arg] of Object.entries(opts)) {
-      if (["OR", "AND", "NOT"].includes(key)) {
-        const joiner = key === "OR" ? "OR" : "AND";
-        const wrap = key === "NOT" ? "NOT" : "";
-        if (Array.isArray(arg)) {
-          const ws = arg.map((x) => processJsonWhere(x, prefix));
-          const w = acceptWhereCauses(ws, joiner);
-          w.where = `${wrap}(${w.where})`;
-          where.push(w);
-        }
-        continue;
-      }
-      const match = jsonRegEx.exec(key);
-      if (match && match.groups) {
-        const path = match.groups.path;
-        const type = match.groups.type;
 
-        let argValue = arg;
-        if (argValue === null || typeof argValue !== "object") {
-          argValue = { eq: argValue };
-        }
+    let { path, ...rest } = opts;
+    let op;
+    let value;
 
-        for (const [op, value] of Object.entries(argValue)) {
-          const { condition, vars, params } = processJsonCondition(
-            op,
-            value,
-            type
-          );
-          const expr = vars
-            ? `jsonb_path_exists(${prefix}, '$.${path} ? (${condition})', ${vars})`
-            : `jsonb_path_exists(${prefix}, cast('$.${path} ? (${condition})' as jsonpath))`;
-          const w = { where: expr, params };
-          where.push(w);
-        }
-      }
+    // only first condition is considered
+    for ([op, value] of Object.entries(rest)) break;
+
+    if (op === undefined) {
+      throw new Error(`Invalid JSON filter: ${JSON.stringify(opts)}`);
     }
+
+    const type = findJsonCastType(opts.type ?? findJsonType(value));
+    const { condition, vars, params } = processJsonCondition(op, value, type);
+    const expr = vars
+      ? `jsonb_path_exists(${prefix}, '$.${path} ? (${condition})', ${vars})`
+      : `jsonb_path_exists(${prefix}, cast('$.${path} ? (${condition})' as jsonpath))`;
+
+    const w = { where: expr, params };
+    where.push(w);
+
     return acceptWhereCauses(where);
   };
 
@@ -331,17 +335,14 @@ export const parseQuery = <T extends Entity>(
     }
   };
 
-  const processOrderByJson = (opts: JsonOrder, prefix: string) => {
+  const processOrderByJson = (opts: JsonOrderBy, prefix: string) => {
     const order: Record<string, any> = {};
-    for (const [key, value] of Object.entries(opts)) {
-      const match = jsonRegEx.exec(key);
-      if (match && match.groups) {
-        const path = match.groups.path.split(/\./g).map((x) => `'${x}'`);
-        const type = match.groups.type;
-        const args = path.join(", ");
-        const expr = `cast(jsonb_extract_path_text(${prefix}, ${args}) as ${type})`;
-        order[expr] = value;
-      }
+    for (const opt of opts) {
+      const path = opt.path.split(/\./g).map((x) => `'${x}'`);
+      const args = path.join(", ");
+      const type = findJsonCastType(opt.type);
+      const expr = `cast(jsonb_extract_path_text(${prefix}, ${args}) as ${type})`;
+      order[expr] = opt.order;
     }
     return order;
   };
@@ -366,7 +367,7 @@ export const parseQuery = <T extends Entity>(
         order = { ...order, ...res.order };
         select = { ...select, ...res.select };
       } else if (isJson(repo, key)) {
-        const jsonOrder = processOrderByJson(value as JsonOrder, name);
+        const jsonOrder = processOrderByJson(value as JsonOrderBy, name);
         Object.assign(order, jsonOrder);
       } else {
         select[name] = makeAlias(repo, prefix, key);
