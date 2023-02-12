@@ -22,10 +22,8 @@ export type NumericFilter<T> =
   | LE<T>
   | IN<T>
   | BETWEEN<T>
-  | LIKE<T>
   | NOT_IN<T>
-  | NOT_BETWEEN<T>
-  | NOT_LIKE<T>;
+  | NOT_BETWEEN<T>;
 
 export type StringFilter =
   | EQ<string>
