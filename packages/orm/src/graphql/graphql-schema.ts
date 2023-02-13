@@ -87,11 +87,11 @@ const NumberFilter = new GraphQLInputObjectType({
 const JsonTypeName = new GraphQLEnumType({
   name: "JsonTypeName",
   values: {
-    String: { value: "text" },
-    Int: { value: "integer" },
-    Date: { value: "timestamp" },
-    Boolean: { value: "boolean" },
-    Decimal: { value: "decimal" },
+    String: { value: "String" },
+    Int: { value: "String" },
+    Date: { value: "Date" },
+    Boolean: { value: "Boolean" },
+    Decimal: { value: "Decimal" },
   },
 });
 
