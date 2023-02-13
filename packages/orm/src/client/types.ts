@@ -1,5 +1,3 @@
-import { Binary, Json, JsonType, Text } from "./fields";
-
 export type EQ<T> = { eq: T | null } | T | null;
 export type NE<T> = { ne: T | null };
 export type GT<T> = { gt: T };
@@ -42,6 +40,21 @@ export type DateFilter = NumericFilter<Date | string>;
 export type IdFilter = NumericFilter<ID>;
 
 export type ID = string | number;
+
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | JsonType;
+export type JsonType = {
+  [K: string]: JsonValue;
+};
+
+export type Json = Promise<JsonType>;
+export type Text = Promise<string>;
+export type Binary = Promise<Buffer>;
 
 export interface Entity {
   readonly id?: ID;
@@ -332,7 +345,31 @@ export type Options<T, U> = {
   [K in keyof T]: K extends keyof U ? T[K] : never;
 };
 
+export type QueryClient = {
+  $raw(query: string, ...params: any[]): Promise<unknown>;
+};
+
+export type ConnectionClient<T extends QueryClient> = T & {
+  $sync(): Promise<void>;
+  $sync(drop: boolean): Promise<void>;
+  $connect(): Promise<void>;
+  $disconnect(): Promise<void>;
+  $transaction<R>(job: (client: T) => Promise<R>): Promise<R>;
+};
+
+export type EntityClass<T extends Entity = Entity> = new () => T;
+export type EntityClient<T extends Record<string, EntityClass>> =
+  QueryClient & {
+    [K in keyof T]: T[K] extends EntityClass<infer E> ? Repository<E> : never;
+  };
+
+export type ClientOptions = {
+  url: string;
+  sync?: boolean;
+};
+
 export interface Repository<T extends Entity> {
+  readonly name: string;
   find<U extends QueryOptions<T>>(): Promise<Payload<T, U>[]>;
   find<U extends QueryOptions<T>>(
     args: Options<U, QueryOptions<T>>

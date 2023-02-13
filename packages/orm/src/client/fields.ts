@@ -1,21 +1,6 @@
 import { Repository } from "typeorm";
 import { createLob, readLob } from "./lob";
 
-export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | JsonType;
-export type JsonType = {
-  [K: string]: JsonValue;
-};
-
-export type Json = Promise<JsonType>;
-export type Text = Promise<string>;
-export type Binary = Promise<Buffer>;
-
 export const isLazy = (
   repo: Repository<any>,
   name: string,

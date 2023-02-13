@@ -1,43 +1,16 @@
 import * as typeorm from "typeorm";
 import { createDataSource } from "../typeorm/datasource";
-import * as handler from "./handler";
+import { EntityRepository } from "./client-repository";
 
 import {
-  BulkDeleteOptions,
-  BulkUpdateOptions,
-  CreateOptions,
-  DeleteOptions,
+  ClientOptions,
+  ConnectionClient,
   Entity,
-  ID,
-  Options,
-  Payload,
-  QueryOptions,
+  EntityClass,
+  EntityClient,
+  QueryClient,
   Repository,
-  UpdateOptions,
 } from "./types";
-
-export type QueryClient = {
-  $raw(query: string, ...params: any[]): Promise<unknown>;
-};
-
-export type ConnectionClient<T extends QueryClient> = T & {
-  $sync(): Promise<void>;
-  $sync(drop: boolean): Promise<void>;
-  $connect(): Promise<void>;
-  $disconnect(): Promise<void>;
-  $transaction<R>(job: (client: T) => Promise<R>): Promise<R>;
-};
-
-export type EntityClass<T extends Entity = Entity> = new () => T;
-export type EntityClient<T extends Record<string, EntityClass>> =
-  QueryClient & {
-    [K in keyof T]: T[K] extends EntityClass<infer E> ? Repository<E> : never;
-  };
-
-export type ClientOptions = {
-  url: string;
-  sync?: boolean;
-};
 
 const createClientProxy = <T extends object>(
   target: T,
@@ -130,63 +103,5 @@ class Connection extends Client implements ConnectionClient<Client> {
       const client = this.#factory(em);
       return job(client);
     });
-  }
-}
-
-class EntityRepository<T extends Entity> implements Repository<T> {
-  #repo: typeorm.Repository<T>;
-
-  constructor(repo: typeorm.Repository<T>) {
-    this.#repo = repo;
-  }
-
-  unwrap() {
-    return this.#repo;
-  }
-
-  async find<U extends QueryOptions<T>>(
-    args?: Options<U, QueryOptions<T>>
-  ): Promise<Payload<T, U>[]> {
-    return await handler.handleFindMany(this.#repo, args ?? {});
-  }
-
-  async findOne<U extends QueryOptions<T>>(
-    args?: Options<U, QueryOptions<T>>
-  ): Promise<Payload<T, U> | null> {
-    return await handler.handleFindOne(this.#repo, args ?? {});
-  }
-
-  async count(args?: QueryOptions<T>) {
-    return await handler.handleCount(this.#repo, args ?? {});
-  }
-
-  async create<U extends CreateOptions<T>>(
-    args: Options<U, CreateOptions<T>>
-  ): Promise<Payload<T, U>> {
-    const { data, select } = args;
-    const { id } = await handler.handleCreate(this.#repo, data);
-    const found = await this.findOne({ select, where: { id } });
-    return found as unknown as Payload<T, U>;
-  }
-
-  async update<U extends UpdateOptions<T>>(
-    args: Options<U, UpdateOptions<T>>
-  ): Promise<Payload<T, U>> {
-    const { data, select } = args;
-    const { id } = await handler.handleUpdate(this.#repo, data);
-    const found = await this.findOne({ select, where: { id } });
-    return found as unknown as Payload<T, U>;
-  }
-
-  async delete(args: DeleteOptions<T>): Promise<ID> {
-    return await handler.handleDelete(this.#repo, args);
-  }
-
-  async updateAll(args: BulkUpdateOptions<T>): Promise<ID> {
-    return await handler.handleBulkUpdate(this.#repo, args);
-  }
-
-  async deleteAll(args?: BulkDeleteOptions<T>): Promise<ID> {
-    return await handler.handleBulkDelete(this.#repo, args ?? {});
   }
 }

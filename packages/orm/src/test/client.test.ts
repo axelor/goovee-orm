@@ -542,10 +542,10 @@ describe("client tests", async () => {
     });
 
     expect(res).toBeInstanceOf(Contact);
-    expect(res.id).toBeTruthy();
-    expect(res.title).toBeDefined();
-    expect(res.addresses).toBeDefined();
-    expect(res.addresses?.length).toBeGreaterThan(0);
+    expect(res!.id).toBeTruthy();
+    expect(res!.title).toBeDefined();
+    expect(res!.addresses).toBeDefined();
+    expect(res!.addresses?.length).toBeGreaterThan(0);
   });
 
   it("should count", async () => {
@@ -578,8 +578,8 @@ describe("client tests", async () => {
     });
 
     expect(afterBulkUpdate).toBeDefined();
-    expect(afterBulkUpdate.lastName).toBe("NAME");
-    expect(afterBulkUpdate.title).toBeNull();
+    expect(afterBulkUpdate!.lastName).toBe("NAME");
+    expect(afterBulkUpdate!.title).toBeNull();
   });
 
   it("should bulk delete", async () => {
