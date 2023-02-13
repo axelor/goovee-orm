@@ -337,10 +337,10 @@ export interface Repository<T extends Entity> {
   find<U extends QueryOptions<T>>(
     args: Options<U, QueryOptions<T>>
   ): Promise<Payload<T, U>[]>;
-  findOne<U extends QueryOptions<T>>(): Promise<Payload<T, U>>;
+  findOne<U extends QueryOptions<T>>(): Promise<Payload<T, U> | null>;
   findOne<U extends QueryOptions<T>>(
     args: Options<U, QueryOptions<T>>
-  ): Promise<Payload<T, U>>;
+  ): Promise<Payload<T, U> | null>;
   create<U extends CreateOptions<T>>(
     args: Options<U, CreateOptions<T>>
   ): Promise<Payload<T, U>>;

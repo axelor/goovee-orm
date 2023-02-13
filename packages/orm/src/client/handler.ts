@@ -426,9 +426,15 @@ export const handleDelete = async (
   return result.affected ?? 0;
 };
 
-const handleSelect = async (repo: Repository<any>, data: any) => {
+const handleSelect = async (
+  repo: Repository<any>,
+  where: WhereOptions<any>
+) => {
   const res = handleFindOne(repo, {
-    where: data,
+    select: {
+      id: true,
+    },
+    where,
   });
   return res;
 };

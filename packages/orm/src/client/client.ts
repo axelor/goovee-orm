@@ -152,7 +152,7 @@ class EntityRepository<T extends Entity> implements Repository<T> {
 
   async findOne<U extends QueryOptions<T>>(
     args?: Options<U, QueryOptions<T>>
-  ): Promise<Payload<T, U>> {
+  ): Promise<Payload<T, U> | null> {
     return await handler.handleFindOne(this.#repo, args ?? {});
   }
 
