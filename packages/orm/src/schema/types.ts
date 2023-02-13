@@ -3,6 +3,7 @@ export interface Property {
   type: string;
   title?: string;
   help?: string;
+  internal?: boolean;
 }
 
 export interface SimpleProperty extends Property {

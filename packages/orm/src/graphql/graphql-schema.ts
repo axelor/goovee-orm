@@ -489,7 +489,16 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
     return (updateInputs[name] = input);
   };
 
-  // first generate enum types
+  // first remove all internal fields
+  entities = entities.map((entity) => {
+    const { fields = [] } = entity;
+    return {
+      ...entity,
+      fields: fields.filter((x) => !x.internal),
+    };
+  });
+
+  // generate enum types
   entities
     .flatMap((x) => x.fields ?? [])
     .forEach((x) => {
