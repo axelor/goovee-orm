@@ -22,8 +22,11 @@ import type {
   DeleteOptions,
   Entity,
   ID,
+  Middleware,
+  MiddlewareArgs,
   Options,
   Payload,
+  QueryClient,
   QueryOptions,
   Repository,
   UpdateOptions,
@@ -284,9 +287,17 @@ const valueOrID = (value: any) =>
 
 export class EntityRepository<T extends Entity> implements Repository<T> {
   #repo: OrmRepository<T>;
+  #client: QueryClient;
+  #interceptor: Interceptor;
 
-  constructor(repo: OrmRepository<T>) {
+  constructor(
+    repo: OrmRepository<T>,
+    client: QueryClient,
+    interceptor: Interceptor
+  ) {
     this.#repo = repo;
+    this.#client = client;
+    this.#interceptor = interceptor;
   }
 
   get name() {
@@ -297,6 +308,21 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     return this.#repo;
   }
 
+  async intercept(
+    method: string,
+    args: any,
+    next: () => Promise<any>
+  ): Promise<any> {
+    const params: MiddlewareArgs = {
+      client: this.#client,
+      source: this,
+      method,
+      args,
+    };
+    return await this.#interceptor.execute(params, next);
+  }
+
+  @intercept()
   async find<U extends QueryOptions<T>>(
     args?: Options<U, QueryOptions<T>>
   ): Promise<Payload<T, U>[]> {
@@ -318,6 +344,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     return result.length ? (result[0] as Payload<T, U>) : null;
   }
 
+  @intercept()
   async count(args?: QueryOptions<T>): Promise<ID> {
     const repo = this.#repo;
     const opts = parseQuery(repo, args);
@@ -339,7 +366,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     const rMeta = relation.inverseEntityMetadata;
     const rRepo = repo.manager.getRepository(rMeta.name);
 
-    const ref = new EntityRepository(rRepo);
+    const ref = new EntityRepository(rRepo, this.#client, this.#interceptor);
 
     if (select) {
       const res = await ref.findOne({ where: select });
@@ -378,7 +405,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     const updateAll = Array.isArray(update) ? update : [update];
     const removeAll = Array.isArray(remove) ? remove : [remove];
 
-    const ref = new EntityRepository(rRepo);
+    const ref = new EntityRepository(rRepo, this.#client, this.#interceptor);
 
     // we are removing relationship, not necessarily the record
     if (remove) {
@@ -415,6 +442,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     }
   }
 
+  @intercept()
   async create<U extends CreateOptions<T>>(
     args: Options<U, CreateOptions<T>>
   ): Promise<Payload<T, U>> {
@@ -456,6 +484,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     return res as any;
   }
 
+  @intercept()
   async update<U extends UpdateOptions<T>>(
     args: Options<U, UpdateOptions<T>>
   ): Promise<Payload<T, U>> {
@@ -532,6 +561,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     return found as any;
   }
 
+  @intercept()
   async delete(args: DeleteOptions<T>): Promise<ID> {
     const repo: any = this.#repo;
     const { id, version } = args;
@@ -550,6 +580,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     return result.affected ?? 0;
   }
 
+  @intercept()
   async updateAll(args: BulkUpdateOptions<T>): Promise<ID> {
     const repo = this.#repo;
     const { set, where } = args;
@@ -562,6 +593,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     return affected ?? 0;
   }
 
+  @intercept()
   async deleteAll(args?: BulkDeleteOptions<T>): Promise<ID> {
     const repo = this.#repo;
     const { where } = args ?? {};
@@ -576,5 +608,45 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     const [_, affected] = await repo.manager.query(raw, params);
 
     return affected ?? 0;
+  }
+}
+
+export function intercept() {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    const method = descriptor.value;
+    descriptor.value = async function (...params: any[]) {
+      const execute = target.intercept;
+      const res = execute
+        ? execute.call(this, propertyKey, params, () =>
+            method.apply(this, params)
+          )
+        : method.apply(this, params);
+      return res;
+    };
+    return descriptor;
+  };
+}
+
+export class Interceptor {
+  #middlewares: Middleware[] = [];
+
+  push(...middleware: Middleware[]) {
+    this.#middlewares.push(...middleware);
+  }
+
+  async execute<T>(args: MiddlewareArgs, cb: () => Promise<any>): Promise<any> {
+    let stack: Middleware[] = [...this.#middlewares, cb];
+    let index = -1;
+    let next = async (): Promise<any> => {
+      let func = stack[++index];
+      if (func) {
+        return await func(args, next);
+      }
+    };
+    return await next();
   }
 }

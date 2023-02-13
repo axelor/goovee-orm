@@ -1,6 +1,6 @@
 import * as typeorm from "typeorm";
 import { createDataSource } from "../typeorm/datasource";
-import { EntityRepository } from "./client-repository";
+import { EntityRepository, Interceptor } from "./client-repository";
 
 import {
   ClientOptions,
@@ -8,22 +8,28 @@ import {
   Entity,
   EntityClass,
   EntityClient,
+  Middleware,
   QueryClient,
   Repository,
 } from "./types";
 
-const createClientProxy = <T extends object>(
-  target: T,
+const createClientProxy = <T extends QueryClient>(
+  client: T,
+  interceptor: Interceptor,
   em: typeorm.EntityManager,
   entities: Record<string, EntityClass>
 ) => {
   const repos: Record<string, Repository<any>> = {};
-  const proxy = new Proxy(target, {
+  const proxy = new Proxy(client, {
     get(target, p, receiver) {
       if (typeof p === "string" && p in entities) {
         const repo =
           repos[p] ??
-          (repos[p] = new EntityRepository<any>(em.getRepository(entities[p])));
+          (repos[p] = new EntityRepository<any>(
+            em.getRepository(entities[p]),
+            client,
+            interceptor
+          ));
         return repo;
       }
       const value = Reflect.get(target, p);
@@ -54,13 +60,14 @@ export const createClient = <
     entities: Object.values(entities),
   });
 
-  const conn = new Connection(ds, (em) => {
+  const interceptor = new Interceptor();
+  const conn = new Connection(ds, interceptor, (em) => {
     const client = new Client(em);
-    const proxy = createClientProxy(client, em, entities);
+    const proxy = createClientProxy(client, interceptor, em, entities);
     return proxy;
   });
 
-  return createClientProxy(conn, ds.manager, entities) as any;
+  return createClientProxy(conn, interceptor, ds.manager, entities) as any;
 };
 
 type ClientFactory = (em: typeorm.EntityManager) => Client;
@@ -79,15 +86,26 @@ class Client implements QueryClient {
 
 class Connection extends Client implements ConnectionClient<Client> {
   #dataSource;
+  #interceptor;
   #factory;
-  constructor(dataSource: typeorm.DataSource, factory: ClientFactory) {
+  constructor(
+    dataSource: typeorm.DataSource,
+    interceptor: Interceptor,
+    factory: ClientFactory
+  ) {
     super(dataSource.manager);
     this.#dataSource = dataSource;
+    this.#interceptor = interceptor;
     this.#factory = factory;
   }
 
   get $connected() {
     return this.#dataSource.isInitialized;
+  }
+
+  $use(middleware: Middleware): ConnectionClient<Client> {
+    this.#interceptor.push(middleware);
+    return this;
   }
 
   async $sync(drop?: boolean): Promise<void> {

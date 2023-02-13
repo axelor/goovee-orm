@@ -23,3 +23,8 @@ let client: TestClient;
 export const getTestClient = async () => {
   return client ?? (client = await createTestClient());
 };
+
+export const resetTestClient = async () => {
+  if (client?.$connected) await client.$disconnect();
+  client = await createTestClient();
+};

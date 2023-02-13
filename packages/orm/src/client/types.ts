@@ -351,6 +351,7 @@ export type QueryClient = {
 
 export type ConnectionClient<T extends QueryClient> = T & {
   readonly $connected: boolean;
+  $use(middleware: Middleware): ConnectionClient<T>;
   $sync(): Promise<void>;
   $sync(drop: boolean): Promise<void>;
   $connect(): Promise<void>;
@@ -392,3 +393,34 @@ export interface Repository<T extends Entity> {
   deleteAll(): Promise<ID>;
   deleteAll(args: BulkDeleteOptions<T>): Promise<ID>;
 }
+
+export type MiddlewareArgs = {
+  /**
+   * The QueryClient in use.
+   *
+   * The middleware should use this client only if required.
+   */
+  client: QueryClient;
+
+  /**
+   * The source object on which method the middleware is applied
+   */
+  source: any;
+
+  /**
+   * The method on which the middleware is applied
+   */
+  method: string;
+
+  /**
+   * The method arguments.
+   *
+   * The middleware can modify these arguments.
+   */
+  args: any[];
+};
+
+export type Middleware = (
+  params: MiddlewareArgs,
+  next: () => Promise<any>
+) => Promise<any>;
