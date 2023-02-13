@@ -9,5 +9,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   const client = await getTestClient();
-  await client.$disconnect();
+  if (client.$connected) {
+    await client.$disconnect();
+  }
 });

@@ -350,6 +350,7 @@ export type QueryClient = {
 };
 
 export type ConnectionClient<T extends QueryClient> = T & {
+  readonly $connected: boolean;
   $sync(): Promise<void>;
   $sync(drop: boolean): Promise<void>;
   $connect(): Promise<void>;

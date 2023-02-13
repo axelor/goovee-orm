@@ -86,6 +86,10 @@ class Connection extends Client implements ConnectionClient<Client> {
     this.#factory = factory;
   }
 
+  get $connected() {
+    return this.#dataSource.isInitialized;
+  }
+
   async $sync(drop?: boolean): Promise<void> {
     return await this.#dataSource.synchronize(drop);
   }
