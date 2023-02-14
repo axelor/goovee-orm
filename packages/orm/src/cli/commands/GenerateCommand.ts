@@ -1,123 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { spawnSync } from "node:child_process";
 import { CommandModule } from "yargs";
-import pkg from "../../../package.json";
-import { createFile, generateClient } from "../../client/client-generator";
-
-const generateIndex = (outDir: string) => {
-  createFile(
-    outDir,
-    "index.ts",
-    `
-export * from "./client";
-export * from "./models";
-`
-  );
-};
-
-const generatePackageJson = (outDir: string) => {
-  const name = "@goovee/cms-client";
-  const { version, license, dependencies, devDependencies } = pkg;
-
-  const config = {
-    name,
-    version,
-    license,
-    private: true,
-    main: "./dist/index.js",
-    module: "./dist/index.mjs",
-    types: "./dist/index.d.ts",
-    scripts: {
-      build: "tsc",
-      clean: "rm -rf dist/",
-      format: 'prettier --write "**/*.{ts,tsx,md}"',
-    },
-    dependencies: {
-      typeorm: dependencies.typeorm,
-      pg: dependencies.pg,
-    },
-    peerDependencies: {
-      graphql: dependencies.graphql,
-    },
-    peerDependenciesMeta: {
-      graphql: {
-        optional: true,
-      },
-    },
-    devDependencies: {
-      "@types/node": devDependencies["@types/node"],
-      "@types/pg": devDependencies["@types/pg"],
-      prettier: "latest",
-      typescript: devDependencies["typescript"],
-    },
-    optionalDependencies: {
-      [pkg.name]: "*",
-    },
-  };
-
-  createFile(outDir, "package.json", config);
-};
-
-const generateTsConfig = (outDir: string) => {
-  const config = {
-    compilerOptions: {
-      target: "ESNext",
-      module: "CommonJS",
-      lib: ["ESNext", "DOM", "DOM.Iterable"],
-      outDir: "dist",
-      composite: false,
-      declaration: true,
-      declarationMap: true,
-      esModuleInterop: true,
-      forceConsistentCasingInFileNames: true,
-      inlineSources: false,
-      isolatedModules: true,
-      emitDecoratorMetadata: true,
-      experimentalDecorators: true,
-      moduleResolution: "node",
-      resolveJsonModule: true,
-      noUnusedLocals: false,
-      noUnusedParameters: false,
-      preserveWatchOutput: true,
-      skipLibCheck: true,
-      strict: true,
-    },
-    include: ["src"],
-    exclude: ["node_modules"],
-  };
-  createFile(outDir, "tsconfig.json", config);
-};
-
-const npmRun = (cwd: string, ...args: string[]) => {
-  // eslint-disable-next-line turbo/no-undeclared-env-vars
-  const cmd = process.env.npm_execpath!;
-  const proc = spawnSync(cmd, args, {
-    cwd,
-    stdio: "inherit",
-    windowsHide: true,
-  });
-  if (proc.status !== 0) process.exit(1);
-};
-
-const updateDeps = (cwd: string) => {
-  const pkgName = "@goovee/cms-client";
-  const pkgDir = cwd;
-  const pkgFile = path.join(pkgDir, "package.json");
-  if (fs.existsSync(pkgFile)) {
-    const config = require(pkgFile);
-    let { dependencies = {}, optionalDependencies = {} } = config;
-    if (dependencies[pkgName] || optionalDependencies[pkgName]) {
-      return;
-    }
-    optionalDependencies[pkgName] = "*";
-    createFile(pkgDir, "package.json", {
-      ...config,
-      optionalDependencies,
-    });
-  }
-};
+import { generateClient } from "../../client/client-generator";
 
 export const GenerateCommand: CommandModule = {
   command: "generate",
@@ -126,42 +11,17 @@ export const GenerateCommand: CommandModule = {
     const searchPaths = [
       path.join(".", "src", "goovee", "schema"),
       path.join(".", "goovee", "schema"),
-      path.join(".", "schema"),
     ];
 
     const schemaDir = searchPaths.find((x) => fs.existsSync(x));
-    const clientDir = path.join("node_modules", ".goovee", "cms-client");
-    const linkDir = path.join("node_modules", "@goovee", "cms-client");
-    const srcDir = path.join(clientDir, "src");
-    const modelsDir = path.join(srcDir, "models");
-
     if (!schemaDir || !fs.existsSync(schemaDir)) {
       console.error(`Schema directory doesn't exists`);
       process.exit(1);
     }
 
-    // clean models
-    fs.rmSync(modelsDir, { recursive: true, force: true });
+    const clientDir = path.join(path.dirname(schemaDir), ".generated");
 
     // generate client
-    generateClient(schemaDir, srcDir);
-    generateIndex(srcDir);
-    generatePackageJson(clientDir);
-    generateTsConfig(clientDir);
-
-    // build
-    npmRun(clientDir, "format");
-    npmRun(clientDir, "install");
-    npmRun(clientDir, "build");
-
-    // add client as an optionalDependencies
-    updateDeps(process.cwd());
-
-    // symlink
-    if (!fs.existsSync(linkDir)) {
-      const linkParent = path.dirname(linkDir);
-      fs.mkdirSync(linkParent, { recursive: true });
-      fs.symlinkSync(path.relative(linkParent, clientDir), linkDir);
-    }
+    generateClient(schemaDir, clientDir);
   },
 };
