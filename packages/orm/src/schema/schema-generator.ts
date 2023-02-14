@@ -59,8 +59,7 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
   }
 
   protected importNameInternal(name: string) {
-    const pkg = require("../../package.json");
-    const modName = `${pkg.name}`;
+    const modName = "@goovee/orm";
     return new ImportName(name, modName);
   }
 

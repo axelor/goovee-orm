@@ -7,18 +7,15 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev --parallel",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "build": "pnpm --filter @goovee/* build",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json,css,scss,html}\""
   },
   "devDependencies": {
-    "eslint-config-custom": "workspace:*",
-    "prettier": "^2.8.3",
-    "turbo": "^1.7.1"
+    "eslint": "^8.34.0",
+    "prettier": "^2.8.4"
   },
   "engines": {
     "node": ">=14.0.0"
   },
-  "packageManager": "pnpm@7.26.3"
+  "packageManager": "pnpm@7.27.0"
 }

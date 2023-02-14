@@ -1,14 +1,27 @@
 {
-  "extends": "tsconfig/node-library.json",
   "compilerOptions": {
-    "target": "es2022",
-    "resolveJsonModule": true,
+    "target": "esnext",
+    "module": "commonjs",
+    "noEmit": true,
+    "baseUrl": ".",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "declaration": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "jsx": "react-jsx",
     "paths": {
       "@goovee/orm": ["./src"]
     }
   },
-  "include": ["src", "tsup.config.ts"],
-  "exclude": ["dist", "build", "node_modules"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

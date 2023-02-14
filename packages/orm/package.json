@@ -2,61 +2,75 @@
   "name": "@goovee/orm",
   "version": "0.0.1",
   "license": "MIT",
+  "scripts": {
+    "dev": "pnpm build --watch",
+    "build": "rm -fr dist/* && tsc -p tsconfig.build.json",
+    "lint": "TIMING=1 eslint \"**/*.{ts,tsx,js,jsx}\" --fix",
+    "clean": "rm -rf ./dist",
+    "test": "vitest",
+    "test:e2e": "vitest --mode e2e --no-threads"
+  },
+  "sideEffects": false,
+  "type": "commonjs",
   "main": "./src/index.ts",
   "module": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./*": "./src/*/index.ts"
+    "./*": [
+      "./src/*.js",
+      "./src/*/index.ts"
+    ]
   },
-  "bin": {
-    "goovee": "./src/cli/index-dev.mjs"
+  "typesVersions": {
+    "*": {
+      "*": [
+        "src/*",
+        "src/*/index"
+      ]
+    }
   },
   "publishConfig": {
-    "main": "./dist/index.js",
-    "module": "./dist/index.ts",
-    "types": "./dist/index.d.ts",
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.mjs",
-        "require": "./dist/index.js"
-      },
-      "./*": {
-        "types": "./dist/*/index.d.ts",
-        "import": "./dist/*/index.mjs",
-        "require": "./dist/*/index.js"
+    "typesVersions": {
+      "*": {
+        "*": [
+          "dist/*.d.ts",
+          "dist/*/index.d.ts"
+        ]
       }
+    },
+    "exports": {
+      ".": "./dist/index.js",
+      "./*": [
+        "./dist/*.js",
+        "./dist/*/index.js"
+      ]
     },
     "bin": {
       "goovee": "./dist/cli/index.js"
     }
   },
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "clean": "rimraf dist",
-    "lint": "eslint *.ts*",
-    "test": "vitest",
-    "test:e2e": "vitest --mode e2e --no-threads"
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "goovee": "./src/cli/index-dev.mjs"
   },
   "dependencies": {
     "graphql": "^16.6.0",
     "pg": "^8.9.0",
     "reflect-metadata": "^0.1.13",
-    "typeorm": "^0.3.11",
+    "typeorm": "^0.3.12",
     "yargs": "^17.6.2"
   },
   "devDependencies": {
     "@faker-js/faker": "^7.6.0",
-    "@swc/core": "^1.3.32",
-    "@types/node": "^18.11.18",
+    "@swc/core": "^1.3.35",
+    "@types/node": "^18.13.0",
     "@types/pg": "^8.6.6",
     "@types/yargs": "^17.0.22",
-    "eslint": "^8.33.0",
-    "eslint-config-custom": "workspace:*",
     "rimraf": "^4.1.2",
     "ts-node": "^10.9.1",
-    "tsconfig": "workspace:*",
     "typescript": "^4.9.5",
-    "vitest": "^0.28.3"
+    "vitest": "^0.28.5"
   }
 }

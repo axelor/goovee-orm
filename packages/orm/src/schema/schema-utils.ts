@@ -17,6 +17,6 @@ export const readSchema = (schemaDir: string): EntityOptions[] => {
     .filter((x) => /\.(ts|json)$/.test(x.name))
     .map((x) => path.join(schemaDir, x.name))
     .map((x) => path.resolve(x))
-    .map((x) => (x.endsWith(".json") ? require(x) : require(x).default));
+    .map((x) => JSON.parse(fs.readFileSync(x, { encoding: "utf-8" })));
   return schema;
 };

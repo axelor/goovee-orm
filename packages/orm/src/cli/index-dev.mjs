@@ -1,17 +1,42 @@
 #!/usr/bin/env node
 
-import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const base = path.dirname(fileURLToPath(import.meta.url));
+const script = fileURLToPath(import.meta.url);
+const scriptDir = dirname(script);
 
-const NODE_PATH = process.env.NODE_PATH;
-const cmd = path.join(NODE_PATH, ".bin", "ts-node");
-const cli = path.join(base, "index.ts");
+const runSelf = () => {
+  const cwd = dirname(dirname(scriptDir));
+  const cmd = process.env.npm_execpath;
+  const env = {
+    ...process.env,
+    APP_CWD: process.cwd(),
+  };
+  const args = ["ts-node", script, ...process.argv.slice(2)];
+  spawnSync(cmd, args, {
+    env,
+    cwd,
+    stdio: "inherit",
+    windowsHide: true,
+  });
+};
 
-spawnSync(cmd, [cli, ...process.argv.slice(2)], {
-  stdio: "inherit",
-  env: process.env,
-  windowsHide: true,
-});
+const runScript = () => {
+  const cwd = process.env.APP_CWD;
+  const cmd = process.env.npm_node_execpath;
+  const script = join(scriptDir, "index.ts");
+  const args = [process.argv[0], script, ...process.argv.slice(2)];
+  spawnSync(cmd, args, {
+    cwd,
+    stdio: "inherit",
+    windowsHide: true,
+  });
+};
+
+if (process.env.APP_CWD) {
+  runScript();
+} else {
+  runSelf();
+}

@@ -16,16 +16,8 @@ corepack prepare pnpm@latest --activate
 
 ### Build
 
-To build all apps and packages, run the following command:
+To build all the packages, run the following command:
 
 ```
 pnpm run build
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-pnpm run dev
 ```
