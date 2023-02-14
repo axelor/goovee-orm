@@ -199,7 +199,10 @@ class RelationImportName extends ImportName {
     this.collection = collection;
   }
   emit(file: CodeFile): void {
+    const relationType = new ImportName("type Relation", "typeorm");
+    file.write(relationType).write("<");
     super.emit(file);
+    file.write(">");
     if (this.collection) {
       file.write("[]");
     }

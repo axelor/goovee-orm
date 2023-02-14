@@ -261,7 +261,7 @@ const Contact = defineEntity({
 });
 
 const expectedCode = `\
-import { Entity, ManyToOne, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
+import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
 import { Model } from "./Model";
 import { Title } from "./Title";
 import { Bio } from "./Bio";
@@ -273,7 +273,7 @@ import { type Text, type Binary, type Json } from "@goovee/orm";
 @Entity("contacts")
 export class Contact extends Model {
   @ManyToOne(() => Title)
-  title?: Title;
+  title?: Relation<Title>;
 
   @Column()
   firstName!: string;
@@ -292,14 +292,14 @@ export class Contact extends Model {
 
   @OneToOne(() => Bio, (x) => x.contact)
   @JoinColumn()
-  bio?: Bio;
+  bio?: Relation<Bio>;
 
   @OneToMany(() => Address, (x) => x.contact)
-  addresses?: Address[];
+  addresses?: Relation<Address>[];
 
   @ManyToMany(() => Circle, (x) => x.contacts)
   @JoinTable()
-  circles?: Circle[];
+  circles?: Relation<Circle>[];
 
   @Column({ enum: ContactType, nullable: true, type: "integer", default: ContactType.PARTNER })
   type?: ContactType;
@@ -316,7 +316,7 @@ export class Contact extends Model {
 `;
 
 const expectedCodeGooveeNaming = `\
-import { Entity, ManyToOne, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
+import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
 import { Model } from "./Model";
 import { Title } from "./Title";
 import { Bio } from "./Bio";
@@ -328,7 +328,7 @@ import { type Text, type Binary, type Json } from "@goovee/orm";
 @Entity("contacts")
 export class Contact extends Model {
   @ManyToOne(() => Title)
-  title?: Title;
+  title?: Relation<Title>;
 
   @Column()
   firstName!: string;
@@ -347,14 +347,14 @@ export class Contact extends Model {
 
   @OneToOne(() => Bio, (x) => x.contact)
   @JoinColumn()
-  bio?: Bio;
+  bio?: Relation<Bio>;
 
   @OneToMany(() => Address, (x) => x.contact)
-  addresses?: Address[];
+  addresses?: Relation<Address>[];
 
   @ManyToMany(() => Circle, (x) => x.contacts)
   @JoinTable({ name: "contacts_circles", joinColumn: { name: "contacts" }, inverseJoinColumn: { name: "circles" } })
-  circles?: Circle[];
+  circles?: Relation<Circle>[];
 
   @Column({ enum: ContactType, nullable: true, type: "integer", default: ContactType.PARTNER })
   type?: ContactType;
