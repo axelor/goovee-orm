@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { camelCase } from "typeorm/util/StringUtils";
 
-import pkg from "../../package.json";
 import { CodeFile } from "../code-generator/CodeFile";
 import { generateSchema } from "../schema/schema-generator";
 import { readSchema } from "../schema/schema-utils";
@@ -21,17 +20,17 @@ export const createFile = (outDir: string, fileName: string, content: any) => {
 
 const createClient = (schema: EntityOptions[], names: string[]) => {
   const file = new CodeFile("index.ts");
-
+  const pkgName = "@goovee/orm";
   file.write(`\
 import {
   createClient as create,
   type ClientOptions,
   type ConnectionClient,
   type EntityClient,
-} from "${pkg.name}";
+} from "${pkgName}";
 
-import { buildGraphQLSchema } from "${pkg.name}";
-import { type EntityOptions } from "${pkg.name}";
+import { buildGraphQLSchema } from "${pkgName}";
+import { type EntityOptions } from "${pkgName}";
 import { type GraphQLSchema } from "graphql";
 
 import {

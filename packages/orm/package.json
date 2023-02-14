@@ -32,7 +32,7 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rimraf dist",
     "lint": "eslint *.ts*",
     "test": "vitest",
@@ -56,7 +56,6 @@
     "rimraf": "^4.1.2",
     "ts-node": "^10.9.1",
     "tsconfig": "workspace:*",
-    "tsup": "^6.5.0",
     "typescript": "^4.9.5",
     "vitest": "^0.28.3"
   }
