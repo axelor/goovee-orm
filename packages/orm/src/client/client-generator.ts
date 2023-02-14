@@ -23,9 +23,6 @@ const createClient = (schema: EntityOptions[], names: string[]) => {
   const file = new CodeFile("index.ts");
 
   file.write(`\
-import dotenv from "dotenv";
-dotenv.config();
-
 import {
   createClient as create,
   type ClientOptions,

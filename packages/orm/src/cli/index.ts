@@ -1,6 +1,4 @@
 import yargs from "yargs";
-import dotenv from "dotenv";
-dotenv.config();
 
 import { GenerateCommand } from "./commands/GenerateCommand";
 
