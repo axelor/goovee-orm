@@ -30,11 +30,11 @@ const generatePackageJson = (outDir: string) => {
     module: "./dist/index.mjs",
     types: "./dist/index.d.ts",
     scripts: {
-      build: "tsup",
+      build: "tsc",
+      clean: "rm -rf dist/",
       format: 'prettier --write "**/*.{ts,tsx,md}"',
     },
     dependencies: {
-      dotenv: dependencies.dotenv,
       typeorm: dependencies.typeorm,
       pg: dependencies.pg,
     },
@@ -47,11 +47,9 @@ const generatePackageJson = (outDir: string) => {
       },
     },
     devDependencies: {
-      "@swc/core": devDependencies["@swc/core"],
       "@types/node": devDependencies["@types/node"],
       "@types/pg": devDependencies["@types/pg"],
       prettier: "latest",
-      tsup: devDependencies["tsup"],
       typescript: devDependencies["typescript"],
     },
     optionalDependencies: {
@@ -68,7 +66,7 @@ const generateTsConfig = (outDir: string) => {
       target: "ESNext",
       module: "CommonJS",
       lib: ["ESNext", "DOM", "DOM.Iterable"],
-      noEmit: true,
+      outDir: "dist",
       composite: false,
       declaration: true,
       declarationMap: true,
@@ -92,50 +90,15 @@ const generateTsConfig = (outDir: string) => {
   createFile(outDir, "tsconfig.json", config);
 };
 
-const generateTsUp = (outDir: string) => {
-  const config = {
-    clean: true,
-    dts: true,
-    entry: ["src/index.ts", "src/*/index.ts", "src/models/*.ts"],
-    format: ["cjs", "esm"],
-    sourcemap: true,
-  };
-  createFile(outDir, "tsup.config.json", config);
-};
-
-const npmInstall = (cwd: string) => {
-  const proc = spawnSync("npm", ["install"], {
+const npmRun = (cwd: string, ...args: string[]) => {
+  // eslint-disable-next-line turbo/no-undeclared-env-vars
+  const cmd = process.env.npm_execpath!;
+  const proc = spawnSync(cmd, args, {
     cwd,
     stdio: "inherit",
     windowsHide: true,
   });
-  if (proc.status !== 0) {
-    console.error("Unable to install dependencies.");
-    process.exit(1);
-  }
-};
-
-const npmBuild = (cwd: string) => {
-  const proc = spawnSync("npm", ["run", "build"], {
-    cwd,
-    stdio: "inherit",
-    windowsHide: true,
-  });
-  if (proc.status !== 0) {
-    console.error("Unable to build client.");
-    process.exit(1);
-  }
-};
-
-const npmFormat = (cwd: string) => {
-  const proc = spawnSync("npm", ["run", "format"], {
-    cwd,
-    windowsHide: true,
-  });
-  if (proc.status !== 0) {
-    console.error("Unable to build client.");
-    process.exit(1);
-  }
+  if (proc.status !== 0) process.exit(1);
 };
 
 const updateDeps = (cwd: string) => {
@@ -185,12 +148,11 @@ export const GenerateCommand: CommandModule = {
     generateIndex(srcDir);
     generatePackageJson(clientDir);
     generateTsConfig(clientDir);
-    generateTsUp(clientDir);
 
     // build
-    npmFormat(clientDir);
-    npmInstall(clientDir);
-    npmBuild(clientDir);
+    npmRun(clientDir, "format");
+    npmRun(clientDir, "install");
+    npmRun(clientDir, "build");
 
     // add client as an optionalDependencies
     updateDeps(process.cwd());
