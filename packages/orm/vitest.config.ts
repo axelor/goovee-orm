@@ -1,5 +1,6 @@
 import path from "node:path";
-import swc from "unplugin-swc";
+
+import { transformSync } from "@swc/core";
 import { defaultExclude, defineConfig } from "vitest/config";
 
 const unitTests = {
@@ -16,7 +17,32 @@ const e2eTests = {
 
 export default defineConfig((env) => {
   return {
-    plugins: [swc.vite()],
+    plugins: [
+      {
+        name: "swc",
+        async transform(code, id, options) {
+          const res = transformSync(code, {
+            filename: id,
+            jsc: {
+              parser: {
+                syntax: "typescript",
+                decorators: true,
+              },
+              transform: {
+                legacyDecorator: true,
+                decoratorMetadata: true,
+              },
+            },
+          });
+          return res;
+        },
+        config() {
+          return {
+            esbuild: false,
+          };
+        },
+      },
+    ],
     test: env.mode === "e2e" ? e2eTests : unitTests,
     resolve: {
       alias: [
