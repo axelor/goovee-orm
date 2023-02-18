@@ -17,7 +17,7 @@ import {
   WhereOptions,
 } from "../client";
 
-import { toCamelCase } from "../schema";
+import { toCamelCase } from "../schema/schema-utils";
 
 export type ResolverSource = Entity & {
   [K: string]: any;

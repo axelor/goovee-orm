@@ -12,7 +12,7 @@ import {
   GraphQLSchema,
   GraphQLString,
 } from "graphql";
-import { toCamelCase } from "../schema";
+import { toCamelCase } from "../schema/schema-utils";
 
 import { EntityOptions, EnumItem } from "../schema/types";
 import {

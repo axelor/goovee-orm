@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defineEntity } from "../schema";
+import { defineEntity } from "../schema/schema-utils";
 import { buildGraphQLSchema } from "./graphql-schema";
 
 describe("GraphQL schema tests", async () => {
