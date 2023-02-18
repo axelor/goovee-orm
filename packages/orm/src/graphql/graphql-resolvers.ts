@@ -86,10 +86,10 @@ const findSelect = (field: FieldNode, ownType: GraphQLObjectType) => {
 const toRelayEdge = async (node: any) => {
   const cursor = node._cursor;
   for (const name of Object.getOwnPropertyNames(node)) {
-    let value = node[name];
-    if (value instanceof Promise) {
-      // fetch all lazy fields
-      node[name] = await value;
+    let descriptor = Object.getOwnPropertyDescriptor(node, name);
+    if (descriptor?.get && descriptor?.set) {
+      // load lazy field
+      await node[name];
     }
   }
 

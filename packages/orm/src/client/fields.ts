@@ -21,7 +21,7 @@ export const resolveLazy = async (
   value: any
 ) => {
   if (isLazy(repo, name) && value) value = await value;
-  if (isLazy(repo, name, "oid")) {
+  if (isLazy(repo, name, "oid") && value) {
     return await createLob(repo.manager, value);
   }
   return value;
@@ -51,7 +51,7 @@ const loadLazy = async (repo: Repository<any>, target: any, name: string) => {
     .where("self.id = :id", { id: target.id });
 
   const res = await qb.getOne();
-  const value = res[name];
+  const value = res?.[name] ?? null;
 
   return isLazy(repo, name, "oid")
     ? readLob(repo.manager, value)
