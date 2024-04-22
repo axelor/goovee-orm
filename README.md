@@ -4,8 +4,8 @@ The mono-repo of the Goovee
 
 ### Requirements
 
-- `node >= 14.0.0`
-- `pnpm >= 7.17.0`
+- `node >= 18.0.0`
+- `pnpm >= 9.0.6`
 
 You can use [corepack](https://nodejs.org/api/corepack.html) to install [pnpm](https://pnpm.io/installation).
 
@@ -19,5 +19,5 @@ corepack prepare pnpm@latest --activate
 To build all the packages, run the following command:
 
 ```
-pnpm run build
+pnpm build
 ```
