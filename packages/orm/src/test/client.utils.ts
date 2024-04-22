@@ -12,11 +12,8 @@ const createTestClient = async () => {
   return createClient();
 };
 
-export type TestClient = ReturnType<typeof createTestClient> extends Promise<
-  infer T
->
-  ? T
-  : never;
+export type TestClient =
+  ReturnType<typeof createTestClient> extends Promise<infer T> ? T : never;
 
 let client: TestClient;
 

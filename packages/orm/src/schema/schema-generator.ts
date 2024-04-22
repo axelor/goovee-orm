@@ -181,7 +181,7 @@ class EnumFieldGenerator extends FieldGenerator<EnumProperty> {
     }
 
     let defaultItem = enumList.find(
-      (item) => item.name === defaultValue || item.value === defaultValue
+      (item) => item.name === defaultValue || item.value === defaultValue,
     );
     if (defaultItem) {
       args.default = decorator.unquote(`${enumType}.${defaultItem.name}`);
@@ -209,7 +209,7 @@ class RelationImportName extends ImportName {
 }
 
 class RelationalField<
-  T extends PropertyOptions & IRelational
+  T extends PropertyOptions & IRelational,
 > extends FieldGenerator<T> {
   protected get actualType() {
     const { type, target } = this.options;
@@ -495,7 +495,7 @@ class IndexGenerator implements CodeGenerator {
 
 const save = (
   outDir: string,
-  type: EntityGenerator | EnumGenerator | IndexGenerator
+  type: EntityGenerator | EnumGenerator | IndexGenerator,
 ) => {
   const fileName = `${type.name}.ts`;
   const file = new CodeFile(fileName);
@@ -521,7 +521,7 @@ const generateEnum = (outDir: string, options: EnumProperty) => {
 const generateEntity = (
   outDir: string,
   options: EntityOptions,
-  config: GeneratorConfig
+  config: GeneratorConfig,
 ) => {
   const type = new EntityGenerator(options, config);
   return save(outDir, type);

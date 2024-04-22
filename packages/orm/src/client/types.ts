@@ -63,13 +63,14 @@ export interface Entity {
   readonly updatedOn?: Date;
 }
 
-export type SelectArg<T> = T extends Array<infer P>
-  ? P extends Entity
-    ? QueryOptions<P>
-    : boolean
-  : T extends Entity
-  ? SelectOptions<T>
-  : boolean;
+export type SelectArg<T> =
+  T extends Array<infer P>
+    ? P extends Entity
+      ? QueryOptions<P>
+      : boolean
+    : T extends Entity
+      ? SelectOptions<T>
+      : boolean;
 
 export type SelectOptions<T extends Entity> = {
   -readonly [K in keyof T]?: SelectArg<T[K]>;
@@ -131,26 +132,26 @@ export type JsonOrderBy = JsonOrder[];
 export type WhereArg<T> = T extends number
   ? IntFilter
   : T extends bigint
-  ? BigIntFilter
-  : T extends boolean
-  ? BooleanFilter
-  : T extends string
-  ? StringFilter
-  : T extends Date
-  ? DateFilter
-  : T extends Array<infer P>
-  ? P extends Entity
-    ? WhereOptions<P>
-    : never
-  : T extends Entity
-  ? WhereOptions<T>
-  : T extends Promise<infer S>
-  ? S extends string
-    ? StringFilter
-    : S extends JsonType
-    ? JsonWhere
-    : never
-  : never;
+    ? BigIntFilter
+    : T extends boolean
+      ? BooleanFilter
+      : T extends string
+        ? StringFilter
+        : T extends Date
+          ? DateFilter
+          : T extends Array<infer P>
+            ? P extends Entity
+              ? WhereOptions<P>
+              : never
+            : T extends Entity
+              ? WhereOptions<T>
+              : T extends Promise<infer S>
+                ? S extends string
+                  ? StringFilter
+                  : S extends JsonType
+                    ? JsonWhere
+                    : never
+                : never;
 
 export type WhereOptions<T extends Entity> =
   | {
@@ -167,16 +168,16 @@ export type OrderBy = "ASC" | "DESC";
 export type OrderByArg<T> = T extends string | number | boolean | Date
   ? OrderBy
   : T extends Array<infer P>
-  ? P extends Entity
-    ? OrderByOptions<P>
-    : never
-  : T extends Entity
-  ? OrderByOptions<T>
-  : T extends Promise<infer S>
-  ? S extends JsonType
-    ? JsonOrderBy
-    : never
-  : never;
+    ? P extends Entity
+      ? OrderByOptions<P>
+      : never
+    : T extends Entity
+      ? OrderByOptions<T>
+      : T extends Promise<infer S>
+        ? S extends JsonType
+          ? JsonOrderBy
+          : never
+        : never;
 
 export type OrderByOptions<T extends Entity> = {
   [K in keyof OmitType<T, Text | Binary | undefined>]?: OrderByArg<T[K]>;
@@ -211,18 +212,18 @@ type PayloadSelect<T extends Entity, Select> = ResultIdentity<T> & {
 type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
   ? never
   : Arg extends true // simple or relation
-  ? T
-  : T extends Array<infer A> // ToMany
-  ? Arg extends { select: infer Select }
-    ? A extends Entity
-      ? PayloadSelect<A, Select>[]
-      : never
-    : never
-  : T extends Entity // ToOne
-  ? Arg extends object
-    ? PayloadSelect<T, Arg>
-    : never
-  : T; // everything else
+    ? T
+    : T extends Array<infer A> // ToMany
+      ? Arg extends { select: infer Select }
+        ? A extends Entity
+          ? PayloadSelect<A, Select>[]
+          : never
+        : never
+      : T extends Entity // ToOne
+        ? Arg extends object
+          ? PayloadSelect<T, Arg>
+          : never
+        : T; // everything else
 
 export type PayloadSimple<T extends Entity> = ResultIdentity<T> &
   OmitType<T, Json | Text | Binary | Entity | Entity[] | undefined>;
@@ -248,13 +249,14 @@ export type NestedCreateManyArg<T extends Entity> = {
   create?: CreateArgs<T> | CreateArgs<T>[];
 };
 
-export type CreateArg<T> = T extends Array<infer P>
-  ? P extends Entity
-    ? NestedCreateManyArg<P>
-    : T
-  : T extends Entity
-  ? NestedCreateArg<T>
-  : T;
+export type CreateArg<T> =
+  T extends Array<infer P>
+    ? P extends Entity
+      ? NestedCreateManyArg<P>
+      : T
+    : T extends Entity
+      ? NestedCreateArg<T>
+      : T;
 
 export type CreateArgs<T extends Entity> = {
   [K in keyof T]: CreateArg<T[K]>;
@@ -290,13 +292,14 @@ export type NestedUpdateManyArg<T extends Entity> = {
   remove?: ID | ID[];
 };
 
-export type UpdateArg<T> = T extends Array<infer P>
-  ? P extends Entity
-    ? NestedUpdateManyArg<P>
-    : T
-  : T extends Entity
-  ? NestedUpdateArg<T>
-  : T;
+export type UpdateArg<T> =
+  T extends Array<infer P>
+    ? P extends Entity
+      ? NestedUpdateManyArg<P>
+      : T
+    : T extends Entity
+      ? NestedUpdateArg<T>
+      : T;
 
 export type UpdateArgs<T extends Entity> = InputIdentity<T> & {
   [K in keyof T]?: UpdateArg<T[K]>;
@@ -309,13 +312,14 @@ export type UpdateOptions<T extends Entity> = {
 
 export type DeleteOptions<T extends Entity> = InputIdentity<T>;
 
-export type BulkSetArg<T> = T extends Array<infer P>
-  ? P extends Entity
-    ? never
-    : T
-  : T extends Entity
-  ? { id: ID | null }
-  : T;
+export type BulkSetArg<T> =
+  T extends Array<infer P>
+    ? P extends Entity
+      ? never
+      : T
+    : T extends Entity
+      ? { id: ID | null }
+      : T;
 
 export type OmitType<T, Type> = Pick<
   T,
@@ -324,7 +328,7 @@ export type OmitType<T, Type> = Pick<
 
 export type BulkSetOptions<
   T extends Entity,
-  U = Omit<T, keyof Entity>
+  U = Omit<T, keyof Entity>,
 > = OmitType<
   {
     [K in keyof U]?: BulkSetArg<U[K]>;
@@ -374,17 +378,17 @@ export interface Repository<T extends Entity> {
   readonly name: string;
   find<U extends QueryOptions<T>>(): Promise<Payload<T, U>[]>;
   find<U extends QueryOptions<T>>(
-    args: Options<U, QueryOptions<T>>
+    args: Options<U, QueryOptions<T>>,
   ): Promise<Payload<T, U>[]>;
   findOne<U extends QueryOptions<T>>(): Promise<Payload<T, U> | null>;
   findOne<U extends QueryOptions<T>>(
-    args: Options<U, QueryOptions<T>>
+    args: Options<U, QueryOptions<T>>,
   ): Promise<Payload<T, U> | null>;
   create<U extends CreateOptions<T>>(
-    args: Options<U, CreateOptions<T>>
+    args: Options<U, CreateOptions<T>>,
   ): Promise<Payload<T, U>>;
   update<U extends UpdateOptions<T>>(
-    args: Options<U, UpdateOptions<T>>
+    args: Options<U, UpdateOptions<T>>,
   ): Promise<Payload<T, U>>;
   delete(args: DeleteOptions<T>): Promise<ID>;
   count(): Promise<ID>;
@@ -422,5 +426,5 @@ export type MiddlewareArgs = {
 
 export type Middleware = (
   params: MiddlewareArgs,
-  next: () => Promise<any>
+  next: () => Promise<any>,
 ) => Promise<any>;

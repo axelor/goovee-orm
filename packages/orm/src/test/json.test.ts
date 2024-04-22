@@ -10,7 +10,7 @@ describe("json tests", async () => {
     const dob = new Date(
       date.getFullYear() - age,
       date.getMonth(),
-      date.getDate()
+      date.getDate(),
     );
     return dob.toISOString();
   };

@@ -25,7 +25,7 @@ export type ParseResult = {
 
 export const parseQuery = <T extends Entity>(
   repo: Repository<any>,
-  query: QueryOptions<T> = {}
+  query: QueryOptions<T> = {},
 ): ParseResult => {
   const opAttrs = [
     "eq",
@@ -120,7 +120,7 @@ export const parseQuery = <T extends Entity>(
   const processSelect = (
     repo: Repository<any>,
     opts: SelectOptions<T>,
-    prefix: string
+    prefix: string,
   ) => {
     let select: Record<string, any> = {};
     let collections: Record<string, any> = {};
@@ -281,7 +281,7 @@ export const parseQuery = <T extends Entity>(
   const processWhere = (
     repo: Repository<any>,
     opts: WhereOptions<T>,
-    prefix: string
+    prefix: string,
   ) => {
     const where: any[] = [];
     for (const [key, value] of Object.entries(opts)) {
@@ -350,7 +350,7 @@ export const parseQuery = <T extends Entity>(
   const processOrderBy = (
     repo: Repository<any>,
     opts: OrderByOptions<T>,
-    prefix: string
+    prefix: string,
   ) => {
     let order: Record<string, any> = {};
     let joins: Record<string, string> = {};
@@ -392,7 +392,7 @@ export const parseQuery = <T extends Entity>(
 
   const ensureUniqueOrderBy = (
     repo: Repository<any>,
-    opts: OrderByOptions<T>
+    opts: OrderByOptions<T>,
   ) => {
     return Object.keys(opts).some((name) => isNonNullUnique(repo, name))
       ? {}
@@ -450,7 +450,7 @@ export const parseQuery = <T extends Entity>(
       if (Array.isArray(v) && v.length === 0) return;
       if (typeof v === "object" && Object.keys(v).length === 0) return;
       return v;
-    })
+    }),
   );
 };
 
@@ -480,7 +480,7 @@ const ID_SELECT: Record<string, string> = {
 
 export const createCursor = (
   options: ParseResult,
-  rawValues: Record<string, any>
+  rawValues: Record<string, any>,
 ) => {
   const { select = {}, order = {} } = options;
   const cur: Cursor = Object.keys(order).map((key) => {
@@ -509,7 +509,7 @@ const ORDER_INVERTED = {
 };
 
 export const parseCursor = (
-  options: ParseResult
+  options: ParseResult,
 ): Pick<ParseResult, "where" | "params" | "order"> => {
   const { take, cursor, order: orderBy = {} } = options;
 
@@ -556,7 +556,7 @@ export const parseCursor = (
   if (invert) {
     const order = Object.entries(orderBy).reduce(
       (prev, [k, o]) => ({ ...prev, [k]: ORDER_INVERTED[o] }),
-      {}
+      {},
     );
     return { where, params, order };
   }

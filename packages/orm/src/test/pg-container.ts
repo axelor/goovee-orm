@@ -62,7 +62,7 @@ export type RunOptions = {
 export const run = async (
   command: string,
   args: readonly string[],
-  options?: RunOptions
+  options?: RunOptions,
 ) => {
   const {
     cwd = process.cwd(),

@@ -6,7 +6,7 @@ const createDateOfBirth = (age: number) => {
   const dob = new Date(
     date.getFullYear() - age,
     date.getMonth(),
-    date.getDate()
+    date.getDate(),
   );
   return dob.toISOString();
 };

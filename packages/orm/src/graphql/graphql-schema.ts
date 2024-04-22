@@ -384,8 +384,8 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
           const type = item.target
             ? findOrder(item.target)
             : item.type === "JSON"
-            ? new GraphQLList(JsonOrderBy)
-            : OrderBy;
+              ? new GraphQLList(JsonOrderBy)
+              : OrderBy;
           Object.assign(fields, {
             [item.name]: { type },
           });
@@ -510,7 +510,7 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
             ...prev,
             [x.name]: { value: x.value },
           }),
-          {}
+          {},
         );
         const type = new GraphQLEnumType({
           name,
@@ -551,7 +551,7 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
             resolve: connectionResolver,
           },
         }),
-        {}
+        {},
       );
     },
   });

@@ -17,7 +17,7 @@ const createClientProxy = <T extends QueryClient>(
   client: T,
   interceptor: Interceptor,
   em: typeorm.EntityManager,
-  entities: Record<string, EntityClass>
+  entities: Record<string, EntityClass>,
 ) => {
   const repos: Record<string, Repository<any>> = {};
   const proxy = new Proxy(client, {
@@ -28,7 +28,7 @@ const createClientProxy = <T extends QueryClient>(
           (repos[p] = new EntityRepository<any>(
             em.getRepository(entities[p]),
             client,
-            interceptor
+            interceptor,
           ));
         return repo;
       }
@@ -47,10 +47,10 @@ const createClientProxy = <T extends QueryClient>(
 
 export const createClient = <
   E extends Entity,
-  T extends Record<string, EntityClass<E>>
+  T extends Record<string, EntityClass<E>>,
 >(
   options: ClientOptions,
-  entities: T
+  entities: T,
 ): ConnectionClient<EntityClient<T>> => {
   const { url, sync: synchronize } = options;
   const ds = createDataSource({
@@ -91,7 +91,7 @@ class Connection extends Client implements ConnectionClient<Client> {
   constructor(
     dataSource: typeorm.DataSource,
     interceptor: Interceptor,
-    factory: ClientFactory
+    factory: ClientFactory,
   ) {
     super(dataSource.manager);
     this.#dataSource = dataSource;

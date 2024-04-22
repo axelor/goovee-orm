@@ -82,7 +82,7 @@ const relationQuery = (manager: EntityManager, relation: RelationMetadata) => {
       .innerJoin(
         joinTable,
         "joined",
-        `joined.${joinColumn} = :__parent AND joined.${inverseJoinColumn} = self.id`
+        `joined.${joinColumn} = :__parent AND joined.${inverseJoinColumn} = self.id`,
       );
   }
 
@@ -99,7 +99,7 @@ const relationQuery = (manager: EntityManager, relation: RelationMetadata) => {
       .innerJoin(
         joinTable,
         "joined",
-        `joined.${mappedBy} = self.id AND joined.${inverseJoinColumn} = :__parent`
+        `joined.${mappedBy} = self.id AND joined.${inverseJoinColumn} = :__parent`,
       );
   }
 
@@ -108,7 +108,7 @@ const relationQuery = (manager: EntityManager, relation: RelationMetadata) => {
 
 const createSelectQuery = (
   builder: QueryBuilder<any>,
-  options: ParseResult
+  options: ParseResult,
 ) => {
   const { select, where, params = {}, joins = {}, order } = options;
 
@@ -130,7 +130,7 @@ const createSelectQuery = (
 
 const createBulkQuery = (
   repo: OrmRepository<any>,
-  where?: WhereOptions<any>
+  where?: WhereOptions<any>,
 ) => {
   const opts = parseQuery(repo, { where });
   const qb = repo.createQueryBuilder("self");
@@ -141,7 +141,7 @@ const createBulkQuery = (
 const load = async (
   repo: OrmRepository<any>,
   builder: QueryBuilder<any>,
-  options: ParseResult
+  options: ParseResult,
 ) => {
   const { references = {}, collections = {}, select = {} } = options;
 
@@ -196,7 +196,7 @@ const load = async (
     const relation = repo.metadata.findRelationWithPropertyPath(property);
     if (!relation) {
       throw new Error(
-        `No such relation exits: ${repo.metadata.name}#${property}`
+        `No such relation exits: ${repo.metadata.name}#${property}`,
       );
     }
 
@@ -293,7 +293,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   constructor(
     repo: OrmRepository<T>,
     client: QueryClient,
-    interceptor: Interceptor
+    interceptor: Interceptor,
   ) {
     this.#repo = repo;
     this.#client = client;
@@ -311,7 +311,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   async intercept(
     method: string,
     args: any,
-    next: () => Promise<any>
+    next: () => Promise<any>,
   ): Promise<any> {
     const params: MiddlewareArgs = {
       client: this.#client,
@@ -324,7 +324,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async find<U extends QueryOptions<T>>(
-    args?: Options<U, QueryOptions<T>>
+    args?: Options<U, QueryOptions<T>>,
   ): Promise<Payload<T, U>[]> {
     const repo = this.#repo;
     const opts = parseQuery(repo, args);
@@ -334,7 +334,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   }
 
   async findOne<U extends QueryOptions<T>>(
-    args?: Options<U, QueryOptions<T>>
+    args?: Options<U, QueryOptions<T>>,
   ): Promise<Payload<T, U> | null> {
     const result = await this.find({
       ...args,
@@ -356,7 +356,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   private async handleReference(
     repo: OrmRepository<any>,
     relation: RelationMetadata,
-    data: any
+    data: any,
   ) {
     // we will get arrays from graphql input
     const select = Array.isArray(data.select) ? data.select[0] : data.select;
@@ -386,7 +386,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     repo: OrmRepository<any>,
     obj: any,
     relation: RelationMetadata,
-    data: any
+    data: any,
   ) {
     const { select, create, update, remove } = data;
     const field = relation.propertyName;
@@ -444,7 +444,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async create<U extends CreateOptions<T>>(
-    args: Options<U, CreateOptions<T>>
+    args: Options<U, CreateOptions<T>>,
   ): Promise<Payload<T, U>> {
     const repo: any = this.#repo;
     const meta: EntityMetadata = repo.metadata;
@@ -486,7 +486,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async update<U extends UpdateOptions<T>>(
-    args: Options<U, UpdateOptions<T>>
+    args: Options<U, UpdateOptions<T>>,
   ): Promise<Payload<T, U>> {
     const repo: any = this.#repo;
     const { select, data } = args;
@@ -544,7 +544,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     }
 
     const changed = Object.keys(attrs).some(
-      (x) => !isValueSame(attrs[x], obj[x])
+      (x) => !isValueSame(attrs[x], obj[x]),
     );
 
     if (changed) {
@@ -587,7 +587,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     const qb = createBulkQuery(repo, where);
     const updateSet = Object.entries(set).reduce(
       (prev, [k, v]) => ({ ...prev, [k]: valueOrID(v) }),
-      {}
+      {},
     );
     const { affected } = await qb.update(updateSet).execute();
     return affected ?? 0;
@@ -615,14 +615,14 @@ export function intercept() {
   return function (
     target: any,
     propertyKey: string,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     const method = descriptor.value;
     descriptor.value = async function (...params: any[]) {
       const execute = target.intercept;
       const res = execute
         ? execute.call(this, propertyKey, params, () =>
-            method.apply(this, params)
+            method.apply(this, params),
           )
         : method.apply(this, params);
       return res;

@@ -4,7 +4,7 @@ import { createLob, readLob } from "./lob";
 export const isLazy = (
   repo: Repository<any>,
   name: string,
-  expected?: string
+  expected?: string,
 ) => {
   const field = name.replace("self.", "");
   const column = repo.metadata.findColumnWithPropertyName(field);
@@ -18,7 +18,7 @@ export const resolveLazy = async (
   repo: Repository<any>,
   target: any,
   name: string,
-  value: any
+  value: any,
 ) => {
   if (isLazy(repo, name) && value) value = await value;
   if (isLazy(repo, name, "oid") && value) {
@@ -30,7 +30,7 @@ export const resolveLazy = async (
 export const ensureLazy = (
   repo: Repository<any>,
   target: any,
-  field: string
+  field: string,
 ) => {
   const name = field.replace("self.", "");
   const symbol = Symbol(name);

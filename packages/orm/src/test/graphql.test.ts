@@ -471,7 +471,7 @@ describe("GraphQL tests", async () => {
     expect(res.data!.createContact.edges).toHaveLength(1);
     expect(res.data!.createContact.edges[0].node.image).toBeInstanceOf(Buffer);
     expect(res.data!.createContact.edges[0].node.image.toString("utf-8")).toBe(
-      "Hello World!!!"
+      "Hello World!!!",
     );
   });
 });

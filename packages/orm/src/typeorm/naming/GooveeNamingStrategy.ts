@@ -19,7 +19,7 @@ export class GooveeNamingStrategy
   columnName(
     propertyName: string,
     customName: string,
-    embeddedPrefixes: string[]
+    embeddedPrefixes: string[],
   ): string {
     return customName ?? snakeCase(propertyName);
   }
@@ -32,7 +32,7 @@ export class GooveeNamingStrategy
     firstTableName: string,
     secondTableName: string,
     firstPropertyName: string,
-    secondPropertyName: string
+    secondPropertyName: string,
   ): string {
     return join(snakeCase(firstTableName), snakeCase(firstPropertyName));
   }
@@ -40,7 +40,7 @@ export class GooveeNamingStrategy
   joinTableColumnName(
     tableName: string,
     propertyName: string,
-    columnName?: string
+    columnName?: string,
   ): string {
     return snakeCase(tableName);
   }
@@ -49,7 +49,7 @@ export class GooveeNamingStrategy
     tableName: string,
     propertyName: string,
     columnName?: string,
-    inverse?: boolean
+    inverse?: boolean,
   ): string {
     throw new Error("Please provide `inverseJoinColumn` name!");
   }
@@ -58,7 +58,7 @@ export class GooveeNamingStrategy
   private generateHashedConstraintName(
     prefix: string,
     tableOrName: string | Table,
-    columnNames: string[]
+    columnNames: string[],
   ) {
     const table = tableOrName instanceof Table ? tableOrName.name : tableOrName;
     const cols = [...columnNames].sort();
@@ -79,7 +79,7 @@ export class GooveeNamingStrategy
   indexName(
     tableOrName: string | Table,
     columnNames: string[],
-    where?: string | undefined
+    where?: string | undefined,
   ) {
     const table = tableOrName instanceof Table ? tableOrName.name : tableOrName;
     const names = [table, ...columnNames];
@@ -90,7 +90,7 @@ export class GooveeNamingStrategy
     tableOrName: string | Table,
     columnNames: string[],
     _referencedTablePath?: string | undefined,
-    _referencedColumnNames?: string[] | undefined
+    _referencedColumnNames?: string[] | undefined,
   ) {
     return this.generateHashedConstraintName("fk", tableOrName, columnNames);
   }

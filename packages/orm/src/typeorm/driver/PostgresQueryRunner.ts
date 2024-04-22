@@ -14,7 +14,7 @@ export class PostgresQueryRunner extends BasePostgresQueryRunner {
 
   protected buildSequenceName(
     table: Table,
-    columnOrName: string | TableColumn
+    columnOrName: string | TableColumn,
   ): string {
     return this.isIdColumn(columnOrName)
       ? this.buildIdSequence(table)
@@ -25,7 +25,7 @@ export class PostgresQueryRunner extends BasePostgresQueryRunner {
     table: Table,
     ifNotExist?: boolean | undefined,
     createForeignKeys?: boolean | undefined,
-    createIndices?: boolean | undefined
+    createIndices?: boolean | undefined,
   ): Promise<void> {
     const upQueries: Query[] = [];
     const downQueries: Query[] = [];
@@ -35,14 +35,14 @@ export class PostgresQueryRunner extends BasePostgresQueryRunner {
       upQueries.push(
         new Query(
           `CREATE SEQUENCE IF NOT EXISTS ${this.escapePath(
-            this.buildSequencePath(table, id)
-          )} OWNED BY ${this.escapePath(table)}."${id.name}"`
-        )
+            this.buildSequencePath(table, id),
+          )} OWNED BY ${this.escapePath(table)}."${id.name}"`,
+        ),
       );
       downQueries.push(
         new Query(
-          `DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, id))}`
-        )
+          `DROP SEQUENCE ${this.escapePath(this.buildSequencePath(table, id))}`,
+        ),
       );
     }
 
@@ -50,7 +50,7 @@ export class PostgresQueryRunner extends BasePostgresQueryRunner {
       table,
       ifNotExist,
       createForeignKeys,
-      createIndices
+      createIndices,
     );
 
     await this.executeQueries(upQueries, downQueries);
@@ -83,7 +83,7 @@ export class PostgresQueryRunner extends BasePostgresQueryRunner {
 
       const ts = tail.replace(
         'RETURNING "version"',
-        'RETURNING "id", "version"'
+        'RETURNING "id", "version"',
       );
       const qs = `INSERT INTO "${table}"(${columns}) VALUES ${values}${ts}`;
       return qs;
@@ -94,7 +94,7 @@ export class PostgresQueryRunner extends BasePostgresQueryRunner {
   query(
     query: string,
     parameters?: any[] | undefined,
-    useStructuredResult?: boolean | undefined
+    useStructuredResult?: boolean | undefined,
   ): Promise<any> {
     if (/^INSERT INTO/i.test(query)) query = this.transformInsert(query);
     return super.query(query, parameters, useStructuredResult);
