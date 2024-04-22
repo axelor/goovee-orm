@@ -16,8 +16,8 @@ describe("json tests", async () => {
   };
 
   const createContact = async () => {
-    const firstName = faker.name.firstName();
-    const lastName = faker.name.lastName();
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
     const nick = faker.hacker.noun();
     const dob = faker.date.birthdate({ min: 18, max: 65, mode: "age" });
     const age = new Date().getFullYear() - dob.getFullYear();
@@ -54,9 +54,9 @@ describe("json tests", async () => {
       { id: 4, color: "yellow", name: "Yellow" },
     ]);
 
-    const street = faker.address.street();
-    const city = faker.address.city();
-    const altContact = faker.name.fullName();
+    const street = faker.location.street();
+    const city = faker.location.city();
+    const altContact = faker.person.fullName();
 
     const bioContent = faker.lorem.text();
 

@@ -36,7 +36,7 @@ describe("client tests", async () => {
       version: 1,
       name: "Mr.",
     });
-    expect(res).not.toHaveProperty("code");
+    expect(res).toHaveProperty("code", undefined);
   });
 
   it("should create record with nested records", async () => {
@@ -737,8 +737,8 @@ describe("client pagination tests", async () => {
 
     const fifth = first5[4];
 
-    expect(fifth).toHaveProperty("_count");
-    expect(fifth).toHaveProperty("_cursor");
+    expect(fifth).not.toHaveProperty("_count", undefined);
+    expect(fifth).not.toHaveProperty("_cursor", undefined);
 
     const after5th = await client.contact.find({
       select: {

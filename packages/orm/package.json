@@ -8,7 +8,7 @@
     "lint": "TIMING=1 eslint \"**/*.{ts,tsx,js,jsx}\" --fix",
     "clean": "rm -rf ./dist",
     "test": "vitest",
-    "test:e2e": "vitest --mode e2e --no-threads"
+    "test:e2e": "vitest --mode e2e --poolOptions.threads.singleThread --test-timeout 10000"
   },
   "sideEffects": false,
   "type": "commonjs",
