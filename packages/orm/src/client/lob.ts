@@ -328,7 +328,7 @@ export const readLob = async (em: EntityManager, oid: number) => {
   if (oid === null || oid === undefined) return null;
   const lm = new LargeObjectManager(em);
   const lob = await lm.open(oid);
-  const size = await lob.size();
+  const size = BigInt(await lob.size());
   let buffer = await lob.read(1024);
   while (buffer.length < size) {
     const next = await lob.read(1024);

@@ -76,7 +76,8 @@ describe("Lob tests", async () => {
         });
 
         const size = await lob.size();
-        expect(size > 0).toBeTruthy();
+        const length = BigInt(size);
+        expect(length > 0).toBeTruthy();
 
         await lob.seek(0);
 

@@ -106,8 +106,8 @@ const relationQuery = (manager: EntityManager, relation: RelationMetadata) => {
   throw new Error(`Invalid relation: ${relation.propertyName}`);
 };
 
-const createSelectQuery = (
-  builder: QueryBuilder<any>,
+const createSelectQuery = <T extends Entity>(
+  builder: QueryBuilder<T>,
   options: ParseResult,
 ) => {
   const { select, where, params = {}, joins = {}, order } = options;
@@ -128,9 +128,9 @@ const createSelectQuery = (
   return sq;
 };
 
-const createBulkQuery = (
-  repo: OrmRepository<any>,
-  where?: WhereOptions<any>,
+const createBulkQuery = <T extends Entity>(
+  repo: OrmRepository<T>,
+  where?: WhereOptions<T>,
 ) => {
   const opts = parseQuery(repo, { where });
   const qb = repo.createQueryBuilder("self");
