@@ -1,25 +1,35 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "module": "commonjs",
-    "noEmit": true,
-    "baseUrl": ".",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "declaration": true,
-    "allowJs": true,
+    "target": "ES2020",
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
+    "module": "CommonJS",
     "skipLibCheck": true,
-    "strict": true,
+
+    "allowJs": true,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+
+    "useDefineForClassFields": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node",
+
+    /* Bundler mode */
+    "moduleResolution": "Node",
+    "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "incremental": true,
+    "noEmit": true,
     "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+
     "paths": {
-      "@goovee/orm": ["./src"]
+      "@goovee/orm": ["./src"],
+      "@goovee/orm/*": ["./src/*"]
     }
   },
   "include": ["src"],
