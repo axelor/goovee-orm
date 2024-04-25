@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { CommandModule } from "yargs";
+import { Command } from "commander";
 import { generateClient } from "../../client/client-generator";
 
-export const GenerateCommand: CommandModule = {
-  command: "generate",
-  describe: "Generate entity types and client from the schema",
-  handler: (args) => {
+export const generate = new Command()
+  .name("generate")
+  .description("Generate goovee client from the schema")
+  .action(() => {
     const searchPaths = [
       path.join(".", "src", "goovee", "schema"),
       path.join(".", "goovee", "schema"),
@@ -21,7 +21,9 @@ export const GenerateCommand: CommandModule = {
 
     const clientDir = path.join(path.dirname(schemaDir), ".generated");
 
+    // delete old files
+    fs.rmSync(clientDir, { recursive: true, force: true });
+
     // generate client
     generateClient(schemaDir, clientDir);
-  },
-};
+  });

@@ -1,17 +1,22 @@
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
-import { GenerateCommand } from "./commands/GenerateCommand";
+import { Command } from "commander";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
-const yarg = yargs(hideBin(process.argv));
+import { generate } from "./commands/generate";
 
-// Yargs stored version number
-yarg.version("1.0.0");
+const version = (() => {
+  const pkg = join(__dirname, "..", "..", "package.json");
+  const data = JSON.parse(readFileSync(pkg, { encoding: "utf-8" }));
+  return data.version;
+})();
 
-yarg
-  .usage("Usage: $0 <command> [options]")
-  .scriptName("goovee")
-  .command(GenerateCommand)
-  .strict()
-  .recommendCommands()
-  .demandCommand(1)
-  .help().argv;
+const program = new Command();
+
+program.name("goovee");
+program.description("Goovee CLI");
+program.version(version);
+
+// add commands
+program.addCommand(generate);
+
+program.parse(process.argv);
