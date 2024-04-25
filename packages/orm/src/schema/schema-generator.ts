@@ -24,7 +24,7 @@ import {
 } from "./types";
 
 const newDecorator = (name: string) => {
-  const imp = new ImportName(name, "typeorm");
+  const imp = new ImportName(name, "@goovee/orm/typeorm");
   const dec = new Decorator(imp);
   return dec;
 };
@@ -198,7 +198,7 @@ class RelationImportName extends ImportName {
     this.collection = collection;
   }
   emit(file: CodeFile): void {
-    const relationType = new ImportName("type Relation", "typeorm");
+    const relationType = new ImportName("type Relation", "@goovee/orm/typeorm");
     file.write(relationType).write("<");
     super.emit(file);
     file.write(">");

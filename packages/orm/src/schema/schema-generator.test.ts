@@ -261,7 +261,7 @@ const Contact = defineEntity({
 });
 
 const expectedCode = `\
-import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
+import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "@goovee/orm/typeorm";
 import { Model } from "./Model";
 import { Title } from "./Title";
 import { Bio } from "./Bio";
@@ -316,7 +316,7 @@ export class Contact extends Model {
 `;
 
 const expectedCodeGooveeNaming = `\
-import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "typeorm";
+import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "@goovee/orm/typeorm";
 import { Model } from "./Model";
 import { Title } from "./Title";
 import { Bio } from "./Bio";
@@ -371,7 +371,7 @@ export class Contact extends Model {
 `;
 
 const expectedUniqueCode = `\
-import { Entity, Unique, Index, Column } from "typeorm";
+import { Entity, Unique, Index, Column } from "@goovee/orm/typeorm";
 
 @Entity("unique_test")
 @Unique(["some", "thing"])

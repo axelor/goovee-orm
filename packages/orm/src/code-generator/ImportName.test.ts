@@ -12,7 +12,10 @@ const emit = (e: Emittable) => {
 
 describe("ImportName tests", () => {
   it("should emit import", () => {
-    const name = new ImportName("type EntityOptions as Options", "typeorm");
+    const name = new ImportName(
+      "type EntityOptions as Options",
+      "@goovee/orm/typeorm",
+    );
     const dec = new Variable("opts", {
       type: name,
       modifier: "const",
@@ -21,7 +24,7 @@ describe("ImportName tests", () => {
     const code = emit(dec);
     expect(name.name).toBe("Options");
     expect(code).toBe(`\
-import { type EntityOptions as Options } from "typeorm";
+import { type EntityOptions as Options } from "@goovee/orm/typeorm";
 
 const opts: Options = {}`);
   });
