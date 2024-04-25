@@ -44,10 +44,12 @@
   },
   "dependencies": {
     "commander": "^12.0.0",
-    "graphql": "^16.8.1",
-    "pg": "^8.11.5",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.20"
+  },
+  "peerDependencies": {
+    "graphql": "^16.8.1",
+    "pg": "^8.11.5"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
