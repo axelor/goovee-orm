@@ -204,8 +204,8 @@ const load = async (
     const rr = repo.manager.getRepository(relation.inverseEntityMetadata.name);
 
     for (const record of records) {
-      rq.setParameter("__parent", record.id);
-      const related = await load(rr, rq, opts);
+      const nq = rq.clone().setParameter("__parent", record.id);
+      const related = await load(rr, nq, opts);
       record[property] =
         property in references
           ? related && related.length
