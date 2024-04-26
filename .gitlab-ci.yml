@@ -1,0 +1,84 @@
+image: node:latest
+
+stages:
+  - build
+  - test
+  - deploy
+
+workflow:
+  rules:
+    - changes:
+      - package.json
+      - pnpm-*
+      - packages/**/package.json
+      - packages/**/tsconfig.*
+      - packages/**/*.{ts,tsx,mts,js,jsx,mjs,css,scss,html}
+
+before_script:
+  - corepack enable
+  - corepack prepare pnpm@latest --activate
+  - pnpm install
+
+build:
+  stage: build
+  script:
+    - pnpm build
+
+test:
+  stage: test
+  needs:
+    - job: build
+  script:
+    - pnpm --filter '@goovee/*' test
+
+test:e2e:
+  stage: test
+  needs:
+    - job: build
+  services:
+    - name: docker:dind
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: "tcp://docker:2375"
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
+    HOSTNAME: docker
+  script:
+    - apt update
+    - apt install -yqq docker.io
+    - pnpm --filter '@goovee/*' test:e2e
+  tags:
+    - docker
+
+publish:
+  stage: deploy
+  needs:
+    - job: test
+    - job: test:e2e
+  rules:
+    - if: $CI_COMMIT_TAG
+    - when: never
+  script:
+    - echo "@goovee:registry=https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/" > .npmrc
+    - echo "//${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=${CI_JOB_TOKEN}" >> .npmrc
+    - pnpm --filter '@goovee/*' build
+    - pnpm --filter '@goovee/*' publish --no-git-checks
+
+publish-beta:
+  stage: deploy
+  needs:
+    - job: test
+    - job: test:e2e
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev"
+      when: manual
+    - when: never
+  script:
+    - echo "@goovee:registry=https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/" > .npmrc
+    - echo "//${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=${CI_JOB_TOKEN}" >> .npmrc
+    - BETA=$(git describe --tags | sed -r 's/.*?-([0-9]+)-(.*)/beta.\1-\2/g')
+    - VERSION=$(grep version package.json | cut -d'"' -f4)
+    - VERSION="${VERSION}-${BETA}"
+    - pnpm version --allow-same-version --no-workspaces-update -w packages $VERSION
+    - pnpm --filter '@goovee/*' build
+    - pnpm --filter '@goovee/*' publish --no-git-checks --tag beta
