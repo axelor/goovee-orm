@@ -83,8 +83,8 @@ export const parseQuery = <T extends Entity>(
       if (key === "lt") op = "<";
       if (key === "le") op = "<=";
 
-      if (key === "like") op = "LIKE";
-      if (key === "notLike") op = "NOT LIKE";
+      if (key === "like") op = "ILIKE";
+      if (key === "notLike") op = "NOT ILIKE";
 
       const param = `p${counter++}`;
 

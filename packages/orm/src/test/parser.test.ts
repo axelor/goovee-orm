@@ -157,7 +157,7 @@ describe("query parser tests", async () => {
     const repo = getContactRepo();
     const res = parseQuery(repo, opts);
     expect(res).toMatchObject({
-      where: "self.id != :p0 AND self.firstName LIKE :p1",
+      where: "self.id != :p0 AND self.firstName ILIKE :p1",
       params: { p0: 1, p1: "some" },
     });
   });
@@ -187,7 +187,7 @@ describe("query parser tests", async () => {
     const res = parseQuery(repo, opts);
     expect(res).toMatchObject({
       where:
-        "self.id = :p0 AND self.firstName LIKE :p1 AND (self.firstName LIKE :p2 OR self.lastName LIKE :p3 OR (self.version > :p4 AND self.id != :p5 AND NOT(self.version = :p6 AND self.id = :p7)))",
+        "self.id = :p0 AND self.firstName ILIKE :p1 AND (self.firstName ILIKE :p2 OR self.lastName ILIKE :p3 OR (self.version > :p4 AND self.id != :p5 AND NOT(self.version = :p6 AND self.id = :p7)))",
       params: {
         p0: 1,
         p1: "some",
@@ -266,7 +266,7 @@ describe("query parser tests", async () => {
     const res = parseQuery(repo, opts);
     expect(res).toMatchObject({
       where:
-        "self.id IN (:...p0) AND self.version NOT IN (:...p1) AND self.firstName LIKE :p2 AND self.lastName NOT LIKE :p3 AND (self.id BETWEEN :p4 AND :p5 OR self.version NOT BETWEEN :p6 AND :p7)",
+        "self.id IN (:...p0) AND self.version NOT IN (:...p1) AND self.firstName ILIKE :p2 AND self.lastName NOT ILIKE :p3 AND (self.id BETWEEN :p4 AND :p5 OR self.version NOT BETWEEN :p6 AND :p7)",
       params: {
         p0: [1, 2, 3],
         p1: [-1, 0],
