@@ -94,9 +94,12 @@ export const createPostgresContainer = async () => {
     "--rm",
     "--name",
     name,
-    "-e POSTGRES_USER=test",
-    "-e POSTGRES_PASSWORD=test",
-    "-e POSTGRES_DATABASE=test",
+    "-e",
+    "POSTGRES_USER=test",
+    "-e",
+    "POSTGRES_PASSWORD=test",
+    "-e",
+    "POSTGRES_DATABASE=test",
     "-p",
     `${port}:5432`,
     "postgres:alpine",
@@ -105,7 +108,8 @@ export const createPostgresContainer = async () => {
   await waitForOutput(pg, "CREATE DATABASE");
   await waitForOutput(pg, "database system is ready to accept connections");
 
-  const url = `postgres://test:test@localhost:${port}/test`;
+  const host = process.env.HOSTNAME ?? "localhost";
+  const url = `postgres://test:test@${host}:${port}/test`;
   const stop = async () => {
     pg.kill("SIGINT");
     await waitForOutput(pg, "database system is shut down");
