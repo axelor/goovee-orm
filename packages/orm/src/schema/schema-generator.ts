@@ -301,6 +301,7 @@ class ManyToManyFieldGenerator extends RelationalField<ManyToManyProperty> {
       if (table) jarg.name = table;
       if (column) jarg.joinColumn = { name: column };
       if (inverseColumn) jarg.inverseJoinColumn = { name: inverseColumn };
+      if (entity.synchronize === false) jarg.synchronize = false;
       j.arg(jarg);
     }
 
@@ -383,6 +384,10 @@ class EntityGenerator implements CodeGenerator {
     if (this.config.naming === "goovee") return toSnakeCase(this.name);
   }
 
+  get synchronize() {
+    return this.options.synchronize;
+  }
+
   private toComputed(field: SimpleProperty) {
     const { name, body: lines = [] } = field;
     const body = lines.join("\n").trim();
@@ -420,7 +425,7 @@ class EntityGenerator implements CodeGenerator {
   }
 
   toCode(file: CodeFile) {
-    const { name, table, options } = this;
+    const { name, table, synchronize, options } = this;
     const { fields = [], uniques = [], indexes = [] } = options;
 
     const entity = new Class(name, {
@@ -434,6 +439,9 @@ class EntityGenerator implements CodeGenerator {
       const decorator = entity.decorator(newDecorator("Entity"));
       if (table) {
         decorator.arg(table);
+      }
+      if (synchronize === false) {
+        decorator.arg({ synchronize });
       }
     }
 

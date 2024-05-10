@@ -2,8 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
-import { defineEntity } from "./schema-utils";
 import { generateSchema } from "./schema-generator";
+import { defineEntity } from "./schema-utils";
 
 const UniqueTest = defineEntity({
   name: "UniqueTest",
@@ -260,6 +260,23 @@ const Contact = defineEntity({
   ],
 });
 
+const SaleOrder = defineEntity({
+  name: "SaleOrder",
+  synchronize: false,
+  fields: [
+    {
+      name: "taxes",
+      type: "ManyToMany",
+      target: "SaleTax",
+    },
+  ],
+});
+
+const SaleTax = defineEntity({
+  name: "SaleTax",
+  synchronize: false,
+});
+
 const expectedCode = `\
 import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "@goovee/orm/typeorm";
 import { Model } from "./Model";
@@ -398,7 +415,31 @@ export class UniqueTest {
 }
 `;
 
+const expectedSyncCode = `\
+import { Entity, ManyToMany, JoinTable, type Relation } from "@goovee/orm/typeorm";
+import { SaleTax } from "./SaleTax";
+
+@Entity("sale_order", { synchronize: false })
+export class SaleOrder {
+  @ManyToMany(() => SaleTax)
+  @JoinTable({ name: "sale_order_taxes", joinColumn: { name: "sale_order" }, inverseJoinColumn: { name: "taxes" }, synchronize: false })
+  taxes?: Relation<SaleTax>[];
+}
+`;
+
 const outDir = path.join("node_modules", "code-gen");
+
+const schema = [
+  Title,
+  Country,
+  Circle,
+  Bio,
+  Address,
+  Contact,
+  SaleOrder,
+  SaleTax,
+  UniqueTest,
+];
 
 const expectedFiles = [
   "Model.ts",
@@ -410,6 +451,8 @@ const expectedFiles = [
   "Bio.ts",
   "Address.ts",
   "Contact.ts",
+  "SaleOrder.ts",
+  "SaleTax.ts",
   "UniqueTest.ts",
   "index.ts",
 ].map((x) => path.join(outDir, x));
@@ -424,9 +467,7 @@ const cleanUp = () => {
 describe("schema generator tests", () => {
   afterEach(cleanUp);
   it("should generate entity classes with default naming", () => {
-    const files = generateSchema(outDir, {
-      schema: [Title, Country, Circle, Bio, Address, Contact, UniqueTest],
-    });
+    const files = generateSchema(outDir, { schema });
 
     expect(files).toHaveLength(expectedFiles.length);
     expect(files).toEqual(expect.arrayContaining(expectedFiles));
@@ -440,7 +481,7 @@ describe("schema generator tests", () => {
 
   it("should generate entity classes with goovee naming", () => {
     generateSchema(outDir, {
-      schema: [Title, Country, Circle, Bio, Address, Contact, UniqueTest],
+      schema,
       naming: "goovee",
     });
     const code = fs.readFileSync(path.join(outDir, "Contact.ts"), {
@@ -452,12 +493,23 @@ describe("schema generator tests", () => {
 
   it("should generate entity classes with unique constraints", () => {
     generateSchema(outDir, {
-      schema: [Title, Country, Circle, Bio, Address, Contact, UniqueTest],
+      schema,
       naming: "goovee",
     });
     const code = fs.readFileSync(path.join(outDir, "UniqueTest.ts"), {
       encoding: "utf-8",
     });
     expect(code).toBe(expectedUniqueCode);
+  });
+
+  it("should generate entity classes with sync disabled", () => {
+    generateSchema(outDir, {
+      schema,
+      naming: "goovee",
+    });
+    const code = fs.readFileSync(path.join(outDir, "SaleOrder.ts"), {
+      encoding: "utf-8",
+    });
+    expect(code).toBe(expectedSyncCode);
   });
 });
