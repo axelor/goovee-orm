@@ -427,7 +427,7 @@ describe("GraphQL tests", async () => {
               node: {
                 firstName: "Some",
                 lastName: "NAME",
-                dateOfBirth: now,
+                dateOfBirth: now.toISOString().split("T")[0],
               },
             },
           ],

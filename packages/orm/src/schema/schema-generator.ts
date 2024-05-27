@@ -115,6 +115,11 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
       arg.select = false;
     }
 
+    // temporal types
+    if (type === "DateTime") arg.type = "timestamp";
+    if (type === "Date") arg.type = "date";
+    if (type === "Time") arg.type = "time";
+
     const decorators: Decorator[] = [];
 
     if (index) {

@@ -277,6 +277,24 @@ const SaleTax = defineEntity({
   synchronize: false,
 });
 
+const Temporals = defineEntity({
+  name: "Temporals",
+  fields: [
+    {
+      name: "dateTimeField",
+      type: "DateTime",
+    },
+    {
+      name: "dateField",
+      type: "Date",
+    },
+    {
+      name: "timeField",
+      type: "Time",
+    },
+  ],
+});
+
 const expectedCode = `\
 import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "@goovee/orm/typeorm";
 import { Model } from "./Model";
@@ -298,7 +316,7 @@ export class Contact extends Model {
   @Column()
   lastName!: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: "date" })
   dateOfBirth?: Date;
 
   @Column({ nullable: true })
@@ -353,7 +371,7 @@ export class Contact extends Model {
   @Column()
   lastName!: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: "date" })
   dateOfBirth?: Date;
 
   @Column({ nullable: true })
@@ -427,6 +445,22 @@ export class SaleOrder {
 }
 `;
 
+const expectedTemporalsCode = `\
+import { Entity, Column } from "@goovee/orm/typeorm";
+
+@Entity("temporals")
+export class Temporals {
+  @Column({ nullable: true, type: "timestamp" })
+  dateTimeField?: Date;
+
+  @Column({ nullable: true, type: "date" })
+  dateField?: Date;
+
+  @Column({ nullable: true, type: "time" })
+  timeField?: Date;
+}
+`;
+
 const outDir = path.join("node_modules", "code-gen");
 
 const schema = [
@@ -439,6 +473,7 @@ const schema = [
   SaleOrder,
   SaleTax,
   UniqueTest,
+  Temporals,
 ];
 
 const expectedFiles = [
@@ -454,6 +489,7 @@ const expectedFiles = [
   "SaleOrder.ts",
   "SaleTax.ts",
   "UniqueTest.ts",
+  "Temporals.ts",
   "index.ts",
 ].map((x) => path.join(outDir, x));
 
@@ -511,5 +547,16 @@ describe("schema generator tests", () => {
       encoding: "utf-8",
     });
     expect(code).toBe(expectedSyncCode);
+  });
+
+  it("should generate proper temporal types", () => {
+    generateSchema(outDir, {
+      schema,
+      naming: "goovee",
+    });
+    const code = fs.readFileSync(path.join(outDir, "Temporals.ts"), {
+      encoding: "utf-8",
+    });
+    expect(code).toBe(expectedTemporalsCode);
   });
 });
