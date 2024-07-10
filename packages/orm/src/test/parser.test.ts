@@ -360,6 +360,34 @@ describe("query parser tests", async () => {
     });
   });
 
+  it("should generate joins in proper order", async () => {
+    const opts: QueryOptions<Contact> = {
+      select: {
+        addresses: {
+          select: {
+            city: true,
+          },
+        },
+      },
+      where: {
+        addresses: {
+          contact: {
+            lastName: {
+              like: "some",
+            },
+          },
+        },
+      },
+    };
+    const repo = getContactRepo();
+    const res = parseQuery(repo, opts);
+
+    expect(Object.keys(res.joins!)).toMatchObject([
+      "self.addresses",
+      "self_addresses.contact",
+    ]);
+  });
+
   it("should parse json where expressions", async () => {
     const opts: QueryOptions<Contact> = {
       where: {

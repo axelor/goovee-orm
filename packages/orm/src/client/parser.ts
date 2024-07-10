@@ -431,9 +431,23 @@ export const parseQuery = <T extends Entity>(
     Object.assign(order, ensureUniqueOrderBy(repo, orderBy));
   }
 
+  // make sure nested joins are ordered else query builder will throw join not found error
+  // e.g `join_table` should come before `join_table.nested`
+  const allJoins = { ...selectJoins, ...whereJoins, ...orderJoins };
+  const joins = Object.fromEntries(
+    Object.entries(allJoins).sort((a, b) => {
+      const a1 = a[1] as string;
+      const b1 = b[1] as string;
+      if (a1 === b1) return 0;
+      if (a1.startsWith(b1)) return 1;
+      if (b1.startsWith(a1)) return -1;
+      return 0;
+    })
+  );
+
   const result = {
     select: { ...select, ...orderSelect },
-    joins: { ...selectJoins, ...whereJoins, ...orderJoins },
+    joins,
     where,
     order,
     params,
