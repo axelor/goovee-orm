@@ -280,7 +280,7 @@ describe("query parser tests", async () => {
     });
   });
 
-  it("should parse IS NULL & NOT NULL", async () => {
+  it("should parse IS NULL & IS NOT NULL", async () => {
     const opts: QueryOptions<Contact> = {
       where: {
         version: {
@@ -304,7 +304,7 @@ describe("query parser tests", async () => {
     const res = parseQuery(repo, opts);
     expect(res).toMatchObject({
       where:
-        "self.version IS NULL AND self.email IS NULL AND self.phone NOT NULL AND self.title IS NULL AND self.bio NOT NULL",
+        "self.version IS NULL AND self.email IS NULL AND self.phone IS NOT NULL AND self.title IS NULL AND self.bio IS NOT NULL",
     });
   });
 

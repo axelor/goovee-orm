@@ -68,7 +68,7 @@ export const parseQuery = <T extends Entity>(
 
     for (const [key, value] of Object.entries(arg)) {
       if (value === null && (key === "eq" || key === "ne")) {
-        result.where = key === "eq" ? `${name} IS NULL` : `${name} NOT NULL`;
+        result.where = key === "eq" ? `${name} IS NULL` : `${name} IS NOT NULL`;
         continue;
       }
 
@@ -315,7 +315,7 @@ export const parseQuery = <T extends Entity>(
         }
         // not null
         if (value?.id?.ne === null) {
-          where.push({ where: `${name} NOT NULL` });
+          where.push({ where: `${name} IS NOT NULL` });
           continue;
         }
         const rRepo: any = repo.manager.getRepository(relation.type);
