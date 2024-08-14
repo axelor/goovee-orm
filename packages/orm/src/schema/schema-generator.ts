@@ -273,10 +273,34 @@ class ManyToOneFieldGenerator extends RelationalField<ManyToOneProperty> {
 
 class OneToManyFieldGenerator extends RelationalField<OneToManyProperty> {
   protected decorators(options: OneToManyProperty) {
-    const { target, mappedBy } = options;
-    const m = newDecorator("OneToMany")
-      .arg(`() => ${target}`)
-      .arg(`(x) => x.${mappedBy}`);
+    const { name, target, mappedBy } = options;
+    if (mappedBy) {
+      const m = newDecorator("OneToMany")
+        .arg(`() => ${target}`)
+        .arg(`(x) => x.${mappedBy}`);
+      return [m];
+    }
+
+    const { entity } = this;
+    const m = newDecorator("OneToMany").arg(`() => ${target}`);
+
+    if (entity.config.naming === "goovee") {
+      const table = `${entity.table}_${toSnakeCase(name)}`;
+      const column = entity.table;
+      const inverseColumn = toSnakeCase(name);
+
+      const j = newDecorator("JoinTable");
+      const jarg: any = {};
+
+      if (table) jarg.name = table;
+      if (column) jarg.joinColumn = { name: column };
+      if (inverseColumn) jarg.inverseJoinColumn = { name: inverseColumn };
+      if (entity.synchronize === false) jarg.synchronize = false;
+
+      j.arg(jarg);
+      return [m, j];
+    }
+
     return [m];
   }
 }
@@ -295,7 +319,11 @@ class ManyToManyFieldGenerator extends RelationalField<ManyToManyProperty> {
     let { table, column, inverseColumn } = options;
     if (entity.config.naming === "goovee") {
       table = table ?? `${entity.table}_${toSnakeCase(name)}`;
-      column = column ?? entity.table;
+      column =
+        column ??
+        (this.inverseRelation
+          ? toSnakeCase(this.inverseRelation.name)
+          : entity.table);
       inverseColumn = inverseColumn ?? toSnakeCase(name);
     }
 
