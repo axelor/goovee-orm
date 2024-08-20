@@ -244,8 +244,8 @@ const load = async (
       return res.length === 1;
     };
 
-    start._hasPrev = count > 1 && startCursor && (await has(startCursor, -1));
-    end._hasNext = count > 1 && endCursor && (await has(endCursor, 1));
+    if (start) start._hasPrev = count > 1 && startCursor && (await has(startCursor, -1));
+    if (end) end._hasNext = count > 1 && endCursor && (await has(endCursor, 1));
   }
 
   return records;
