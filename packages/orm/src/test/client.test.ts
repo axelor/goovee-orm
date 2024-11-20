@@ -656,6 +656,49 @@ describe("client tests", async () => {
       });
     });
   });
+
+  it("should filter record using 'NE' on boolean", async () => {
+    const india = await client.country.create({
+      data: {
+        code: "IN",
+        name: "India",
+        isMember: true,
+      },
+    });
+
+    const france = await client.country.create({
+      data: {
+        code: "FR",
+        name: "France",
+      },
+    });
+
+    const germany = await client.country.create({
+      data: {
+        code: "DE",
+        name: "Germany",
+      },
+    });
+
+    const memberCountries = await client.country.find({
+      where: {
+        isMember: {
+          eq: true,
+        },
+      },
+    });
+
+    const nonMemberCountries = await client.country.find({
+      where: {
+        isMember: {
+          ne: true,
+        },
+      },
+    });
+
+    expect(memberCountries).toHaveLength(1);
+    expect(nonMemberCountries).toHaveLength(2);
+  });
 });
 
 describe("client pagination tests", async () => {
