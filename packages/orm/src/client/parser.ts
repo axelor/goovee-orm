@@ -442,7 +442,7 @@ export const parseQuery = <T extends Entity>(
       if (a1.startsWith(b1)) return 1;
       if (b1.startsWith(a1)) return -1;
       return 0;
-    })
+    }),
   );
 
   const result = {
