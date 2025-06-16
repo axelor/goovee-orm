@@ -494,10 +494,7 @@ const expectedFiles = [
 ].map((x) => path.join(outDir, x));
 
 const cleanUp = () => {
-  expectedFiles.filter((x) => fs.existsSync(x)).forEach((x) => fs.rmSync(x));
-  if (fs.existsSync(outDir)) {
-    fs.rmdirSync(outDir);
-  }
+  fs.rmSync(outDir, { recursive: true, force: true });
 };
 
 describe("schema generator tests", () => {
