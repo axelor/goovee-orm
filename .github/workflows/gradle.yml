@@ -1,0 +1,93 @@
+name: CI/CD Pipeline
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+      - run: pnpm install
+      - name: Build
+        run: pnpm build
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+      - run: pnpm install
+      - name: Run Tests
+        run: pnpm test
+
+  test-e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+      - run: pnpm install
+      - uses: docker/setup-docker-action@v4
+      - name: Run E2E Tests
+        run: pnpm test:e2e
+
+  publish:
+    needs: [test, test-e2e]
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    name: Release tag
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Create GitHub release
+        id: create-new-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+      - uses: pnpm/action-setup@v3
+        with:
+          version: latest
+      - run: pnpm install
+      - name: Build
+        run: pnpm build
+      - name: Publish packages
+        run: pnpm release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

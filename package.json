@@ -8,6 +8,9 @@
   ],
   "scripts": {
     "build": "pnpm --filter @goovee/* build",
+    "release": "pnpm --filter @goovee/* release",
+    "test": "pnpm --filter @goovee/* test",
+    "test:e2e": "pnpm --filter @goovee/* test:e2e",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css,scss,html}\""
   },
   "devDependencies": {
