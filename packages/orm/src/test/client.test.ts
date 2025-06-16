@@ -692,6 +692,7 @@ describe("client tests", async () => {
       where: {
         isMember: {
           ne: true,
+          eq: null
         },
       },
     });
