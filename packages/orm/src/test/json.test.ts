@@ -1,111 +1,13 @@
-import { faker } from "@faker-js/faker";
 import { beforeEach, describe, expect, it } from "vitest";
 import { getTestClient } from "./client.utils";
+import { createData, clearData } from "./fixture";
 
 describe("json tests", async () => {
   const client = await getTestClient();
 
-  const createDateOfBirth = (age: number) => {
-    const date = new Date();
-    const dob = new Date(
-      date.getFullYear() - age,
-      date.getMonth(),
-      date.getDate(),
-    );
-    return dob.toISOString();
-  };
-
-  const createContact = async () => {
-    const firstName = faker.person.firstName();
-    const lastName = faker.person.lastName();
-    const nick = faker.hacker.noun();
-    const dob = faker.date.birthdate({ min: 18, max: 65, mode: "age" });
-    const age = new Date().getFullYear() - dob.getFullYear();
-    const customer = faker.helpers.arrayElement([true, false]);
-    const salary = faker.finance.amount();
-
-    const expertSkill = faker.helpers.arrayElement([
-      "Java",
-      "TypeScript",
-      "React",
-      "Next.js",
-      "Hibernate",
-      "PostgreSQL",
-    ]);
-
-    const skills = faker.helpers.arrayElements([
-      "Java",
-      "JavaScript",
-      "TypeScript",
-      "React",
-      "Next.js",
-      "Hibernate",
-      "PostgreSQL",
-      "MySQL",
-      "Database",
-      "Git",
-      "Linux",
-    ]);
-
-    const tags = faker.helpers.arrayElements([
-      { id: 1, color: "red", name: "Red" },
-      { id: 2, color: "blue", name: "Blue" },
-      { id: 3, color: "green", name: "Green" },
-      { id: 4, color: "yellow", name: "Yellow" },
-    ]);
-
-    const street = faker.location.street();
-    const city = faker.location.city();
-    const altContact = faker.person.fullName();
-
-    const bioContent = faker.lorem.text();
-
-    return await client.contact.create({
-      data: {
-        firstName,
-        lastName,
-        attrs: Promise.resolve({
-          nick,
-          age,
-          customer,
-          salary,
-          tags,
-          dateOfBirth: createDateOfBirth(age),
-        }),
-        bio: {
-          create: {
-            content: bioContent,
-            me: Promise.resolve({
-              expertSkill,
-              skills,
-              age,
-            }),
-          },
-        },
-        addresses: {
-          create: [
-            {
-              contact: {},
-              street,
-              city,
-              props: Promise.resolve({
-                altContact,
-              }),
-            },
-          ],
-        },
-      },
-      select: {
-        attrs: true,
-      },
-    });
-  };
-
   beforeEach(async () => {
-    let max = 20;
-    while (max-- > 0) {
-      await createContact();
-    }
+    await clearData(client);
+    await createData(client);
   });
 
   it("should search on text json field", async () => {

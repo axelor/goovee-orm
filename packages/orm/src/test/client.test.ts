@@ -551,7 +551,7 @@ describe("client tests", async () => {
   it("should count", async () => {
     await createData(client);
     const titleCount = await client.title.count();
-    expect(titleCount).toBe(2);
+    expect(titleCount).toBe(3);
   });
 
   it("should bulk update", async () => {
@@ -739,7 +739,7 @@ describe("client tests", async () => {
 describe("client pagination tests", async () => {
   const client = await getTestClient();
 
-  beforeEach(async () => createData(client, 20));
+  beforeEach(async () => createData(client));
 
   it("should do offset pagination", async () => {
     const first = await client.contact.find({
