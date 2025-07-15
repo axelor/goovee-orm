@@ -57,10 +57,8 @@ export const parseQuery = <T extends Entity>(
   let counter = 0;
 
   const makeWhere = (name: string, arg: any) => {
-    const result: any = {
-      where: "",
-      params: {},
-    };
+    const conditions: string[] = [];
+    const params: Record<string, any> = {};
 
     if (arg === null || typeof arg !== "object") {
       arg = { eq: arg };
@@ -68,7 +66,7 @@ export const parseQuery = <T extends Entity>(
 
     for (const [key, value] of Object.entries(arg)) {
       if (value === null && (key === "eq" || key === "ne")) {
-        result.where = key === "eq" ? `${name} IS NULL` : `${name} IS NOT NULL`;
+        conditions.push(key === "eq" ? `${name} IS NULL` : `${name} IS NOT NULL`);
         continue;
       }
 
@@ -88,23 +86,29 @@ export const parseQuery = <T extends Entity>(
 
       const param = `p${counter++}`;
 
-      result.where = `${name} ${op} :${param}`;
-      result.params = { [param]: value };
-
       if (Array.isArray(value)) {
         if (key === "in" || key === "notIn") {
           op = key === "in" ? "IN" : "NOT IN";
-          result.where = `${name} ${op} (:...${param})`;
-        }
-        if (key === "between" || key === "notBetween") {
+          conditions.push(`${name} ${op} (:...${param})`);
+        } else if (key === "between" || key === "notBetween") {
           op = key === "between" ? "BETWEEN" : "NOT BETWEEN";
           const param2 = `p${counter++}`;
-          result.where = `${name} ${op} :${param} AND :${param2}`;
-          result.params = { [param]: value[0], [param2]: value[1] };
+          conditions.push(`${name} ${op} :${param} AND :${param2}`);
+          params[param] = value[0];
+          params[param2] = value[1];
+          continue;
         }
+      } else {
+        conditions.push(`${name} ${op} :${param}`);
       }
+
+      params[param] = value;
     }
-    return result;
+
+    return {
+      where: conditions.length > 1 ? `(${conditions.join(" AND ")})` : conditions[0] || "",
+      params,
+    };
   };
 
   const simpleSelect = (repo: Repository<any>) => {

@@ -690,10 +690,14 @@ describe("client tests", async () => {
 
     const nonMemberCountries = await client.country.find({
       where: {
-        isMember: {
-          ne: true,
-          eq: null,
-        },
+        OR: [
+          {
+            isMember: { ne: true },
+          },
+          {
+            isMember: { eq: null },
+          },
+        ],
       },
     });
 
