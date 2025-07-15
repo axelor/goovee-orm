@@ -120,6 +120,11 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
     if (type === "Date") arg.type = "date";
     if (type === "Time") arg.type = "time";
 
+    // decimal type
+    if (type === "Decimal") {
+      arg.type = "numeric";
+    }
+
     const decorators: Decorator[] = [];
 
     if (index) {

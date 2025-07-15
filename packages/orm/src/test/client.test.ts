@@ -700,6 +700,40 @@ describe("client tests", async () => {
     expect(memberCountries).toHaveLength(1);
     expect(nonMemberCountries).toHaveLength(2);
   });
+
+  it("should filter decimal values", async () => {
+    const US = await client.country.create({
+      data: {
+        code: "US",
+        name: "United States",
+        population: "33.23",
+      },
+    });
+    const UK = await client.country.create({
+      data: {
+        code: "UK",
+        name: "United Kingdom",
+        population: "6.80",
+      },
+    });
+    const CN = await client.country.create({
+      data: {
+        code: "CN",
+        name: "China",
+        population: "140.56",
+      },
+    });
+    const found = await client.country.find({
+      where: {
+        population: {
+          gt: "30",
+        },
+      },
+    });
+    expect(found).toHaveLength(2);
+    expect(found.map((x) => x.code)).toContain("US");
+    expect(found.map((x) => x.code)).toContain("CN");
+  });
 });
 
 describe("client pagination tests", async () => {

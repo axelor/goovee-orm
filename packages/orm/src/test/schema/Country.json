@@ -18,6 +18,10 @@
     {
       "type": "Boolean",
       "name": "isMember"
+    },
+    {
+      "type": "Decimal",
+      "name": "population"
     }
   ]
 }

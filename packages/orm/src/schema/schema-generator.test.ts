@@ -295,6 +295,22 @@ const Temporals = defineEntity({
   ],
 });
 
+const Decimals = defineEntity({
+  name: "Decimals",
+  fields: [
+    {
+      name: "rate",
+      type: "Decimal",
+    },
+    {
+      name: "amount",
+      type: "Decimal",
+      precision: 10,
+      scale: 2,
+    },
+  ],
+});
+
 const expectedCode = `\
 import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "@goovee/orm/typeorm";
 import { Model } from "./Model";
@@ -461,6 +477,19 @@ export class Temporals {
 }
 `;
 
+const expectedDecimalsCode = `\
+import { Entity, Column } from "@goovee/orm/typeorm";
+
+@Entity("decimals")
+export class Decimals {
+  @Column({ nullable: true, type: "numeric" })
+  rate?: string;
+
+  @Column({ nullable: true, scale: 2, precision: 10, type: "numeric" })
+  amount?: string;
+}
+`;
+
 const outDir = path.join("node_modules", "code-gen");
 
 const schema = [
@@ -474,6 +503,7 @@ const schema = [
   SaleTax,
   UniqueTest,
   Temporals,
+  Decimals,
 ];
 
 const expectedFiles = [
@@ -490,6 +520,7 @@ const expectedFiles = [
   "SaleTax.ts",
   "UniqueTest.ts",
   "Temporals.ts",
+  "Decimals.ts",
   "index.ts",
 ].map((x) => path.join(outDir, x));
 
@@ -555,5 +586,16 @@ describe("schema generator tests", () => {
       encoding: "utf-8",
     });
     expect(code).toBe(expectedTemporalsCode);
+  });
+
+  it("should generate proper decimal types", () => {
+    generateSchema(outDir, {
+      schema,
+      naming: "goovee",
+    });
+    const code = fs.readFileSync(path.join(outDir, "Decimals.ts"), {
+      encoding: "utf-8",
+    });
+    expect(code).toBe(expectedDecimalsCode);
   });
 });
