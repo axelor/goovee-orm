@@ -14,7 +14,7 @@ export const defineEntity = (entity: EntityOptions) => entity;
 export const readSchema = (schemaDir: string): EntityOptions[] => {
   const schema = fs
     .readdirSync(schemaDir, { withFileTypes: true })
-    .filter((x) => /\.(ts|json)$/.test(x.name))
+    .filter((x) => /\.(json)$/.test(x.name))
     .map((x) => path.join(schemaDir, x.name))
     .map((x) => path.resolve(x))
     .map((x) => JSON.parse(fs.readFileSync(x, { encoding: "utf-8" })));

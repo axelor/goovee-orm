@@ -22,7 +22,7 @@ describe("client generator tests", () => {
   it("should generate client", () => {
     const schemaDir = path.join(__dirname, "..", "..", "test", "schema");
     const outDir = fs.mkdtempSync(path.join(__dirname, "db."));
-    const files = generateClient(schemaDir, outDir);
+    const files = generateClient([schemaDir], outDir);
     expect(files.length).toBeGreaterThan(0);
     cleanUp(outDir, files);
   });

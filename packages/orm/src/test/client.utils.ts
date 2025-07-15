@@ -5,7 +5,7 @@ import { generateClient } from "../client/generator";
 export const generateCode = () => {
   const schemaDir = path.join(__dirname, "schema");
   const clientDir = path.join(__dirname, "db");
-  generateClient(schemaDir, clientDir);
+  generateClient([schemaDir], clientDir);
 };
 
 const createTestClient = async () => {

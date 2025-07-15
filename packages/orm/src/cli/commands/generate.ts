@@ -1,29 +1,33 @@
 import fs from "node:fs";
-import path from "node:path";
 
 import { Command } from "commander";
+
 import { generateClient } from "../../client/generator";
+import { expandConfig, loadConfig } from "../config";
 
 export const generate = new Command()
   .name("generate")
   .description("Generate goovee client from the schema")
   .action(() => {
-    const searchPaths = [
-      path.join(".", "src", "goovee", "schema"),
-      path.join(".", "goovee", "schema"),
-    ];
+    const configRaw = loadConfig();
+    const config = expandConfig(configRaw);
+    const schema = config.schema ?? {};
 
-    const schemaDir = searchPaths.find((x) => fs.existsSync(x));
-    if (!schemaDir || !fs.existsSync(schemaDir)) {
-      console.error(`Schema directory doesn't exists`);
-      process.exit(1);
+    const dirs = schema.dirs!;
+    const outDir = schema.outDir!;
+
+    for (const dir of dirs) {
+      if (!fs.existsSync(dir)) {
+        console.error(`Schema directory doesn't exists: ${dir}`);
+        process.exit(1);
+      }
     }
 
-    const clientDir = path.join(path.dirname(schemaDir), ".generated");
-
     // delete old files
-    fs.rmSync(clientDir, { recursive: true, force: true });
+    if (schema.clean) {
+      fs.rmSync(outDir, { recursive: true, force: true });
+    }
 
     // generate client
-    generateClient(schemaDir, clientDir);
+    generateClient(dirs, outDir);
   });

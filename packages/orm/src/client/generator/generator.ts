@@ -83,13 +83,22 @@ export function createSchema(): GraphQLSchema {
   return file.toJSON();
 };
 
-export const generateClient = (schemaDir: string, outDir: string) => {
+export const generateClient = (schemaDirs: string[], outDir: string) => {
   const modelsDir = path.join(outDir, "models");
   const clientDir = path.join(outDir, "client");
 
-  const schema = readSchema(schemaDir);
+  const schema = schemaDirs.flatMap(readSchema);
   const files: string[] = [];
   const names = schema.map((x) => x.name);
+
+  // check for duplicates
+  const visited = new Set<string>();
+  for (const name of names) {
+    if (visited.has(name)) {
+      throw new Error(`Duplicate entity found: ${name}`);
+    }
+    visited.add(name);
+  }
 
   files.push(...generateSchema(modelsDir, { schema, naming: "goovee" }));
 

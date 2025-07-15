@@ -20,6 +20,9 @@ importers:
       commander:
         specifier: ^14.0.0
         version: 14.0.0
+      glob:
+        specifier: ^11.0.3
+        version: 11.0.3
       graphql:
         specifier: ^16.8.1
         version: 16.8.1

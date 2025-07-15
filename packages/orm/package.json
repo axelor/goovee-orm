@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "commander": "^14.0.0",
+    "glob": "^11.0.3",
     "typeorm": "^0.3.24"
   },
   "peerDependencies": {
