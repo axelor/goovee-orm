@@ -733,10 +733,319 @@ class OrderByProcessor {
   }
 }
 
+class AggregateProcessor {
+  constructor(
+    private context: ParserContext,
+    private whereProcessor: WhereProcessor,
+    private joinHandler: JoinHandler,
+  ) {}
+
+  process(
+    repo: Repository<any>,
+    opts: AggregateOptions<any>,
+    prefix: string,
+  ): ParseResult {
+    let select: Record<string, string> = {};
+    let joins: Record<string, string> = {};
+    let groups: Record<string, any> = {};
+    let having: string | undefined;
+    let havingParams: Record<string, any> = {};
+
+    const {
+      _count,
+      _avg,
+      _sum,
+      _min,
+      _max,
+      groupBy,
+      where: conditions = {},
+      orderBy = {},
+      having: havingConditions,
+      take,
+      skip,
+    } = opts;
+
+    // Process where conditions (pre-aggregation filtering)
+    const whereResult = this.whereProcessor.process(repo, conditions, prefix);
+
+    // Process aggregate operations
+    if (_count) {
+      const countResult = this.processAggregateOperations(repo, _count, prefix, "COUNT");
+      select = { ...select, ...countResult.select };
+      joins = { ...joins, ...countResult.joins };
+    }
+
+    if (_avg) {
+      const avgResult = this.processAggregateOperations(repo, _avg, prefix, "AVG");
+      select = { ...select, ...avgResult.select };
+      joins = { ...joins, ...avgResult.joins };
+    }
+
+    if (_sum) {
+      const sumResult = this.processAggregateOperations(repo, _sum, prefix, "SUM");
+      select = { ...select, ...sumResult.select };
+      joins = { ...joins, ...sumResult.joins };
+    }
+
+    if (_min) {
+      const minResult = this.processAggregateOperations(repo, _min, prefix, "MIN");
+      select = { ...select, ...minResult.select };
+      joins = { ...joins, ...minResult.joins };
+    }
+
+    if (_max) {
+      const maxResult = this.processAggregateOperations(repo, _max, prefix, "MAX");
+      select = { ...select, ...maxResult.select };
+      joins = { ...joins, ...maxResult.joins };
+    }
+
+    // Process groupBy fields
+    if (groupBy) {
+      const groupResult = this.processGroupByFields(repo, groupBy, prefix);
+      select = { ...select, ...groupResult.select };
+      joins = { ...joins, ...groupResult.joins };
+      groups = { ...groups, ...groupResult.groups };
+    }
+
+    // Process having conditions (post-aggregation filtering)
+    if (havingConditions) {
+      const havingResult = this.processHavingConditions(repo, havingConditions, prefix);
+      having = havingResult.having;
+      havingParams = { ...havingParams, ...havingResult.params };
+      joins = { ...joins, ...havingResult.joins };
+    }
+
+    // Combine all joins and sort them
+    const allJoins = {
+      ...joins,
+      ...(whereResult?.joins || {}),
+    };
+    const sortedJoins = this.context.sortJoins(allJoins);
+
+    // Build final result
+    const result: ParseResult = {
+      select,
+      joins: sortedJoins,
+      where: whereResult?.where,
+      groups: Object.keys(groups).length > 0 ? groups : undefined,
+      having: having,
+      params: { ...whereResult?.params, ...havingParams },
+      take,
+      skip,
+    };
+
+    return this.cleanResult(result);
+  }
+
+  private processAggregateOperations(
+    repo: Repository<any>,
+    aggregateOpts: any,
+    prefix: string,
+    operation: string,
+  ): { select: Record<string, string>; joins: Record<string, string> } {
+    const select: Record<string, string> = {};
+    const joins: Record<string, string> = {};
+
+    for (const [fieldName, value] of Object.entries(aggregateOpts)) {
+      if (value === true) {
+        const name = this.context.makeName(prefix, fieldName);
+        const alias = this.context.makeAlias(repo, prefix, fieldName);
+        
+        // Check if it's a relation
+        const relation = repo.metadata.findRelationWithPropertyPath(fieldName);
+        if (relation) {
+          joins[name] = alias;
+          // For relations, use id field for COUNT, otherwise use the relation field itself
+          if (operation === "COUNT") {
+            select[`${operation}(${alias}.id)`] = `_${operation.toLowerCase()}_${fieldName}`;
+          } else {
+            // For other operations on relations, we might need to handle differently
+            // For now, let's use id field
+            select[`${operation}(${alias}.id)`] = `_${operation.toLowerCase()}_${fieldName}`;
+          }
+        } else {
+          select[`${operation}(${name})`] = `_${operation.toLowerCase()}_${fieldName}`;
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        // Handle nested aggregate operations for relations
+        const relation = repo.metadata.findRelationWithPropertyPath(fieldName);
+        if (relation) {
+          const name = this.context.makeName(prefix, fieldName);
+          const alias = this.context.makeAlias(repo, prefix, fieldName);
+          const rRepo = this.joinHandler.getRelationRepository(repo, relation);
+          const nestedResult = this.processAggregateOperations(rRepo, value, alias, operation);
+          Object.assign(select, nestedResult.select);
+          Object.assign(joins, nestedResult.joins);
+          joins[name] = alias;
+        }
+      }
+    }
+
+    return { select, joins };
+  }
+
+  private processGroupByFields(
+    repo: Repository<any>,
+    groupByOpts: any,
+    prefix: string,
+  ): { select: Record<string, string>; joins: Record<string, string>; groups: Record<string, any> } {
+    const select: Record<string, string> = {};
+    const joins: Record<string, string> = {};
+    const groups: Record<string, any> = {};
+
+    for (const [fieldName, value] of Object.entries(groupByOpts)) {
+      if (value === true) {
+        const name = this.context.makeName(prefix, fieldName);
+        const alias = this.context.makeAlias(repo, prefix, fieldName);
+        
+        // Check if it's a relation
+        const relation = repo.metadata.findRelationWithPropertyPath(fieldName);
+        if (relation) {
+          joins[name] = alias;
+          // For relations in groupBy, typically we group by the id
+          select[`${alias}.id`] = `groupby_${fieldName}`;
+          groups[`${alias}.id`] = `groupby_${fieldName}`;
+        } else {
+          // For regular fields, group by the field itself
+          select[name] = `groupby_${fieldName}`;
+          groups[name] = `groupby_${fieldName}`;
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        // Handle nested groupBy for relations
+        const relation = repo.metadata.findRelationWithPropertyPath(fieldName);
+        if (relation) {
+          const name = this.context.makeName(prefix, fieldName);
+          const alias = this.context.makeAlias(repo, prefix, fieldName);
+          const rRepo = this.joinHandler.getRelationRepository(repo, relation);
+          
+          const nestedResult = this.processGroupByFields(rRepo, value, alias);
+          Object.assign(select, nestedResult.select);
+          Object.assign(joins, nestedResult.joins);
+          Object.assign(groups, nestedResult.groups);
+          joins[name] = alias;
+        }
+      }
+    }
+
+    return { select, joins, groups };
+  }
+
+  private processHavingConditions(
+    repo: Repository<any>,
+    havingOpts: any,
+    prefix: string,
+  ): { having: string; params: Record<string, any>; joins: Record<string, string> } {
+    let having = "";
+    let params: Record<string, any> = {};
+    let joins: Record<string, string> = {};
+
+    const conditions: string[] = [];
+
+    for (const [operation, fieldConditions] of Object.entries(havingOpts)) {
+      if (typeof fieldConditions === 'object' && fieldConditions !== null) {
+        const result = this.processHavingFields(repo, fieldConditions, prefix, operation);
+        conditions.push(...result.conditions);
+        Object.assign(params, result.params);
+        Object.assign(joins, result.joins);
+      }
+    }
+
+    if (conditions.length > 0) {
+      having = conditions.join(" AND ");
+    }
+
+    return { having, params, joins };
+  }
+
+  private processHavingFields(
+    repo: Repository<any>,
+    fieldConditions: any,
+    prefix: string,
+    operation: string,
+  ): { conditions: string[]; params: Record<string, any>; joins: Record<string, string> } {
+    const conditions: string[] = [];
+    let params: Record<string, any> = {};
+    let joins: Record<string, string> = {};
+
+    for (const [fieldName, condition] of Object.entries(fieldConditions)) {
+      const relation = repo.metadata.findRelationWithPropertyPath(fieldName);
+      
+      if (relation && typeof condition === 'object' && condition !== null && !this.isFilterCondition(condition)) {
+        // This is a nested relation having condition
+        const name = this.context.makeName(prefix, fieldName);
+        const alias = this.context.makeAlias(repo, prefix, fieldName);
+        const rRepo = this.joinHandler.getRelationRepository(repo, relation);
+        
+        const nestedResult = this.processHavingFields(rRepo, condition, alias, operation);
+        conditions.push(...nestedResult.conditions);
+        Object.assign(params, nestedResult.params);
+        Object.assign(joins, nestedResult.joins);
+        joins[name] = alias;
+      } else {
+        // This is a direct field condition
+        const name = this.context.makeName(prefix, fieldName);
+        const alias = this.context.makeAlias(repo, prefix, fieldName);
+        
+        let aggregateField = name;
+        if (relation) {
+          joins[name] = alias;
+          aggregateField = `${alias}.id`;
+        }
+
+        // Process the filter condition
+        if (typeof condition === 'object' && condition !== null) {
+          for (const [operator, value] of Object.entries(condition)) {
+            // Remove the underscore prefix from operation name for SQL
+            const cleanOperation = operation.startsWith('_') ? operation.substring(1) : operation;
+            const aggregateExpr = `${cleanOperation.toUpperCase()}(${aggregateField})`;
+            const param = this.context.nextParam();
+            const sqlOp = this.getSqlOperator(operator);
+            
+            conditions.push(`${aggregateExpr} ${sqlOp} :${param}`);
+            params[param] = value;
+          }
+        }
+      }
+    }
+
+    return { conditions, params, joins };
+  }
+
+  private isFilterCondition(obj: any): boolean {
+    if (typeof obj !== 'object' || obj === null) return false;
+    const filterOps = ['eq', 'ne', 'gt', 'ge', 'lt', 'le', 'in', 'notIn', 'between', 'notBetween'];
+    return Object.keys(obj).some(key => filterOps.includes(key));
+  }
+
+  private getSqlOperator(operator: string): string {
+    const operators: Record<string, string> = {
+      eq: "=",
+      ne: "!=",
+      gt: ">",
+      ge: ">=",
+      lt: "<",
+      le: "<=",
+    };
+    return operators[operator] || "=";
+  }
+
+  private cleanResult(result: ParseResult): ParseResult {
+    return JSON.parse(
+      JSON.stringify(result, (k, v) => {
+        if (v === undefined || v === null) return v;
+        if (Array.isArray(v) && v.length === 0) return;
+        if (typeof v === "object" && Object.keys(v).length === 0) return;
+        return v;
+      }),
+    );
+  }
+}
+
 class QueryParser {
   private selectProcessor: SelectProcessor;
   private whereProcessor: WhereProcessor;
   private orderProcessor: OrderByProcessor;
+  private aggregateProcessor: AggregateProcessor;
   private jsonHandler: JsonQueryHandler;
   private joinHandler: JoinHandler;
 
@@ -756,6 +1065,11 @@ class QueryParser {
     this.orderProcessor = new OrderByProcessor(
       context,
       this.jsonHandler,
+      this.joinHandler,
+    );
+    this.aggregateProcessor = new AggregateProcessor(
+      context,
+      this.whereProcessor,
       this.joinHandler,
     );
   }
@@ -858,7 +1172,23 @@ export function parseAggregate(
   repo: Repository<any>,
   query: AggregateOptions<any>,
 ): ParseResult {
-  throw new ParserError("Not implemented yet.");
+  const context = new ParserContext(client);
+  const joinHandler = new JoinHandler(context);
+  const jsonHandler = new JsonQueryHandler(context);
+  const whereProcessor = new WhereProcessor(context, jsonHandler, joinHandler);
+  const aggregateProcessor = new AggregateProcessor(context, whereProcessor, joinHandler);
+
+  try {
+    return aggregateProcessor.process(repo, query, "self");
+  } catch (error) {
+    if (error instanceof ParserError) {
+      throw error;
+    }
+    throw new ParserError(
+      `Failed to parse aggregate query: ${error instanceof Error ? error.message : String(error)}`,
+      { query, repository: repo.metadata.targetName },
+    );
+  }
 }
 
 export function isPageQuery(options: QueryOptions<any> | ParseResult): boolean {

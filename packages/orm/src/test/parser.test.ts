@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseQuery } from "../client/parser";
-import { QueryOptions } from "../client/types";
+import { parseQuery, parseAggregate } from "../client/parser";
+import { QueryOptions, AggregateOptions } from "../client/types";
 import { getTestClient } from "./client.utils";
 
 import { Contact } from "./db/models";
@@ -463,6 +463,432 @@ describe("query parser tests", async () => {
         "cast(jsonb_extract_path_text(self.attrs, 'name') as text)": "DESC",
         "cast(jsonb_extract_path_text(self_bio.me, 'skill') as text)": "DESC",
       },
+    });
+  });
+});
+
+describe("aggregate parser tests", async () => {
+  const client = await getTestClient();
+
+  // access the internal typeorm repo for testing
+  const getContactRepo = () => (client.contact as any).unwrap();
+
+  it("should parse simple _count aggregation", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        id: true,
+        firstName: true,
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self.id)": "_count_id",
+      "COUNT(self.firstName)": "_count_firstName",
+    });
+  });
+
+  it("should parse _count with relations", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        title: {
+          id: true,
+        },
+        addresses: {
+          id: true,
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self_title.id)": "_count_id",
+      "COUNT(self_addresses.id)": "_count_id",
+    });
+    expect(res.joins).toMatchObject({
+      "self.title": "self_title",
+      "self.addresses": "self_addresses",
+    });
+  });
+
+  it("should parse _count with where conditions", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        id: true,
+      },
+      where: {
+        firstName: { like: "John%" },
+        version: { gt: 0 },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self.id)": "_count_id",
+    });
+    expect(res.where).toBe("self.firstName LIKE :p0 AND self.version > :p1");
+    expect(res.params).toMatchObject({
+      p0: "John%",
+      p1: 0,
+    });
+  });
+
+  it("should parse _avg aggregation", () => {
+    const opts: AggregateOptions<Contact> = {
+      _avg: {
+        version: true,
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "AVG(self.version)": "_avg_version",
+    });
+  });
+
+  it("should parse _sum aggregation", () => {
+    const opts: AggregateOptions<Contact> = {
+      _sum: {
+        version: true,
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "SUM(self.version)": "_sum_version",
+    });
+  });
+
+  it("should parse _min and _max aggregations", () => {
+    const opts: AggregateOptions<Contact> = {
+      _min: {
+        version: true,
+        firstName: true,
+      },
+      _max: {
+        version: true,
+        lastName: true,
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "MIN(self.version)": "_min_version",
+      "MIN(self.firstName)": "_min_firstName",
+      "MAX(self.version)": "_max_version",
+      "MAX(self.lastName)": "_max_lastName",
+    });
+  });
+
+  it("should parse multiple aggregate operations together", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        id: true,
+      },
+      _avg: {
+        version: true,
+      },
+      _sum: {
+        version: true,
+      },
+      _min: {
+        firstName: true,
+      },
+      _max: {
+        lastName: true,
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self.id)": "_count_id",
+      "AVG(self.version)": "_avg_version",
+      "SUM(self.version)": "_sum_version",
+      "MIN(self.firstName)": "_min_firstName",
+      "MAX(self.lastName)": "_max_lastName",
+    });
+  });
+
+  it("should parse simple groupBy fields", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        id: true,
+      },
+      groupBy: {
+        firstName: true,
+        version: true,
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self.id)": "_count_id",
+      "self.firstName": "groupby_firstName",
+      "self.version": "groupby_version",
+    });
+    expect(res.groups).toMatchObject({
+      "self.firstName": "groupby_firstName",
+      "self.version": "groupby_version",
+    });
+  });
+
+  it("should parse groupBy with relations", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        id: true,
+      },
+      groupBy: {
+        title: {
+          id: true,
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self.id)": "_count_id",
+      "self_title.id": "groupby_id",
+    });
+    expect(res.groups).toMatchObject({
+      "self_title.id": "groupby_id",
+    });
+    expect(res.joins).toMatchObject({
+      "self.title": "self_title",
+    });
+  });
+
+  it("should parse groupBy with nested relations", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        id: true,
+      },
+      groupBy: {
+        addresses: {
+          country: {
+            id: true,
+          },
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self.id)": "_count_id",
+      "self_addresses_country.id": "groupby_id",
+    });
+    expect(res.groups).toMatchObject({
+      "self_addresses_country.id": "groupby_id",
+    });
+    expect(res.joins).toMatchObject({
+      "self.addresses": "self_addresses",
+      "self_addresses.country": "self_addresses_country",
+    });
+  });
+
+  it("should parse aggregates with groupBy and where conditions", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        id: true,
+      },
+      _avg: {
+        version: true,
+      },
+      groupBy: {
+        firstName: true,
+        title: {
+          id: true,
+        },
+      },
+      where: {
+        version: { gt: 0 },
+        lastName: { like: "Smith%" },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self.id)": "_count_id",
+      "AVG(self.version)": "_avg_version",
+      "self.firstName": "groupby_firstName",
+      "self_title.id": "groupby_id",
+    });
+    expect(res.groups).toMatchObject({
+      "self.firstName": "groupby_firstName",
+      "self_title.id": "groupby_id",
+    });
+    expect(res.joins).toMatchObject({
+      "self.title": "self_title",
+    });
+    expect(res.where).toBe("self.version > :p0 AND self.lastName LIKE :p1");
+    expect(res.params).toMatchObject({
+      p0: 0,
+      p1: "Smith%",
+    });
+  });
+
+  it("should parse having conditions", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        id: true,
+      },
+      _avg: {
+        version: true,
+      },
+      groupBy: {
+        firstName: true,
+      },
+      having: {
+        _count: {
+          id: { gt: 5 },
+        },
+        _avg: {
+          version: { ge: 2.0 },
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self.id)": "_count_id",
+      "AVG(self.version)": "_avg_version",
+      "self.firstName": "groupby_firstName",
+    });
+    expect(res.groups).toMatchObject({
+      "self.firstName": "groupby_firstName",
+    });
+    expect(res.having).toBe("COUNT(self.id) > :p0 AND AVG(self.version) >= :p1");
+    expect(res.params).toMatchObject({
+      p0: 5,
+      p1: 2.0,
+    });
+  });
+
+  it("should parse having conditions with relations", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        title: {
+          id: true,
+        },
+      },
+      groupBy: {
+        firstName: true,
+      },
+      having: {
+        _count: {
+          title: {
+            id: { ge: 2 },
+          },
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self_title.id)": "_count_id",
+      "self.firstName": "groupby_firstName",
+    });
+    expect(res.groups).toMatchObject({
+      "self.firstName": "groupby_firstName",
+    });
+    expect(res.joins).toMatchObject({
+      "self.title": "self_title",
+    });
+    expect(res.having).toBe("COUNT(self_title.id) >= :p0");
+    expect(res.params).toMatchObject({
+      p0: 2,
+    });
+  });
+
+  it("should parse complete aggregate query with all features", () => {
+    const opts: AggregateOptions<Contact> = {
+      _count: {
+        id: true,
+        addresses: {
+          id: true,
+        },
+      },
+      _avg: {
+        version: true,
+      },
+      _max: {
+        firstName: true,
+      },
+      groupBy: {
+        lastName: true,
+        title: {
+          id: true,
+        },
+      },
+      where: {
+        version: { gt: 0 },
+      },
+      having: {
+        _count: {
+          addresses: {
+            id: { ge: 2 },
+          },
+        },
+        _avg: {
+          version: { lt: 10 },
+        },
+      },
+      take: 50,
+      skip: 10,
+    };
+
+    const repo = getContactRepo();
+    const res = parseAggregate(client, repo, opts);
+    
+    expect(res.select).toMatchObject({
+      "COUNT(self.id)": "_count_id",
+      "COUNT(self_addresses.id)": "_count_id",
+      "AVG(self.version)": "_avg_version",
+      "MAX(self.firstName)": "_max_firstName",
+      "self.lastName": "groupby_lastName",
+      "self_title.id": "groupby_id",
+    });
+    expect(res.groups).toMatchObject({
+      "self.lastName": "groupby_lastName",
+      "self_title.id": "groupby_id",
+    });
+    expect(res.joins).toMatchObject({
+      "self.title": "self_title",
+      "self.addresses": "self_addresses",
+    });
+    expect(res.where).toBe("self.version > :p0");
+    expect(res.having).toBe("COUNT(self_addresses.id) >= :p1 AND AVG(self.version) < :p2");
+    expect(res.take).toBe(50);
+    expect(res.skip).toBe(10);
+    expect(res.params).toMatchObject({
+      p0: 0,
+      p1: 2,
+      p2: 10,
     });
   });
 });
