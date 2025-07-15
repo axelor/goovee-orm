@@ -1,6 +1,6 @@
 import * as typeorm from "typeorm";
 import { createDataSource } from "../typeorm/datasource";
-import { EntityRepository, Interceptor } from "./client-repository";
+import { EntityRepository, Interceptor } from "./repository";
 
 import { EntityOptions } from "../schema";
 import {
