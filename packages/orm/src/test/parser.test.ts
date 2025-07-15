@@ -21,7 +21,7 @@ describe("query parser tests", async () => {
     };
 
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
     expect(res.select).toMatchObject({
       "self.id": "self_id",
       "self.firstName": "self_first_name",
@@ -51,7 +51,7 @@ describe("query parser tests", async () => {
     };
 
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
     expect(res).toMatchObject({
       select: {
         "self.id": "self_id",
@@ -86,7 +86,7 @@ describe("query parser tests", async () => {
   it("should select all simmple fields by default", async () => {
     const repo = getContactRepo();
     let opts: QueryOptions<Contact> = {};
-    let res = parseQuery(repo, opts);
+    let res = parseQuery(client, repo, opts);
 
     expect(res.select).toBeDefined();
     expect(res.select).toHaveProperty("self.id");
@@ -95,7 +95,7 @@ describe("query parser tests", async () => {
     expect(res.select).not.toHaveProperty("self.attrs");
 
     opts = { select: { title: true } };
-    res = parseQuery(repo, opts);
+    res = parseQuery(client, repo, opts);
 
     expect(res).toMatchObject({
       select: {
@@ -110,7 +110,7 @@ describe("query parser tests", async () => {
     });
 
     opts = { select: { addresses: true } };
-    res = parseQuery(repo, opts);
+    res = parseQuery(client, repo, opts);
 
     expect(res).toMatchObject({
       collections: {
@@ -139,7 +139,7 @@ describe("query parser tests", async () => {
     };
 
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
     expect(res).toMatchObject({
       where: "self.id = :p0 AND self.firstName = :p1",
       params: { p0: 1, p1: "some" },
@@ -155,9 +155,9 @@ describe("query parser tests", async () => {
     };
 
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
     expect(res).toMatchObject({
-      where: "self.id != :p0 AND self.firstName ILIKE :p1",
+      where: "self.id != :p0 AND self.firstName LIKE :p1",
       params: { p0: 1, p1: "some" },
     });
   });
@@ -184,10 +184,10 @@ describe("query parser tests", async () => {
     };
 
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
     expect(res).toMatchObject({
       where:
-        "self.id = :p0 AND self.firstName ILIKE :p1 AND (self.firstName ILIKE :p2 OR self.lastName ILIKE :p3 OR (self.version > :p4 AND self.id != :p5 AND NOT(self.version = :p6 AND self.id = :p7)))",
+        "self.id = :p0 AND self.firstName LIKE :p1 AND (self.firstName LIKE :p2 OR self.lastName LIKE :p3 OR (self.version > :p4 AND self.id != :p5 AND NOT(self.version = :p6 AND self.id = :p7)))",
       params: {
         p0: 1,
         p1: "some",
@@ -216,7 +216,7 @@ describe("query parser tests", async () => {
       },
     };
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
     expect(res).toMatchObject({
       joins: {
         "self.title": "self_title",
@@ -263,19 +263,22 @@ describe("query parser tests", async () => {
       },
     };
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
     expect(res).toMatchObject({
       where:
-        "self.id IN (:...p0) AND self.version NOT IN (:...p1) AND self.firstName ILIKE :p2 AND self.lastName NOT ILIKE :p3 AND (self.id BETWEEN :p4 AND :p5 OR self.version NOT BETWEEN :p6 AND :p7)",
+        "self.id IN (:p0, :p1, :p2) AND self.version NOT IN (:p3, :p4) AND self.firstName LIKE :p5 AND self.lastName NOT LIKE :p6 AND (self.id BETWEEN :p7 AND :p8 OR self.version NOT BETWEEN :p9 AND :p10)",
       params: {
-        p0: [1, 2, 3],
-        p1: [-1, 0],
-        p2: "some",
-        p3: "some",
-        p4: 10,
-        p5: 20,
-        p6: 10,
-        p7: 20,
+        p0: 1,
+        p1: 2,
+        p2: 3,
+        p3: -1,
+        p4: 0,
+        p5: "some",
+        p6: "some",
+        p7: 10,
+        p8: 20,
+        p9: 10,
+        p10: 20,
       },
     });
   });
@@ -301,7 +304,7 @@ describe("query parser tests", async () => {
       },
     };
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
     expect(res).toMatchObject({
       where:
         "self.version IS NULL AND self.email IS NULL AND self.phone IS NOT NULL AND self.title IS NULL AND self.bio IS NOT NULL",
@@ -333,7 +336,7 @@ describe("query parser tests", async () => {
       },
     };
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
 
     expect(res).toMatchObject({
       joins: {
@@ -380,7 +383,7 @@ describe("query parser tests", async () => {
       },
     };
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
 
     expect(Object.keys(res.joins!)).toMatchObject([
       "self.addresses",
@@ -411,7 +414,7 @@ describe("query parser tests", async () => {
     };
 
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
 
     expect(res).toMatchObject({
       joins: {
@@ -452,7 +455,7 @@ describe("query parser tests", async () => {
     };
 
     const repo = getContactRepo();
-    const res = parseQuery(repo, opts);
+    const res = parseQuery(client, repo, opts);
 
     expect(res).toMatchObject({
       joins: { "self.bio": "self_bio" },

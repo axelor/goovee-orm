@@ -67,12 +67,10 @@ import {
 export type Client = EntityClient<typeof entities>;
 export type GooveeClient = ConnectionClient<Client>;
 
-export function createClient(): GooveeClient;
-export function createClient(options: ClientOptions): GooveeClient;
-export function createClient(options?: ClientOptions): GooveeClient {
-  const { url = process.env.DATABASE_URL ?? "", sync = false } = options ?? {};
+export function createClient(options: ClientOptions = {}): GooveeClient {
+  const { url = process.env.DATABASE_URL ?? "" } = options;
   if (url) {
-    return create({ url, sync }, entities);
+    return create({ ...options, url }, entities, schemaDefs);
   }
   throw new Error("No 'DATABASE_URL' environment variable defined.");
 };

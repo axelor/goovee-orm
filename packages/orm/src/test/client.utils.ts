@@ -1,4 +1,5 @@
 import path from "node:path";
+import { ClientFeatures } from "../client";
 import { generateClient } from "../client/client-generator";
 
 export const generateCode = () => {

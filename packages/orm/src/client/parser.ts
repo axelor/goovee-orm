@@ -1,10 +1,13 @@
 import { Repository } from "typeorm";
+import { EntityOptions } from "../schema";
 import {
+  ClientFeatures,
   Entity,
   JsonOrderBy,
   JsonWhere,
   OrderBy,
   OrderByOptions,
+  QueryClient,
   QueryOptions,
   SelectOptions,
   WhereOptions,
@@ -24,23 +27,21 @@ export type ParseResult = {
 };
 
 export const parseQuery = <T extends Entity>(
+  client: QueryClient,
   repo: Repository<any>,
-  query: QueryOptions<T> = {},
+  query: QueryOptions<T>,
 ): ParseResult => {
-  const opAttrs = [
-    "eq",
-    "ne",
-    "gt",
-    "ge",
-    "lt",
-    "le",
-    "like",
-    "in",
-    "between",
-    "notLike",
-    "notIn",
-    "notBetween",
-  ];
+  const schema: EntityOptions[] = (client as any).__schema;
+  const features: ClientFeatures = (client as any).__features ?? {};
+
+  let counter = 0;
+
+  const isStringField = (repo: Repository<any>, name: string) => {
+    if (!schema) return false;
+    const schemaDef = schema.find((x) => x.name === repo.metadata.targetName);
+    const fieldDef = schemaDef?.fields?.find((x) => x.name === name);
+    return fieldDef?.type === "String";
+  };
 
   const makeName = (prefix: string, name: string) => {
     return `${prefix}.${name}`;
@@ -54,9 +55,31 @@ export const parseQuery = <T extends Entity>(
     return a;
   };
 
-  let counter = 0;
+  const normalize = (
+    repo: Repository<any>,
+    fieldName: string,
+    variable: string,
+  ) => {
+    const { normalization = {} } = features;
+    const { lowerCase = false, unaccent = false } = normalization;
 
-  const makeWhere = (name: string, arg: any) => {
+    // Only apply normalization to string fields
+    if (!isStringField(repo, fieldName)) return variable;
+
+    let res = variable;
+
+    if (lowerCase) res = `lower(${res})`;
+    if (unaccent) res = `unaccent(${res})`;
+
+    return res;
+  };
+
+  const makeWhere = (
+    repo: Repository<any>,
+    fieldName: string,
+    name: string,
+    arg: any,
+  ) => {
     const conditions: string[] = [];
     const params: Record<string, any> = {};
 
@@ -66,7 +89,9 @@ export const parseQuery = <T extends Entity>(
 
     for (const [key, value] of Object.entries(arg)) {
       if (value === null && (key === "eq" || key === "ne")) {
-        conditions.push(key === "eq" ? `${name} IS NULL` : `${name} IS NOT NULL`);
+        conditions.push(
+          key === "eq" ? `${name} IS NULL` : `${name} IS NOT NULL`,
+        );
         continue;
       }
 
@@ -81,32 +106,48 @@ export const parseQuery = <T extends Entity>(
       if (key === "lt") op = "<";
       if (key === "le") op = "<=";
 
-      if (key === "like") op = "ILIKE";
-      if (key === "notLike") op = "NOT ILIKE";
+      if (key === "like") op = "LIKE";
+      if (key === "notLike") op = "NOT LIKE";
 
-      const param = `p${counter++}`;
+      const wrappedName = normalize(repo, fieldName, name);
 
       if (Array.isArray(value)) {
         if (key === "in" || key === "notIn") {
           op = key === "in" ? "IN" : "NOT IN";
-          conditions.push(`${name} ${op} (:...${param})`);
+          // Create individual parameters for each array element
+          const paramPlaceholders = value.map((v) => {
+            const p = `p${counter++}`;
+            params[p] = v;
+            return normalize(repo, fieldName, `:${p}`);
+          });
+          conditions.push(
+            `${wrappedName} ${op} (${paramPlaceholders.join(", ")})`,
+          );
         } else if (key === "between" || key === "notBetween") {
           op = key === "between" ? "BETWEEN" : "NOT BETWEEN";
+          const param1 = `p${counter++}`;
           const param2 = `p${counter++}`;
-          conditions.push(`${name} ${op} :${param} AND :${param2}`);
-          params[param] = value[0];
+          const wrappedParam1 = normalize(repo, fieldName, `:${param1}`);
+          const wrappedParam2 = normalize(repo, fieldName, `:${param2}`);
+          conditions.push(
+            `${wrappedName} ${op} ${wrappedParam1} AND ${wrappedParam2}`,
+          );
+          params[param1] = value[0];
           params[param2] = value[1];
-          continue;
         }
       } else {
-        conditions.push(`${name} ${op} :${param}`);
+        const param = `p${counter++}`;
+        const wrappedParam = normalize(repo, fieldName, `:${param}`);
+        conditions.push(`${wrappedName} ${op} ${wrappedParam}`);
+        params[param] = value;
       }
-
-      params[param] = value;
     }
 
     return {
-      where: conditions.length > 1 ? `(${conditions.join(" AND ")})` : conditions[0] || "",
+      where:
+        conditions.length > 1
+          ? `(${conditions.join(" AND ")})`
+          : conditions[0] || "",
       params,
     };
   };
@@ -150,10 +191,10 @@ export const parseQuery = <T extends Entity>(
         }
         if (relation.isOneToMany || relation.isManyToMany) {
           const v = value === true ? { select: simpleSelect(rRepo) } : value;
-          const vResult = parseQuery(rRepo, v);
+          const vResult = parseQuery(client, rRepo, v);
           collections[key] = vResult;
         } else {
-          const nested: any = parseQuery(rRepo, { select: value });
+          const nested: any = parseQuery(client, rRepo, { select: value });
           references[key] = nested;
         }
       } else {
@@ -227,8 +268,9 @@ export const parseQuery = <T extends Entity>(
     if (op === "like" || op == "notLike") {
       const p = keys[0];
       const v = params[p];
+      const flags = features?.normalization?.lowerCase ? 'flag "i"' : "";
       params[p] = v.replace(/%/g, ".*");
-      condition = `@ like_regex "^' || :${p} || '$" flag "i"`;
+      condition = `@ like_regex "^' || :${p} || '$" ${flags}`;
       vars = "";
     }
 
@@ -329,7 +371,7 @@ export const parseQuery = <T extends Entity>(
           where.push(w);
         }
       } else {
-        const w = makeWhere(name, value);
+        const w = makeWhere(repo, key, name, value);
         where.push(w);
       }
     }
@@ -375,7 +417,7 @@ export const parseQuery = <T extends Entity>(
         Object.assign(order, jsonOrder);
       } else {
         select[name] = makeAlias(repo, prefix, key);
-        order[name] = value;
+        order[normalize(repo, key, name)] = value;
       }
     }
     return { order, joins, select };

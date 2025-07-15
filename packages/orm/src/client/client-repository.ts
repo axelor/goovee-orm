@@ -129,10 +129,11 @@ const createSelectQuery = <T extends Entity>(
 };
 
 const createBulkQuery = <T extends Entity>(
+  client: QueryClient,
   repo: OrmRepository<T>,
   where?: WhereOptions<T>,
 ) => {
-  const opts = parseQuery(repo, { where });
+  const opts = parseQuery(client, repo, { where });
   const qb = repo.createQueryBuilder("self");
   const sq = createSelectQuery(qb, opts);
   return sq;
@@ -327,8 +328,9 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   async find<U extends QueryOptions<T>>(
     args?: Options<U, QueryOptions<T>>,
   ): Promise<Payload<T, U>[]> {
+    const client = this.#client;
     const repo = this.#repo;
-    const opts = parseQuery(repo, args);
+    const opts = parseQuery(client, repo, args ?? {});
     const qb = repo.createQueryBuilder("self");
     const result = await load(repo, qb, opts);
     return result;
@@ -347,8 +349,9 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async count(args?: QueryOptions<T>): Promise<ID> {
+    const client = this.#client;
     const repo = this.#repo;
-    const opts = parseQuery(repo, args);
+    const opts = parseQuery(client, repo, args ?? {});
     const qb = repo.createQueryBuilder("self");
     const sq = createSelectQuery(qb, opts);
     return await sq.getCount();
@@ -583,9 +586,10 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async updateAll(args: BulkUpdateOptions<T>): Promise<ID> {
+    const client = this.#client;
     const repo = this.#repo;
     const { set, where } = args;
-    const qb = createBulkQuery(repo, where);
+    const qb = createBulkQuery(client, repo, where);
     const updateSet = Object.entries(set).reduce(
       (prev, [k, v]) => ({ ...prev, [k]: valueOrID(v) }),
       {},
@@ -596,9 +600,10 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async deleteAll(args?: BulkDeleteOptions<T>): Promise<ID> {
+    const client = this.#client;
     const repo = this.#repo;
     const { where } = args ?? {};
-    const qb = createBulkQuery(repo, where);
+    const qb = createBulkQuery(client, repo, where);
 
     // https://github.com/typeorm/typeorm/issues/5931
     const [query, params] = qb.select("self.id").getQueryAndParameters();

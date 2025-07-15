@@ -2,7 +2,9 @@ import * as typeorm from "typeorm";
 import { createDataSource } from "../typeorm/datasource";
 import { EntityRepository, Interceptor } from "./client-repository";
 
+import { EntityOptions } from "../schema";
 import {
+  ClientFeatures,
   ClientOptions,
   ConnectionClient,
   Entity,
@@ -18,6 +20,8 @@ const createClientProxy = <T extends QueryClient>(
   interceptor: Interceptor,
   em: typeorm.EntityManager,
   entities: Record<string, EntityClass>,
+  schema: EntityOptions[],
+  features?: ClientFeatures,
 ) => {
   const repos: Record<string, Repository<any>> = {};
   const proxy = new Proxy(client, {
@@ -27,11 +31,15 @@ const createClientProxy = <T extends QueryClient>(
           repos[p] ??
           (repos[p] = new EntityRepository<any>(
             em.getRepository(entities[p]),
-            client,
+            proxy,
             interceptor,
           ));
         return repo;
       }
+
+      if (typeof p === "string" && p === "__schema") return schema;
+      if (typeof p === "string" && p === "__features") return features;
+
       const value = Reflect.get(target, p);
       return typeof value === "function" ? value.bind(target) : value;
     },
@@ -51,8 +59,9 @@ export const createClient = <
 >(
   options: ClientOptions,
   entities: T,
+  schema: EntityOptions[],
 ): ConnectionClient<EntityClient<T>> => {
-  const { url, sync: synchronize } = options;
+  const { url, sync: synchronize, features } = options;
   const ds = createDataSource({
     type: "postgres",
     url,
@@ -63,11 +72,25 @@ export const createClient = <
   const interceptor = new Interceptor();
   const conn = new Connection(ds, interceptor, (em) => {
     const client = new Client(em);
-    const proxy = createClientProxy(client, interceptor, em, entities);
+    const proxy = createClientProxy(
+      client,
+      interceptor,
+      em,
+      entities,
+      schema,
+      features,
+    );
     return proxy;
   });
 
-  return createClientProxy(conn, interceptor, ds.manager, entities) as any;
+  return createClientProxy(
+    conn,
+    interceptor,
+    ds.manager,
+    entities,
+    schema,
+    features,
+  ) as any;
 };
 
 type ClientFactory = (em: typeorm.EntityManager) => Client;

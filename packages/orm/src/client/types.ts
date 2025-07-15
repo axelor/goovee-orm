@@ -366,9 +366,26 @@ export type EntityClient<T extends Record<string, EntityClass>> =
     [K in keyof T]: T[K] extends EntityClass<infer E> ? Repository<E> : never;
   };
 
+export type ClientFeatures = {
+  /**
+   * Text normalization applied to both filtering and sorting
+   */
+  normalization?: {
+    /**
+     * Convert text to lower case before comparison
+     */
+    lowerCase?: boolean;
+    /**
+     * Remove accents/diacritics (e.g., é -> e)
+     */
+    unaccent?: boolean;
+  };
+};
+
 export type ClientOptions = {
-  url: string;
+  url?: string;
   sync?: boolean;
+  features?: ClientFeatures;
 };
 
 export interface Repository<T extends Entity> {
