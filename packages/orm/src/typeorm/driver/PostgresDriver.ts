@@ -1,5 +1,6 @@
 import { DataSource, ReplicationMode } from "typeorm";
 import { PostgresDriver as BasePostgresDriver } from "typeorm/driver/postgres/PostgresDriver.js";
+import { PlatformTools } from "typeorm/platform/PlatformTools.js";
 import { PostgresQueryRunner } from "./PostgresQueryRunner";
 
 export class PostgresDriver extends BasePostgresDriver {
@@ -12,5 +13,9 @@ export class PostgresDriver extends BasePostgresDriver {
 
   createQueryRunner(mode: ReplicationMode): PostgresQueryRunner {
     return new PostgresQueryRunner(this, mode);
+  }
+
+  protected loadDependencies(): void {
+    this.postgres = PlatformTools.load("pg");
   }
 }
