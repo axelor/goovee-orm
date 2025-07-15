@@ -5,6 +5,8 @@ import { PostgresQueryRunner } from "./PostgresQueryRunner";
 export class PostgresDriver extends BasePostgresDriver {
   constructor(connection?: DataSource) {
     super(connection);
+    this.mappedDataTypes.createDateDefault = "null";
+    this.mappedDataTypes.updateDateDefault = "null";
     this.supportedDataTypes.push("oid" as any); // for large object support
   }
 

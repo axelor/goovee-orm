@@ -1,8 +1,8 @@
 import {
   EntityManager,
   EntityMetadata,
-  QueryBuilder,
   Repository as OrmRepository,
+  QueryBuilder,
   SelectQueryBuilder,
 } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
@@ -468,6 +468,14 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
       }
     }
 
+    // handle audit fields
+    if (meta.createDateColumn) {
+      attrs[meta.createDateColumn.propertyName] = new Date();
+    }
+    if (meta.updateDateColumn) {
+      attrs[meta.updateDateColumn.propertyName] = new Date();
+    }
+
     // save
     const obj = await repo.save(repo.create(attrs));
 
@@ -552,6 +560,9 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     );
 
     if (changed) {
+      if (meta.updateDateColumn) {
+        attrs[meta.updateDateColumn.propertyName] = new Date();
+      }
       Object.assign(obj, attrs);
       await repo.save(obj);
     }
