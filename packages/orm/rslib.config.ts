@@ -8,7 +8,12 @@ const ignore = new rspack.IgnorePlugin({
 export default defineConfig({
   source: {
     entry: {
-      index: ["src/**", "!src/test/**", "!src/**/*.test.*"],
+      index: [
+        "src/**",
+        "!src/**/*.test.*",
+        "!src/test/**",
+        "!src/cli/index-dev.mjs",
+      ],
     },
     tsconfigPath: "tsconfig.build.json",
   },

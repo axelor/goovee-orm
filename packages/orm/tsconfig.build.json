@@ -4,5 +4,5 @@
     "rootDir": "./src"
   },
   "include": ["src"],
-  "exclude": ["src/test", "src/**/*.test.*"]
+  "exclude": ["src/test", "src/**/*.test.*", "src/cli/index-dev.mjs"]
 }
