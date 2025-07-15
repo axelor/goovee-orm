@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.0.5] (Unreleased)
+
 ## [0.0.4] (2025-07-15)
 
 ### ✨ Features
@@ -99,5 +101,6 @@
 - **Initial Project Setup:** Established the initial project structure and core dependencies.
 - **CI/CD Integration:** Added `.gitlab-ci.yml` for continuous integration and deployment.
 
+[0.0.5]: https://github.com/axelor/goovee-orm/compare/0.0.4...0.0.5
 [0.0.4]: https://github.com/axelor/goovee-orm/compare/0.0.3...0.0.4
 [0.0.3]: https://github.com/axelor/goovee-orm
