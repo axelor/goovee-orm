@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { generate } from "./commands/generate";
-import packageJson from "../../package.json";
+import packageJson from "../../package.json" with { type: "json" };
 
 const version = packageJson.version;
 
