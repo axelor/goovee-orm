@@ -1,15 +1,32 @@
 import { QueryBuilder, SelectQueryBuilder } from "typeorm";
-import { isLazy, ensureLazy } from "../../fields/utils";
-import { ParseResult, isPageQuery, parseCursor, createCursor } from "../../parser";
+import { ensureLazy, isLazy } from "../../fields/utils";
+import {
+  ParseResult,
+  createCursor,
+  isPageQuery,
+  parseCursor,
+} from "../../parser";
 import { OrmRepository } from "../types";
 import { createSelectQuery, relationQuery } from "./utils";
-
 
 export const runQuery = async (
   repo: OrmRepository<any>,
   builder: QueryBuilder<any>,
-  options: ParseResult
+  options: ParseResult,
 ) => {
+  return doQuery(repo, builder, options).then((x) => x.entities);
+};
+
+type QueryResult<T> = {
+  entities: T[];
+  raw: Record<string, any>[];
+};
+
+const doQuery = async (
+  repo: OrmRepository<any>,
+  builder: QueryBuilder<any>,
+  options: ParseResult,
+): Promise<QueryResult<any>> => {
   const { references = {}, collections = {}, select = {} } = options;
 
   const lazyFields = Object.keys(select).filter((x) => isLazy(repo, x));
@@ -28,8 +45,13 @@ export const runQuery = async (
     take = Math.abs(take);
   }
 
+  const noResult: QueryResult<any> = {
+    entities: [],
+    raw: [],
+  };
+
   if (count === 0) {
-    return [];
+    return noResult;
   }
 
   if (take > 0) sq.take(take);
@@ -47,7 +69,7 @@ export const runQuery = async (
       const sub = new SelectQueryBuilder(sq).orderBy(cur.order);
       const res = await sub.getMany();
       const ids = res.map((x) => x.id);
-      if (ids.length === 0) return [];
+      if (ids.length === 0) return noResult;
       sq.where("self.id IN (:...ids)", { ids }).take(undefined).skip(undefined);
     }
   }
@@ -59,26 +81,56 @@ export const runQuery = async (
     ...Object.entries(collections),
   ];
 
+  const ids = records.map((x) => x.id);
+  if (ids.length === 0) {
+    return noResult;
+  }
+
   for (const [property, opts] of relations) {
     const relation = repo.metadata.findRelationWithPropertyPath(property);
     if (!relation) {
       throw new Error(
-        `No such relation exits: ${repo.metadata.name}#${property}`
+        `No such relation exits: ${repo.metadata.name}#${property}`,
       );
     }
 
-    const rq = relationQuery(repo.manager, relation);
     const rr = repo.manager.getRepository(relation.inverseEntityMetadata.name);
+    const nq = relationQuery(repo.manager, relation)
+      .clone()
+      .setParameter("__parents", ids);
+
+    // Add `self.id` and `self.version` to prevent `createSelectQuery`
+    // to start selection from scratch
+    const oo = {
+      ...opts,
+      select: {
+        ...opts.select,
+        "self.id": "self_id",
+        "self.version": "self.version",
+      },
+    };
+
+    const { entities: items, raw: rawItems } = await doQuery(rr, nq, oo);
+
+    const itemsById = items.reduce((group, item) => {
+      return {
+        ...group,
+        [item.id]: item,
+      };
+    }, {});
+
+    const itemsByParent = rawItems.reduce((group, item) => {
+      const parent = item.__parent;
+      const values = group[parent] ?? [];
+      group[parent] = [...values, item.self_id];
+      return group;
+    }, {});
 
     for (const record of records) {
-      const nq = rq.clone().setParameter("__parent", record.id);
-      const related = await runQuery(rr, nq, opts);
+      const relatedIds: any[] = itemsByParent[record.id] || [];
+      const related = relatedIds.map((x) => itemsById[x]);
       record[property] =
-        property in references
-          ? related && related.length
-            ? related[0]
-            : null
-          : related;
+        property in references ? (related.length ? related[0] : null) : related;
     }
   }
 
@@ -102,16 +154,19 @@ export const runQuery = async (
     // Calculate pagination flags efficiently without additional queries
     const start = records[0];
     const end = records[records.length - 1];
-    
+
     if (start && end) {
       // _hasPrev: true if we have a skip value (not at beginning) or if cursor indicates we're not at start
       start._hasPrev = skip > 0 || (cursor && take > 0);
-      
+
       // _hasNext: true if we fetched exactly 'take' records and there might be more
       // This is determined by: (skip + records.length) < count
       end._hasNext = count > skip + records.length;
     }
   }
 
-  return records;
+  return {
+    entities: records,
+    raw: rawRecords,
+  };
 };

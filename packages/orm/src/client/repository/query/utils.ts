@@ -1,13 +1,13 @@
-import {
-  EntityManager,
-  QueryBuilder,
-} from "typeorm";
+import { EntityManager, QueryBuilder } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
 import { parseQuery, ParseResult } from "../../parser";
 import type { Entity, QueryClient, WhereOptions } from "../../types";
 import { OrmRepository } from "../types";
 
-export const relationQuery = (manager: EntityManager, relation: RelationMetadata) => {
+export const relationQuery = (
+  manager: EntityManager,
+  relation: RelationMetadata,
+) => {
   const entityTable = relation.entityMetadata.tableName;
   const targetTable = relation.inverseEntityMetadata.tableName;
 
@@ -23,8 +23,9 @@ export const relationQuery = (manager: EntityManager, relation: RelationMetadata
       .from(targetTable, "self")
       .select("self.id")
       .addSelect("self.version")
+      .addSelect("joined.id as __parent")
       .innerJoin(entityTable, "joined", `joined.${joinColumn} = self.id`)
-      .where("joined.id = :__parent");
+      .where("joined.id IN (:...__parents)");
   }
 
   if (relation.isOneToOne && !joinColumn) {
@@ -33,8 +34,9 @@ export const relationQuery = (manager: EntityManager, relation: RelationMetadata
       .from(targetTable, "self")
       .select("self.id")
       .addSelect("self.version")
+      .addSelect("joined.id as __parent")
       .innerJoin(entityTable, "joined", `joined.id = self.${mappedBy}`)
-      .where("joined.id = :__parent");
+      .where("joined.id IN (:...__parents)");
   }
 
   if (relation.isOneToMany) {
@@ -43,7 +45,8 @@ export const relationQuery = (manager: EntityManager, relation: RelationMetadata
       .from(targetTable, "self")
       .select("self.id")
       .addSelect("self.version")
-      .where(`self.${mappedBy} = :__parent`);
+      .addSelect(`self.${mappedBy} as __parent`)
+      .where(`self.${mappedBy} IN (:...__parents)`);
   }
 
   // owner side many-to-many
@@ -53,10 +56,11 @@ export const relationQuery = (manager: EntityManager, relation: RelationMetadata
       .from(targetTable, "self")
       .select("self.id")
       .addSelect("self.version")
+      .addSelect(`joined.${joinColumn} as __parent`)
       .innerJoin(
         joinTable,
         "joined",
-        `joined.${joinColumn} = :__parent AND joined.${inverseJoinColumn} = self.id`,
+        `joined.${joinColumn} IN (:...__parents) AND joined.${inverseJoinColumn} = self.id`,
       );
   }
 
@@ -70,10 +74,11 @@ export const relationQuery = (manager: EntityManager, relation: RelationMetadata
       .from(targetTable, "self")
       .select("self.id")
       .addSelect("self.version")
+      .addSelect(`joined.${inverseJoinColumn} as __parent`)
       .innerJoin(
         joinTable,
         "joined",
-        `joined.${mappedBy} = self.id AND joined.${inverseJoinColumn} = :__parent`,
+        `joined.${mappedBy} = self.id AND joined.${inverseJoinColumn} IN (:...__parents)`,
       );
   }
 
@@ -84,13 +89,17 @@ export const createSelectQuery = <T extends Entity>(
   builder: QueryBuilder<T>,
   options: ParseResult,
 ) => {
-  const { select, where, params = {}, joins = {}, order } = options;
+  const { select = {}, where, params = {}, joins = {}, order } = options;
 
-  const sq = select
-    ? builder.select("self.id").addSelect("self.version")
-    : builder.select();
+  const hasId = !!select["self.id"];
+  const hasVersion = !!select["self.version"];
 
-  Object.entries(select ?? {})
+  let sq = builder.select();
+
+  if (!hasId) sq = sq.select("self.id");
+  if (!hasVersion) sq = sq.addSelect("self.version");
+
+  Object.entries(select)
     .filter(([name]) => name !== "self.id" && name !== "self.version")
     .forEach(([name, alias]) => sq.addSelect(name, alias));
 
