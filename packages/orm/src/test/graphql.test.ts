@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { graphql } from "graphql";
 import { describe, expect, it } from "vitest";
 import { getTestClient } from "./client.utils";
@@ -427,7 +428,7 @@ describe("GraphQL tests", async () => {
               node: {
                 firstName: "Some",
                 lastName: "NAME",
-                dateOfBirth: now.toISOString().split("T")[0],
+                dateOfBirth: dayjs(now).format('YYYY-MM-DD')
               },
             },
           ],
