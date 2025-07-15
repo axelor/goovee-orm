@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-import { generateClient } from "./client-generator";
+import { generateClient } from "./generator";
 
 const cleanUp = (outDir: string, files: string[]) => {
   files.filter((x) => fs.existsSync(x)).forEach((x) => fs.rmSync(x));
@@ -20,7 +20,7 @@ const cleanUp = (outDir: string, files: string[]) => {
 
 describe("client generator tests", () => {
   it("should generate client", () => {
-    const schemaDir = path.join(__dirname, "..", "test", "schema");
+    const schemaDir = path.join(__dirname, "..", "..", "test", "schema");
     const outDir = fs.mkdtempSync(path.join(__dirname, "db."));
     const files = generateClient(schemaDir, outDir);
     expect(files.length).toBeGreaterThan(0);

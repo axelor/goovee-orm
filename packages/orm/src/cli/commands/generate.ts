@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { Command } from "commander";
-import { generateClient } from "../../client/client-generator";
+import { generateClient } from "../../client/generator";
 
 export const generate = new Command()
   .name("generate")

@@ -1,6 +1,6 @@
 import path from "node:path";
 import { ClientFeatures } from "../client";
-import { generateClient } from "../client/client-generator";
+import { generateClient } from "../client/generator";
 
 export const generateCode = () => {
   const schemaDir = path.join(__dirname, "schema");

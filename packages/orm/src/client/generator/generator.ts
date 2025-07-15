@@ -2,10 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { camelCase } from "typeorm/util/StringUtils";
 
-import { CodeFile } from "../code-generator/CodeFile";
-import { generateSchema } from "../schema/schema-generator";
-import { readSchema } from "../schema/schema-utils";
-import { EntityOptions } from "../schema/types";
+import { CodeFile } from "../../code-generator/CodeFile";
+import { generateSchema } from "../../schema/schema-generator";
+import { readSchema } from "../../schema/schema-utils";
+import { EntityOptions } from "../../schema/types";
 
 export const createFile = (outDir: string, fileName: string, content: any) => {
   const text =
