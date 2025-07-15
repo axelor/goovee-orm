@@ -423,13 +423,14 @@ export class Contact extends Model {
 
 const expectedUniqueCode = `\
 import { Entity, Unique, Index, Column } from "@goovee/orm/typeorm";
+import { Model } from "./Model";
 
 @Entity("unique_test")
 @Unique(["some", "thing"])
 @Unique("uk_some_one", ["some", "one"])
 @Index(["another", "one"], { unique: true })
 @Index("idx_some_one", ["some", "one"], { unique: true })
-export class UniqueTest {
+export class UniqueTest extends Model {
   @Index({ unique: true })
   @Column({ nullable: true })
   name?: string;
@@ -451,10 +452,11 @@ export class UniqueTest {
 
 const expectedSyncCode = `\
 import { Entity, ManyToMany, JoinTable, type Relation } from "@goovee/orm/typeorm";
+import { Model } from "./Model";
 import { SaleTax } from "./SaleTax";
 
 @Entity("sale_order", { synchronize: false })
-export class SaleOrder {
+export class SaleOrder extends Model {
   @ManyToMany(() => SaleTax)
   @JoinTable({ name: "sale_order_taxes", joinColumn: { name: "sale_order" }, inverseJoinColumn: { name: "taxes" }, synchronize: false })
   taxes?: Relation<SaleTax>[];
@@ -463,9 +465,10 @@ export class SaleOrder {
 
 const expectedTemporalsCode = `\
 import { Entity, Column } from "@goovee/orm/typeorm";
+import { Model } from "./Model";
 
 @Entity("temporals")
-export class Temporals {
+export class Temporals extends Model {
   @Column({ nullable: true, type: "timestamp" })
   dateTimeField?: Date;
 
@@ -479,9 +482,10 @@ export class Temporals {
 
 const expectedDecimalsCode = `\
 import { Entity, Column } from "@goovee/orm/typeorm";
+import { Model } from "./Model";
 
 @Entity("decimals")
-export class Decimals {
+export class Decimals extends Model {
   @Column({ nullable: true, type: "numeric" })
   rate?: string;
 

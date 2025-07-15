@@ -650,7 +650,7 @@ export const generateSchema = (outDir: string, config: GeneratorConfig) => {
   // generate all other entities
   for (const opts of schema) {
     if (opts.name !== Model.name) {
-      files.push(generateEntity(outDir, opts, config));
+      files.push(generateEntity(outDir, { extends: "Model", ...opts }, config));
     }
   }
 
