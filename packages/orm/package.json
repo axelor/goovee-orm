@@ -46,7 +46,7 @@
     "dist"
   ],
   "bin": {
-    "goovee": "./src/cli/index-dev.mjs"
+    "goovee": "tsx ./src/cli/index.ts"
   },
   "dependencies": {
     "commander": "^14.0.0",
@@ -64,8 +64,8 @@
     "@types/yargs": "^17.0.33",
     "dayjs": "^1.11.13",
     "rimraf": "^6.0.1",
-    "ts-node": "^10.9.2",
     "tsdown": "^0.12.9",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   }
