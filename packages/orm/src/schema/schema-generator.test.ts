@@ -483,14 +483,15 @@ export class Temporals extends Model {
 const expectedDecimalsCode = `\
 import { Entity, Column } from "@goovee/orm/typeorm";
 import { Model } from "./Model";
+import { BigDecimal } from "@goovee/orm";
 
 @Entity("decimals")
 export class Decimals extends Model {
-  @Column({ nullable: true, type: "numeric" })
-  rate?: string;
+  @Column({ nullable: true, type: "numeric", transformer: (BigDecimal as any).__transformer })
+  rate?: BigDecimal;
 
-  @Column({ nullable: true, scale: 2, precision: 10, type: "numeric" })
-  amount?: string;
+  @Column({ nullable: true, scale: 2, precision: 10, type: "numeric", transformer: (BigDecimal as any).__transformer })
+  amount?: BigDecimal;
 }
 `;
 

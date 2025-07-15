@@ -1,3 +1,5 @@
+import type { BigDecimal } from "./decimal";
+
 export type EQ<T> = { eq: T | null } | T | null;
 export type NE<T> = { ne: T | null };
 export type GT<T> = { gt: T };
@@ -32,7 +34,9 @@ export type BooleanFilter = EQ<boolean> | NE<boolean>;
 
 export type IntFilter = NumericFilter<number>;
 export type BigIntFilter = NumericFilter<bigint>;
-export type DecimalFilter = NumericFilter<string>;
+export type DecimalFilter = NumericFilter<
+  string | number | bigint | BigDecimal
+>;
 export type DateFilter = NumericFilter<Date | string>;
 export type IdFilter = NumericFilter<ID>;
 
@@ -132,23 +136,25 @@ export type WhereArg<T> = T extends number
     ? BigIntFilter
     : T extends boolean
       ? BooleanFilter
-      : T extends string
-        ? StringFilter
-        : T extends Date
-          ? DateFilter
-          : T extends Array<infer P>
-            ? P extends Entity
-              ? WhereOptions<P>
-              : never
-            : T extends Entity
-              ? WhereOptions<T>
-              : T extends Promise<infer S>
-                ? S extends string
-                  ? StringFilter
-                  : S extends JsonType
-                    ? JsonWhere
-                    : never
-                : never;
+      : T extends BigDecimal
+        ? DecimalFilter
+        : T extends string
+          ? StringFilter
+          : T extends Date
+            ? DateFilter
+            : T extends Array<infer P>
+              ? P extends Entity
+                ? WhereOptions<P>
+                : never
+              : T extends Entity
+                ? WhereOptions<T>
+                : T extends Promise<infer S>
+                  ? S extends string
+                    ? StringFilter
+                    : S extends JsonType
+                      ? JsonWhere
+                      : never
+                  : never;
 
 export type WhereOptions<T extends Entity> =
   | {
@@ -162,7 +168,12 @@ export type WhereOptions<T extends Entity> =
 
 export type OrderBy = "ASC" | "DESC";
 
-export type OrderByArg<T> = T extends string | number | boolean | Date
+export type OrderByArg<T> = T extends
+  | string
+  | number
+  | boolean
+  | Date
+  | BigDecimal
   ? OrderBy
   : T extends Array<infer P>
     ? P extends Entity
@@ -253,7 +264,11 @@ export type CreateArg<T> =
       : T
     : T extends Entity
       ? NestedCreateArg<T>
-      : T;
+      : T extends BigDecimal
+        ? string | number | bigint | T
+        : T extends undefined
+        ? T | null
+        : T;
 
 export type CreateArgs<T extends Entity> = {
   [K in keyof T]: CreateArg<T[K]>;

@@ -1,3 +1,5 @@
+import { ValueTransformer } from "typeorm";
+
 export enum RoundingMode {
   UP = "UP",
   DOWN = "DOWN",
@@ -374,3 +376,19 @@ export class BigDecimal {
     return this.#value;
   }
 }
+
+const Transformer: ValueTransformer = {
+  from: (value) => {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    if (value instanceof BigDecimal) {
+      return value;
+    }
+    return new BigDecimal(value);
+  },
+  to: (value) => value?.toString(),
+};
+
+// for internal use only
+(BigDecimal as any).__transformer = Transformer;

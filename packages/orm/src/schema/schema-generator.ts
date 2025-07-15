@@ -37,7 +37,7 @@ const Types: Record<string, string> = {
   Date: "Date",
   Time: "Date",
   DateTime: "Date",
-  Decimal: "string",
+  Decimal: "BigDecimal",
   Binary: "Binary",
   Text: "Text",
   JSON: "Json",
@@ -68,6 +68,7 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
     if (type === "JSON") return this.importNameInternal("type Json");
     if (type === "Text") return this.importNameInternal("type Text");
     if (type === "Binary") return this.importNameInternal("type Binary");
+    if (type === "Decimal") return this.importNameInternal("BigDecimal");
     return Types[type] ?? type;
   }
 
@@ -123,6 +124,7 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
     // decimal type
     if (type === "Decimal") {
       arg.type = "numeric";
+      arg.transformer = d.unquote("(BigDecimal as any).__transformer")
     }
 
     const decorators: Decorator[] = [];
