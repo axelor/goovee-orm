@@ -99,21 +99,18 @@ export const runQuery = async (
       record._cursor = cur;
     }
 
+    // Calculate pagination flags efficiently without additional queries
     const start = records[0];
-    const startCursor = start?._cursor;
     const end = records[records.length - 1];
-    const endCursor = end?._cursor;
-
-    const has = async (cursor: string, take: number) => {
-      const qb = repo.createQueryBuilder("self");
-      const opts = { ...options, cursor, take, skip: 0 };
-      const res = await runQuery(repo, qb, opts);
-      return res.length === 1;
-    };
-
-    if (start)
-      start._hasPrev = count > 1 && startCursor && (await has(startCursor, -1));
-    if (end) end._hasNext = count > 1 && endCursor && (await has(endCursor, 1));
+    
+    if (start && end) {
+      // _hasPrev: true if we have a skip value (not at beginning) or if cursor indicates we're not at start
+      start._hasPrev = skip > 0 || (cursor && take > 0);
+      
+      // _hasNext: true if we fetched exactly 'take' records and there might be more
+      // This is determined by: (skip + records.length) < count
+      end._hasNext = count > skip + records.length;
+    }
   }
 
   return records;
