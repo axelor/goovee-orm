@@ -33,7 +33,8 @@ export const contacts = [
     street: "123 Main Street",
     city: "New York",
     altContact: "Jane Doe",
-    bioContent: "Experienced Java developer with 10 years in enterprise applications.",
+    bioContent:
+      "Experienced Java developer with 10 years in enterprise applications.",
   },
   {
     firstName: "Alice",
@@ -51,7 +52,8 @@ export const contacts = [
     street: "456 Oak Avenue",
     city: "Toronto",
     altContact: "Bob Smith",
-    bioContent: "Frontend specialist focusing on React and TypeScript development.",
+    bioContent:
+      "Frontend specialist focusing on React and TypeScript development.",
   },
   {
     firstName: "Bob",
@@ -321,7 +323,8 @@ export const contacts = [
     street: "618 Orange Avenue",
     city: "Winnipeg",
     altContact: "Quinn Lee",
-    bioContent: "Database architect with NoSQL and caching solutions experience.",
+    bioContent:
+      "Database architect with NoSQL and caching solutions experience.",
   },
   {
     firstName: "Quinn",
@@ -339,7 +342,8 @@ export const contacts = [
     street: "729 Grape Lane",
     city: "Portland",
     altContact: "Ryan Walker",
-    bioContent: "Performance engineer specializing in Redis and caching strategies.",
+    bioContent:
+      "Performance engineer specializing in Redis and caching strategies.",
   },
   {
     firstName: "Ryan",
@@ -357,7 +361,8 @@ export const contacts = [
     street: "840 Berry Road",
     city: "Glasgow",
     altContact: "Sara Hall",
-    bioContent: "Performance optimization specialist with monitoring expertise.",
+    bioContent:
+      "Performance optimization specialist with monitoring expertise.",
   },
   {
     firstName: "Sara",

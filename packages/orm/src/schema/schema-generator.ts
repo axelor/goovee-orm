@@ -124,7 +124,7 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
     // decimal type
     if (type === "Decimal") {
       arg.type = "numeric";
-      arg.transformer = d.unquote("(BigDecimal as any).__transformer")
+      arg.transformer = d.unquote("(BigDecimal as any).__transformer");
     }
 
     const decorators: Decorator[] = [];

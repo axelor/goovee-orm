@@ -31,7 +31,7 @@ export class ParserContext {
   private usedAliases = new Set<string>();
   public readonly schema: EntityOptions[];
   public readonly features: ClientFeatures;
-  
+
   // PostgreSQL NAMEDATALEN limit - using 16 for testing, should be 63 for production
   private readonly MAX_ALIAS_LENGTH = 16;
 
@@ -55,7 +55,7 @@ export class ParserContext {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(36);
@@ -78,7 +78,7 @@ export class ParserContext {
     const maxBaseLength = this.MAX_ALIAS_LENGTH - hashSuffix.length;
     const base = alias.substring(0, maxBaseLength);
     const uniqueAlias = `${base}${hashSuffix}`;
-    
+
     this.usedAliases.add(uniqueAlias);
     return uniqueAlias;
   }

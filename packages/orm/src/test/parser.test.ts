@@ -483,14 +483,14 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self.id)": "count_id",
       "COUNT(self.firstName)": "count_firstName",
     });
     expect(res.aliasMap).toMatchObject({
-      "count_id": "_count.id",
-      "count_firstName": "_count.firstName",
+      count_id: "_count.id",
+      count_firstName: "_count.firstName",
     });
   });
 
@@ -508,7 +508,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self_title.id)": "count_title_id",
       "COUNT(self_addresses.id)": "count_add_req67s",
@@ -532,7 +532,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self.id)": "count_id",
     });
@@ -552,7 +552,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "AVG(self.version)": "avg_version",
     });
@@ -567,7 +567,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "SUM(self.version)": "sum_version",
     });
@@ -587,7 +587,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "MIN(self.version)": "min_version",
       "MIN(self.firstName)": "min_firstName",
@@ -617,7 +617,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self.id)": "count_id",
       "AVG(self.version)": "avg_version",
@@ -640,7 +640,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self.id)": "count_id",
       "self.firstName": "groupBy_f_ygirgy",
@@ -666,7 +666,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self.id)": "count_id",
       "self_title.id": "groupBy_title_id",
@@ -695,7 +695,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self.id)": "count_id",
       "self_addresses_country.id": "groupBy_a_xtsb62",
@@ -731,7 +731,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self.id)": "count_id",
       "AVG(self.version)": "avg_version",
@@ -775,7 +775,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self.id)": "count_id",
       "AVG(self.version)": "avg_version",
@@ -784,7 +784,9 @@ describe("aggregate parser tests", async () => {
     expect(res.groups).toMatchObject({
       "self.firstName": "groupBy_f_ygirgy",
     });
-    expect(res.having).toBe("COUNT(self.id) > :p0 AND AVG(self.version) >= :p1");
+    expect(res.having).toBe(
+      "COUNT(self.id) > :p0 AND AVG(self.version) >= :p1",
+    );
     expect(res.params).toMatchObject({
       p0: 5,
       p1: 2.0,
@@ -812,7 +814,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self_title.id)": "count_title_id",
       "self.firstName": "groupBy_f_ygirgy",
@@ -868,7 +870,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "COUNT(self.id)": "count_id",
       "COUNT(self_addresses.id)": "count_add_req67s",
@@ -886,7 +888,9 @@ describe("aggregate parser tests", async () => {
       "self.addresses": "self_addresses",
     });
     expect(res.where).toBe("self.version > :p0");
-    expect(res.having).toBe("COUNT(self_addresses.id) >= :p1 AND AVG(self.version) < :p2");
+    expect(res.having).toBe(
+      "COUNT(self_addresses.id) >= :p1 AND AVG(self.version) < :p2",
+    );
     expect(res.take).toBe(50);
     expect(res.skip).toBe(10);
     expect(res.params).toMatchObject({
@@ -895,10 +899,10 @@ describe("aggregate parser tests", async () => {
       p2: 10,
     });
     expect(res.aliasMap).toMatchObject({
-      "avg_version": "_avg.version",
-      "max_firstName": "_max.firstName",
-      "groupBy_lastName": "groupBy.lastName",
-      "groupBy_title_id": "groupBy.title.id",
+      avg_version: "_avg.version",
+      max_firstName: "_max.firstName",
+      groupBy_lastName: "groupBy.lastName",
+      groupBy_title_id: "groupBy.title.id",
     });
   });
 
@@ -915,7 +919,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "AVG(self_addresses_country.version)": "avg_addre_mjs0ij",
     });
@@ -924,7 +928,7 @@ describe("aggregate parser tests", async () => {
       "self_addresses.country": "self_addresses_country",
     });
     expect(res.aliasMap).toMatchObject({
-      "avg_addre_mjs0ij": "_avg.addresses.country.version",
+      avg_addre_mjs0ij: "_avg.addresses.country.version",
     });
   });
 
@@ -942,7 +946,7 @@ describe("aggregate parser tests", async () => {
 
     const repo = getContactRepo();
     const res = parseAggregate(client, repo, opts);
-    
+
     expect(res.select).toMatchObject({
       "AVG(self.version)": "avg_version",
       "AVG(self_addresses_country.version)": "avg_addre_mjs0ij",
@@ -952,8 +956,8 @@ describe("aggregate parser tests", async () => {
       "self_addresses.country": "self_addresses_country",
     });
     expect(res.aliasMap).toMatchObject({
-      "avg_version": "_avg.version",
-      "avg_addre_mjs0ij": "_avg.addresses.country.version",
+      avg_version: "_avg.version",
+      avg_addre_mjs0ij: "_avg.addresses.country.version",
     });
   });
 });

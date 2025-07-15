@@ -35,7 +35,10 @@ const createCircles = async (client: TestClient) => {
   }
 };
 
-const createContact = async (client: TestClient, contactData: typeof contacts[0]) => {
+const createContact = async (
+  client: TestClient,
+  contactData: (typeof contacts)[0],
+) => {
   const {
     firstName,
     lastName,

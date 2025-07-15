@@ -22,10 +22,7 @@ export class AggregateProcessor {
     );
   }
 
-  process(
-    repo: Repository<any>,
-    opts: AggregateOptions<any>,
-  ): ParseResult {
+  process(repo: Repository<any>, opts: AggregateOptions<any>): ParseResult {
     let select: Record<string, string> = {};
     let joins: Record<string, string> = {};
     let groups: Record<string, any> = {};

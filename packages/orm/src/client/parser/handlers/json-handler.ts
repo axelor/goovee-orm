@@ -1,4 +1,9 @@
-import { ParserContext, findJsonCastType, findJsonType, acceptWhereCauses } from "../context";
+import {
+  ParserContext,
+  findJsonCastType,
+  findJsonType,
+  acceptWhereCauses,
+} from "../context";
 import { JsonWhere, JsonOrderBy, OrderBy, WhereResult } from "../types";
 import { InvalidJsonFilterError } from "../errors";
 

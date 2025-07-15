@@ -89,9 +89,9 @@ export const createPostgresContainer = async () => {
   const cmd = await which("docker").catch(() => which("podman"));
   const port = await generatePort();
   const name = generateName();
-  
+
   console.log(`🐘 Starting PostgreSQL container on port ${port}...`);
-  
+
   const pg = await run(
     cmd,
     [

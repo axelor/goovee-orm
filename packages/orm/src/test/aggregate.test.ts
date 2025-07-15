@@ -9,7 +9,7 @@ describe("aggregate e2e tests", async () => {
   const setupTestData = async (client: any) => {
     // Clear existing data
     await client.contact.deleteAll();
-    
+
     // Create test title
     const title = await client.title.create({
       data: {
@@ -39,7 +39,7 @@ describe("aggregate e2e tests", async () => {
     const contact2 = await client.contact.create({
       data: {
         firstName: "Jane",
-        lastName: "Smith", 
+        lastName: "Smith",
         version: 2,
       },
     });
@@ -82,7 +82,7 @@ describe("aggregate e2e tests", async () => {
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(1);
-    
+
     const first = result[0];
     expect(first._count).toBeDefined();
     expect(first._count.id).toBeTypeOf("number");
@@ -107,7 +107,7 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._count).toBeDefined();
@@ -129,7 +129,7 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._avg).toBeDefined();
@@ -148,12 +148,14 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._sum).toBeDefined();
       // Sum can be null if no valid values exist, or a number
-      expect(first._sum.version === null || typeof first._sum.version === "number").toBe(true);
+      expect(
+        first._sum.version === null || typeof first._sum.version === "number",
+      ).toBe(true);
     }
   });
 
@@ -173,7 +175,7 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._min).toBeDefined();
@@ -208,15 +210,19 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._count).toBeDefined();
       expect(first._count.id).toBeTypeOf("number");
       expect(first._avg).toBeDefined();
-      expect(first._avg.version === null || typeof first._avg.version === "number").toBe(true);
+      expect(
+        first._avg.version === null || typeof first._avg.version === "number",
+      ).toBe(true);
       expect(first._sum).toBeDefined();
-      expect(first._sum.version === null || typeof first._sum.version === "number").toBe(true);
+      expect(
+        first._sum.version === null || typeof first._sum.version === "number",
+      ).toBe(true);
       expect(first._min).toBeDefined();
       expect(first._min.firstName).toBeTypeOf("string");
       expect(first._max).toBeDefined();
@@ -237,7 +243,7 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     // Should have multiple results when grouping
     if (result.length > 0) {
       const first = result[0];
@@ -263,7 +269,7 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._count).toBeDefined();
@@ -290,7 +296,7 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._count).toBeDefined();
@@ -318,13 +324,15 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._count).toBeDefined();
       expect(first._count.id).toBeTypeOf("number");
       expect(first._avg).toBeDefined();
-      expect(first._avg.version === null || typeof first._avg.version === "number").toBe(true);
+      expect(
+        first._avg.version === null || typeof first._avg.version === "number",
+      ).toBe(true);
     }
   });
 
@@ -351,7 +359,7 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._count).toBeDefined();
@@ -400,7 +408,7 @@ describe("aggregate e2e tests", async () => {
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeLessThanOrEqual(10);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._count).toBeDefined();
@@ -434,13 +442,16 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._avg).toBeDefined();
       expect(first._avg.addresses).toBeDefined();
       expect(first._avg.addresses.country).toBeDefined();
-      expect(first._avg.addresses.country.version === null || typeof first._avg.addresses.country.version === "number").toBe(true);
+      expect(
+        first._avg.addresses.country.version === null ||
+          typeof first._avg.addresses.country.version === "number",
+      ).toBe(true);
     }
   });
 
@@ -460,18 +471,28 @@ describe("aggregate e2e tests", async () => {
 
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     if (result.length > 0) {
       const first = result[0];
       expect(first._avg).toBeDefined();
-      expect(first._avg.version === null || typeof first._avg.version === "number").toBe(true);
+      expect(
+        first._avg.version === null || typeof first._avg.version === "number",
+      ).toBe(true);
       expect(first._avg.addresses).toBeDefined();
       expect(first._avg.addresses.country).toBeDefined();
-      expect(first._avg.addresses.country.version === null || typeof first._avg.addresses.country.version === "number").toBe(true);
-      
+      expect(
+        first._avg.addresses.country.version === null ||
+          typeof first._avg.addresses.country.version === "number",
+      ).toBe(true);
+
       // They should be different values since they come from different tables (if both not null)
-      if (first._avg.version !== null && first._avg.addresses.country.version !== null) {
-        expect(first._avg.version).not.toBe(first._avg.addresses.country.version);
+      if (
+        first._avg.version !== null &&
+        first._avg.addresses.country.version !== null
+      ) {
+        expect(first._avg.version).not.toBe(
+          first._avg.addresses.country.version,
+        );
       }
     }
   });
@@ -491,7 +512,7 @@ describe("aggregate e2e tests", async () => {
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(1);
-    
+
     const first = result[0];
     expect(first._count).toBeDefined();
     expect(first._count.id).toBe(0);

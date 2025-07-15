@@ -1,13 +1,13 @@
-import { 
-  ParseResult, 
-  Cursor, 
-  CursorTuple, 
-  QueryOptions, 
-  ORDER_OPS, 
-  ORDER_OPS_INVERTED, 
-  ORDER_INVERTED, 
+import {
+  ParseResult,
+  Cursor,
+  CursorTuple,
+  QueryOptions,
+  ORDER_OPS,
+  ORDER_OPS_INVERTED,
+  ORDER_INVERTED,
   ID_SELECT,
-  WhereResult 
+  WhereResult,
 } from "./types";
 
 export function isPageQuery(options: QueryOptions<any> | ParseResult): boolean {

@@ -428,7 +428,7 @@ describe("GraphQL tests", async () => {
               node: {
                 firstName: "Some",
                 lastName: "NAME",
-                dateOfBirth: dayjs(now).format('YYYY-MM-DD')
+                dateOfBirth: dayjs(now).format("YYYY-MM-DD"),
               },
             },
           ],

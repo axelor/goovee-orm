@@ -424,7 +424,9 @@ describe("BigDecimal", () => {
     it("very large numbers", () => {
       const a = new BigDecimal("999999999999999999999999999999.99");
       const b = new BigDecimal("1.01");
-      expect(a.add(b).stripTrailingZeros().toString()).toBe("1000000000000000000000000000001");
+      expect(a.add(b).stripTrailingZeros().toString()).toBe(
+        "1000000000000000000000000000001",
+      );
     });
 
     it("very small decimals", () => {
@@ -716,8 +718,12 @@ describe("BigDecimal", () => {
     });
 
     it("should handle stripTrailingZeros with mixed trailing zeros", () => {
-      expect(new BigDecimal("123.1000").stripTrailingZeros().toString()).toBe("123.1");
-      expect(new BigDecimal("123.0100").stripTrailingZeros().toString()).toBe("123.01");
+      expect(new BigDecimal("123.1000").stripTrailingZeros().toString()).toBe(
+        "123.1",
+      );
+      expect(new BigDecimal("123.0100").stripTrailingZeros().toString()).toBe(
+        "123.01",
+      );
     });
 
     it("should handle unscaledValue with negative numbers", () => {
@@ -773,7 +779,7 @@ describe("BigDecimal", () => {
       const values = [
         new BigDecimal("10.33"),
         new BigDecimal("15.67"),
-        new BigDecimal("12.50")
+        new BigDecimal("12.50"),
       ];
 
       let sum = BigDecimal.ZERO;
@@ -797,7 +803,9 @@ describe("BigDecimal", () => {
 
   describe("Error Handling and Boundary Conditions", () => {
     it("should handle invalid string formats", () => {
-      expect(() => new BigDecimal("123.45.67.89")).toThrow("Invalid number format");
+      expect(() => new BigDecimal("123.45.67.89")).toThrow(
+        "Invalid number format",
+      );
       expect(() => new BigDecimal("abc")).toThrow();
       expect(() => new BigDecimal("12.34abc")).toThrow();
     });

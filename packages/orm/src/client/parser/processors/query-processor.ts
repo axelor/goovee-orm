@@ -22,10 +22,7 @@ export class QueryProcessor {
     this.context = new ParserContext(client);
     this.joinHandler = new JoinHandler(this.context);
     this.jsonHandler = new JsonQueryHandler(this.context);
-    this.selectProcessor = new SelectProcessor(
-      this.context,
-      this.joinHandler
-    );
+    this.selectProcessor = new SelectProcessor(this.context, this.joinHandler);
     this.whereProcessor = new WhereProcessor(
       this.context,
       this.jsonHandler,
