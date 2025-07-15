@@ -4,18 +4,18 @@ import { transformSync } from "@swc/core";
 import { defaultExclude, defineConfig } from "vitest/config";
 
 const unitTests = {
-  environment: "node",
+  include: ["src/**/*.test.ts"],
   exclude: [...defaultExclude, "src/test"],
 };
 
 const e2eTests = {
-  environment: "node",
+  include: ["src/test/**/*.test.ts"],
   setupFiles: ["src/test/test-setup.ts"],
   globalSetup: ["src/test/global-setup.ts"],
-  include: ["src/test/*.test.ts"],
 };
 
 export default defineConfig((env) => {
+  const testConfig = env.mode === "e2e" ? e2eTests : unitTests;
   return {
     plugins: [
       {
@@ -43,7 +43,11 @@ export default defineConfig((env) => {
         },
       },
     ],
-    test: env.mode === "e2e" ? e2eTests : unitTests,
+    test: {
+      environment: "node",
+      globals: true,
+      ...testConfig,
+    },
     resolve: {
       alias: [
         {

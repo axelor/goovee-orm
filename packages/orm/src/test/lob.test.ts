@@ -88,7 +88,8 @@ describe("Lob tests", async () => {
           reader.pipe(writeFileStream);
 
           await new Promise((resolve, reject) => {
-            reader.on("end", resolve);
+            writeFileStream.on("finish", resolve);
+            writeFileStream.on("error", reject);
             reader.on("error", reject);
           });
 

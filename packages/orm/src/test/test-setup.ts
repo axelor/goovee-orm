@@ -7,6 +7,7 @@ beforeEach(async () => {
   await client.$connect();
   await client.$sync(true);
 });
+
 afterEach(async () => {
   const client = await getTestClient();
   if (client.$connected) {

@@ -89,6 +89,9 @@ export const createPostgresContainer = async () => {
   const cmd = await which("docker").catch(() => which("podman"));
   const port = await generatePort();
   const name = generateName();
+  
+  console.log(`🐘 Starting PostgreSQL container on port ${port}...`);
+  
   const pg = await run(
     cmd,
     [
@@ -101,7 +104,21 @@ export const createPostgresContainer = async () => {
       "-e",
       "POSTGRES_PASSWORD=test",
       "-e",
-      "POSTGRES_DATABASE=test",
+      "POSTGRES_DB=test",
+      "-e",
+      "POSTGRES_INITDB_ARGS=--auth-local=trust --auth-host=trust",
+      // Performance optimizations for testing
+      "-e",
+      "POSTGRES_FSYNC=off",
+      "-e",
+      "POSTGRES_SYNCHRONOUS_COMMIT=off",
+      "-e",
+      "POSTGRES_WAL_LEVEL=minimal",
+      "-e",
+      "POSTGRES_MAX_WAL_SENDERS=0",
+      // Use tmpfs for faster I/O
+      "--tmpfs",
+      "/var/lib/postgresql/data:rw,noexec,nosuid,size=512m",
       "-p",
       `${port}:5432`,
       "postgres:alpine",
