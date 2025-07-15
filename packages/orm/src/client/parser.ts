@@ -23,6 +23,7 @@ export type ParseResult = {
   params?: Record<string, any>;
   references?: Record<string, ParseResult>;
   collections?: Record<string, ParseResult>;
+  aliasMap?: Record<string, string>;
   take?: number;
   skip?: number;
   cursor?: string;
@@ -129,8 +130,12 @@ function findJsonCastType(type?: keyof typeof JSON_CAST_TYPES): string {
 
 class ParserContext {
   private counter = 0;
+  private usedAliases = new Set<string>();
   public readonly schema: EntityOptions[];
   public readonly features: ClientFeatures;
+  
+  // PostgreSQL NAMEDATALEN limit - using 16 for testing, should be 63 for production
+  private readonly MAX_ALIAS_LENGTH = 16;
 
   constructor(client: QueryClient) {
     this.schema = (client as any).__schema;
@@ -143,6 +148,41 @@ class ParserContext {
 
   nextQuery(): string {
     return `q${this.counter++}`;
+  }
+
+  /**
+   * Simple hash function for generating consistent short suffixes
+   */
+  private simpleHash(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(36);
+  }
+
+  /**
+   * Truncates and ensures uniqueness of PostgreSQL aliases that exceed NAMEDATALEN limit
+   */
+  truncateAlias(alias: string): string {
+    if (alias.length <= this.MAX_ALIAS_LENGTH) {
+      if (!this.usedAliases.has(alias)) {
+        this.usedAliases.add(alias);
+        return alias;
+      }
+    }
+
+    // If alias is too long or already used, create a truncated version with hash
+    const hash = this.simpleHash(alias);
+    const hashSuffix = `_${hash}`;
+    const maxBaseLength = this.MAX_ALIAS_LENGTH - hashSuffix.length;
+    const base = alias.substring(0, maxBaseLength);
+    const uniqueAlias = `${base}${hashSuffix}`;
+    
+    this.usedAliases.add(uniqueAlias);
+    return uniqueAlias;
   }
 
   isStringField(repo: Repository<any>, name: string): boolean {
@@ -748,6 +788,7 @@ class AggregateProcessor {
     let select: Record<string, string> = {};
     let joins: Record<string, string> = {};
     let groups: Record<string, any> = {};
+    let aliasMap: Record<string, string> = {};
     let having: string | undefined;
     let havingParams: Record<string, any> = {};
 
@@ -770,41 +811,47 @@ class AggregateProcessor {
 
     // Process aggregate operations
     if (_count) {
-      const countResult = this.processAggregateOperations(repo, _count, prefix, "COUNT");
+      const countResult = this.processAggregateOperations(repo, _count, prefix, "COUNT", "_count");
       select = { ...select, ...countResult.select };
       joins = { ...joins, ...countResult.joins };
+      aliasMap = { ...aliasMap, ...countResult.aliasMap };
     }
 
     if (_avg) {
-      const avgResult = this.processAggregateOperations(repo, _avg, prefix, "AVG");
+      const avgResult = this.processAggregateOperations(repo, _avg, prefix, "AVG", "_avg");
       select = { ...select, ...avgResult.select };
       joins = { ...joins, ...avgResult.joins };
+      aliasMap = { ...aliasMap, ...avgResult.aliasMap };
     }
 
     if (_sum) {
-      const sumResult = this.processAggregateOperations(repo, _sum, prefix, "SUM");
+      const sumResult = this.processAggregateOperations(repo, _sum, prefix, "SUM", "_sum");
       select = { ...select, ...sumResult.select };
       joins = { ...joins, ...sumResult.joins };
+      aliasMap = { ...aliasMap, ...sumResult.aliasMap };
     }
 
     if (_min) {
-      const minResult = this.processAggregateOperations(repo, _min, prefix, "MIN");
+      const minResult = this.processAggregateOperations(repo, _min, prefix, "MIN", "_min");
       select = { ...select, ...minResult.select };
       joins = { ...joins, ...minResult.joins };
+      aliasMap = { ...aliasMap, ...minResult.aliasMap };
     }
 
     if (_max) {
-      const maxResult = this.processAggregateOperations(repo, _max, prefix, "MAX");
+      const maxResult = this.processAggregateOperations(repo, _max, prefix, "MAX", "_max");
       select = { ...select, ...maxResult.select };
       joins = { ...joins, ...maxResult.joins };
+      aliasMap = { ...aliasMap, ...maxResult.aliasMap };
     }
 
     // Process groupBy fields
     if (groupBy) {
-      const groupResult = this.processGroupByFields(repo, groupBy, prefix);
+      const groupResult = this.processGroupByFields(repo, groupBy, prefix, "groupBy");
       select = { ...select, ...groupResult.select };
       joins = { ...joins, ...groupResult.joins };
       groups = { ...groups, ...groupResult.groups };
+      aliasMap = { ...aliasMap, ...groupResult.aliasMap };
     }
 
     // Process having conditions (post-aggregation filtering)
@@ -830,6 +877,7 @@ class AggregateProcessor {
       groups: Object.keys(groups).length > 0 ? groups : undefined,
       having: having,
       params: { ...whereResult?.params, ...havingParams },
+      aliasMap: Object.keys(aliasMap).length > 0 ? aliasMap : undefined,
       take,
       skip,
     };
@@ -842,29 +890,42 @@ class AggregateProcessor {
     aggregateOpts: any,
     prefix: string,
     operation: string,
-  ): { select: Record<string, string>; joins: Record<string, string> } {
+    basePath: string,
+  ): { select: Record<string, string>; joins: Record<string, string>; aliasMap: Record<string, string> } {
     const select: Record<string, string> = {};
     const joins: Record<string, string> = {};
+    const aliasMap: Record<string, string> = {};
 
     for (const [fieldName, value] of Object.entries(aggregateOpts)) {
+      const currentPath = basePath === "groupBy" ? fieldName : `${basePath}.${fieldName}`;
+      
       if (value === true) {
         const name = this.context.makeName(prefix, fieldName);
         const alias = this.context.makeAlias(repo, prefix, fieldName);
-        
+
         // Check if it's a relation
         const relation = repo.metadata.findRelationWithPropertyPath(fieldName);
         if (relation) {
           joins[name] = alias;
           // For relations, use id field for COUNT, otherwise use the relation field itself
           if (operation === "COUNT") {
-            select[`${operation}(${alias}.id)`] = `_${operation.toLowerCase()}_${fieldName}`;
+            const selectKey = `${operation}(${alias}.id)`;
+            const selectAlias = this.generateUniqueAlias(operation.toLowerCase(), currentPath);
+            select[selectKey] = selectAlias;
+            aliasMap[selectAlias] = currentPath;
           } else {
             // For other operations on relations, we might need to handle differently
             // For now, let's use id field
-            select[`${operation}(${alias}.id)`] = `_${operation.toLowerCase()}_${fieldName}`;
+            const selectKey = `${operation}(${alias}.id)`;
+            const selectAlias = this.generateUniqueAlias(operation.toLowerCase(), currentPath);
+            select[selectKey] = selectAlias;
+            aliasMap[selectAlias] = currentPath;
           }
         } else {
-          select[`${operation}(${name})`] = `_${operation.toLowerCase()}_${fieldName}`;
+          const selectKey = `${operation}(${name})`;
+          const selectAlias = this.generateUniqueAlias(operation.toLowerCase(), currentPath);
+          select[selectKey] = selectAlias;
+          aliasMap[selectAlias] = currentPath;
         }
       } else if (typeof value === 'object' && value !== null) {
         // Handle nested aggregate operations for relations
@@ -873,42 +934,51 @@ class AggregateProcessor {
           const name = this.context.makeName(prefix, fieldName);
           const alias = this.context.makeAlias(repo, prefix, fieldName);
           const rRepo = this.joinHandler.getRelationRepository(repo, relation);
-          const nestedResult = this.processAggregateOperations(rRepo, value, alias, operation);
+          const nestedResult = this.processAggregateOperations(rRepo, value, alias, operation, currentPath);
           Object.assign(select, nestedResult.select);
           Object.assign(joins, nestedResult.joins);
+          Object.assign(aliasMap, nestedResult.aliasMap);
           joins[name] = alias;
         }
       }
     }
 
-    return { select, joins };
+    return { select, joins, aliasMap };
   }
 
   private processGroupByFields(
     repo: Repository<any>,
     groupByOpts: any,
     prefix: string,
-  ): { select: Record<string, string>; joins: Record<string, string>; groups: Record<string, any> } {
+    basePath: string,
+  ): { select: Record<string, string>; joins: Record<string, string>; groups: Record<string, any>; aliasMap: Record<string, string> } {
     const select: Record<string, string> = {};
     const joins: Record<string, string> = {};
     const groups: Record<string, any> = {};
+    const aliasMap: Record<string, string> = {};
 
     for (const [fieldName, value] of Object.entries(groupByOpts)) {
+      const currentPath = `${basePath}.${fieldName}`;
+      
       if (value === true) {
         const name = this.context.makeName(prefix, fieldName);
         const alias = this.context.makeAlias(repo, prefix, fieldName);
-        
+
         // Check if it's a relation
         const relation = repo.metadata.findRelationWithPropertyPath(fieldName);
         if (relation) {
           joins[name] = alias;
           // For relations in groupBy, typically we group by the id
-          select[`${alias}.id`] = `groupby_${fieldName}`;
-          groups[`${alias}.id`] = `groupby_${fieldName}`;
+          const selectAlias = this.generateUniqueAlias("groupby", currentPath);
+          select[`${alias}.id`] = selectAlias;
+          groups[`${alias}.id`] = selectAlias;
+          aliasMap[selectAlias] = currentPath;
         } else {
           // For regular fields, group by the field itself
-          select[name] = `groupby_${fieldName}`;
-          groups[name] = `groupby_${fieldName}`;
+          const selectAlias = this.generateUniqueAlias("groupby", currentPath);
+          select[name] = selectAlias;
+          groups[name] = selectAlias;
+          aliasMap[selectAlias] = currentPath;
         }
       } else if (typeof value === 'object' && value !== null) {
         // Handle nested groupBy for relations
@@ -917,17 +987,18 @@ class AggregateProcessor {
           const name = this.context.makeName(prefix, fieldName);
           const alias = this.context.makeAlias(repo, prefix, fieldName);
           const rRepo = this.joinHandler.getRelationRepository(repo, relation);
-          
-          const nestedResult = this.processGroupByFields(rRepo, value, alias);
+
+          const nestedResult = this.processGroupByFields(rRepo, value, alias, currentPath);
           Object.assign(select, nestedResult.select);
           Object.assign(joins, nestedResult.joins);
           Object.assign(groups, nestedResult.groups);
+          Object.assign(aliasMap, nestedResult.aliasMap);
           joins[name] = alias;
         }
       }
     }
 
-    return { select, joins, groups };
+    return { select, joins, groups, aliasMap };
   }
 
   private processHavingConditions(
@@ -969,13 +1040,13 @@ class AggregateProcessor {
 
     for (const [fieldName, condition] of Object.entries(fieldConditions)) {
       const relation = repo.metadata.findRelationWithPropertyPath(fieldName);
-      
+
       if (relation && typeof condition === 'object' && condition !== null && !this.isFilterCondition(condition)) {
         // This is a nested relation having condition
         const name = this.context.makeName(prefix, fieldName);
         const alias = this.context.makeAlias(repo, prefix, fieldName);
         const rRepo = this.joinHandler.getRelationRepository(repo, relation);
-        
+
         const nestedResult = this.processHavingFields(rRepo, condition, alias, operation);
         conditions.push(...nestedResult.conditions);
         Object.assign(params, nestedResult.params);
@@ -985,7 +1056,7 @@ class AggregateProcessor {
         // This is a direct field condition
         const name = this.context.makeName(prefix, fieldName);
         const alias = this.context.makeAlias(repo, prefix, fieldName);
-        
+
         let aggregateField = name;
         if (relation) {
           joins[name] = alias;
@@ -1000,7 +1071,7 @@ class AggregateProcessor {
             const aggregateExpr = `${cleanOperation.toUpperCase()}(${aggregateField})`;
             const param = this.context.nextParam();
             const sqlOp = this.getSqlOperator(operator);
-            
+
             conditions.push(`${aggregateExpr} ${sqlOp} :${param}`);
             params[param] = value;
           }
@@ -1015,6 +1086,15 @@ class AggregateProcessor {
     if (typeof obj !== 'object' || obj === null) return false;
     const filterOps = ['eq', 'ne', 'gt', 'ge', 'lt', 'le', 'in', 'notIn', 'between', 'notBetween'];
     return Object.keys(obj).some(key => filterOps.includes(key));
+  }
+
+  private generateUniqueAlias(operation: string, path: string): string {
+    // Convert path like "_avg.addresses.country.version" to "avg_addresses_country_version"
+    // or "groupBy.title.id" to "groupby_title_id"
+    const cleanPath = path.replace(/^_/, '').replace(/\./g, '_');
+    
+    // Apply PostgreSQL NAMEDATALEN limit with uniqueness handling
+    return this.context.truncateAlias(cleanPath);
   }
 
   private getSqlOperator(operator: string): string {
