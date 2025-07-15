@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.0.4 (Unreleased)
+## [0.0.4] (2025-07-15)
 
 ### ✨ Features
 
@@ -37,7 +37,7 @@
 - **Base Entity:** Ensured that all generated entities extend the `Model` base class for better consistency and code reuse.
 - **Build System Migration:** Migrated build system from TypeScript to rslib for dual ESM and CommonJS support.
 
-## v0.0.3
+## [0.0.3] (2025-06-18)
 
 ### 🐛 Bug Fixes
 
@@ -98,3 +98,6 @@
 
 - **Initial Project Setup:** Established the initial project structure and core dependencies.
 - **CI/CD Integration:** Added `.gitlab-ci.yml` for continuous integration and deployment.
+
+[0.0.4]: https://github.com/axelor/goovee-orm/compare/0.0.3...0.0.4
+[0.0.3]: https://github.com/axelor/goovee-orm

@@ -6,7 +6,7 @@ Welcome to the **Goovee Portal Mono-Repo** — a centralized repository containi
 
 All packages can be found in the `packages/` folder. It currently contains the following package:
 
-- [@goovee/orm](https://github.com/axelor/goovee-orm/blob/main/packages/orm)
+- [@goovee/orm](https://github.com/axelor/goovee-orm/blob/main/packages/orm) with its [changelog file](https://github.com/axelor/goovee-orm/blob/main/packages/orm/CHANGELOG.md)
 
 ## License
 
