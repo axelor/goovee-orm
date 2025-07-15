@@ -1,3 +1,3 @@
 export * from "./client";
-export * from "./decimal";
+export * from "./fields/decimal";
 export * from "./types";

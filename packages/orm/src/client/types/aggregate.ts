@@ -1,4 +1,4 @@
-import type { BigDecimal } from "../decimal";
+import type { BigDecimal } from "../fields/decimal";
 import type { Entity, OrderBy } from "./base";
 import type { NumericFilter } from "./filters";
 import type { WhereArg, WhereOptions } from "./query";

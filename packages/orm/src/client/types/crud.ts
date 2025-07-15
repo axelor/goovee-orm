@@ -1,4 +1,4 @@
-import type { BigDecimal } from "../decimal";
+import type { BigDecimal } from "../fields/decimal";
 import type { Entity, ID, InputIdentity, OmitByType } from "./base";
 import type { SelectOptions, WhereOptions } from "./query";
 

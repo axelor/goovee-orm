@@ -3,7 +3,7 @@ import path from "node:path";
 import { Repository } from "typeorm";
 
 import { describe, expect, it } from "vitest";
-import { LargeObjectManager } from "../client/lob";
+import { LargeObjectManager } from "../client/fields/lob";
 import { getTestClient } from "./client.utils";
 import { Contact } from "./db/models";
 

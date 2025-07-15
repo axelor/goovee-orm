@@ -1,4 +1,4 @@
-import type { BigDecimal } from "../decimal";
+import type { BigDecimal } from "../fields/decimal";
 import type {
   Binary,
   Entity,

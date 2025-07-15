@@ -6,7 +6,7 @@ import {
   SelectQueryBuilder,
 } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
-import { ensureLazy, isLazy, resolveLazy } from "./fields";
+import { ensureLazy, isLazy, resolveLazy } from "./fields/utils";
 import {
   createCursor,
   isPageQuery,

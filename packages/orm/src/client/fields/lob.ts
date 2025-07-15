@@ -1,13 +1,13 @@
 import { Readable, Writable } from "node:stream";
 import { EntityManager } from "typeorm";
 
-export enum Mode {
+enum Mode {
   WRITE = 0x00020000,
   READ = 0x00040000,
   READWRITE = Mode.READ | Mode.WRITE,
 }
 
-export enum Seek {
+enum Seek {
   SET = 0,
   CUR = 1,
   END = 2,
