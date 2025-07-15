@@ -24,11 +24,8 @@ export type NumericFilter<T> =
   | NOT_BETWEEN<T>;
 
 export type StringFilter =
-  | EQ<string>
-  | NE<string>
-  | IN<string>
+  | NumericFilter<string>
   | LIKE<string>
-  | NOT_IN<string>
   | NOT_LIKE<string>;
 
 export type BooleanFilter = EQ<boolean> | NE<boolean>;
