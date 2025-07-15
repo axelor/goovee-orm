@@ -10,6 +10,7 @@ import { ensureLazy, isLazy, resolveLazy } from "./fields";
 import {
   createCursor,
   isPageQuery,
+  parseAggregate,
   parseCursor,
   parseQuery,
   ParseResult,
@@ -255,6 +256,14 @@ const load = async (
   return records;
 };
 
+const aggregate = async (
+  repo: OrmRepository<any>,
+  builder: QueryBuilder<any>,
+  options: ParseResult,
+) => {
+  throw new Error("Not implemented yet.");
+};
+
 const isValueSame = (a: any, b: any): boolean => {
   if (a === null || a === undefined) a = null;
   if (b === null || b === undefined) b = null;
@@ -363,7 +372,12 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   async aggregate<U extends AggregateOptions<T>>(
     args: Options<U, AggregateOptions<T>>,
   ): Promise<AggregatePayload<T, U>[]> {
-    throw new Error("Not implemented yet.");
+    const client = this.#client;
+    const repo = this.#repo;
+    const opts = parseAggregate(client, repo, args ?? {});
+    const qb = repo.createQueryBuilder("self");
+    const result = await aggregate(repo, qb, opts);
+    return result;
   }
 
   private async handleReference(

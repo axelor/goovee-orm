@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import { EntityOptions } from "../schema";
 import {
+  AggregateOptions,
   ClientFeatures,
   JsonOrderBy,
   JsonWhere,
@@ -16,7 +17,9 @@ export type ParseResult = {
   select?: Record<string, string>;
   joins?: Record<string, string>;
   order?: Record<string, OrderBy>;
+  groups?: Record<string, any>;
   where?: string;
+  having?: string;
   params?: Record<string, any>;
   references?: Record<string, ParseResult>;
   collections?: Record<string, ParseResult>;
@@ -829,11 +832,11 @@ class QueryParser {
   }
 }
 
-export const parseQuery = (
+export function parseQuery(
   client: QueryClient,
   repo: Repository<any>,
   query: QueryOptions<any>,
-): ParseResult => {
+): ParseResult {
   const context = new ParserContext(client);
   const builder = new QueryParser(client, repo, context);
 
@@ -848,7 +851,15 @@ export const parseQuery = (
       { query, repository: repo.metadata.targetName },
     );
   }
-};
+}
+
+export function parseAggregate(
+  client: QueryClient,
+  repo: Repository<any>,
+  query: AggregateOptions<any>,
+): ParseResult {
+  throw new ParserError("Not implemented yet.");
+}
 
 export function isPageQuery(options: QueryOptions<any> | ParseResult): boolean {
   const { take, skip } = options;
