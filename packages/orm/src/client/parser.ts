@@ -2,7 +2,6 @@ import { Repository } from "typeorm";
 import { EntityOptions } from "../schema";
 import {
   ClientFeatures,
-  Entity,
   JsonOrderBy,
   JsonWhere,
   OrderBy,
@@ -26,221 +25,259 @@ export type ParseResult = {
   cursor?: string;
 };
 
-export const parseQuery = <T extends Entity>(
-  client: QueryClient,
-  repo: Repository<any>,
-  query: QueryOptions<T>,
-): ParseResult => {
-  const schema: EntityOptions[] = (client as any).__schema;
-  const features: ClientFeatures = (client as any).__features ?? {};
+export type CursorTuple = [string, OrderBy, any];
+export type Cursor = CursorTuple[];
 
-  let counter = 0;
+interface ProcessResult {
+  select: Record<string, string>;
+  joins: Record<string, string>;
+  references: Record<string, ParseResult>;
+  collections: Record<string, ParseResult>;
+}
 
-  const isStringField = (repo: Repository<any>, name: string) => {
-    if (!schema) return false;
-    const schemaDef = schema.find((x) => x.name === repo.metadata.targetName);
+interface WhereResult {
+  where: string;
+  params: Record<string, any>;
+  joins: Record<string, string>;
+}
+
+interface OrderResult {
+  order: Record<string, OrderBy>;
+  joins: Record<string, string>;
+  select: Record<string, string>;
+}
+
+const SQL_OPERATORS = {
+  eq: "=",
+  ne: "!=",
+  gt: ">",
+  ge: ">=",
+  lt: "<",
+  le: "<=",
+  like: "LIKE",
+  notLike: "NOT LIKE",
+} as const;
+
+const JSON_CAST_TYPES = {
+  String: "text",
+  Int: "integer",
+  Boolean: "boolean",
+  Decimal: "decimal",
+  Date: "timestamp",
+} as const;
+
+const ORDER_OPS = {
+  ASC: ">",
+  DESC: "<",
+} as const;
+
+const ORDER_OPS_INVERTED = {
+  ASC: "<",
+  DESC: ">",
+} as const;
+
+const ORDER_INVERTED = {
+  ASC: "DESC",
+  DESC: "ASC",
+} as const;
+
+const ID_SELECT: Record<string, string> = {
+  "self.id": "self_id",
+};
+
+class ParserError extends Error {
+  constructor(
+    message: string,
+    public readonly context?: Record<string, any>,
+  ) {
+    super(message);
+    this.name = "ParserError";
+  }
+}
+
+class InvalidJsonFilterError extends ParserError {
+  constructor(filter: any) {
+    super(`Invalid JSON filter: ${JSON.stringify(filter)}`, { filter });
+  }
+}
+
+function acceptWhereCauses(
+  items: WhereResult[],
+  joiner: string = "AND",
+): WhereResult {
+  const where = items.map((x) => x.where).join(` ${joiner} `);
+  const params = items.reduce((prev, x) => ({ ...prev, ...x.params }), {});
+  const joins = items.reduce((prev, x) => ({ ...prev, ...x.joins }), {});
+  return { where, params, joins };
+}
+
+function findJsonType(value: any): keyof typeof JSON_CAST_TYPES {
+  if (Array.isArray(value)) value = value[0];
+  if (typeof value === "number") return "Int";
+  if (typeof value === "boolean") return "Boolean";
+  if (/^(-)?(\d+)(\.\d+)?$/.test(value)) return "Decimal";
+  if (/^(\d{4})-(\d{2})-(\d{2}).*$/.test(value)) return "Date";
+  return "String";
+}
+
+function findJsonCastType(type?: keyof typeof JSON_CAST_TYPES): string {
+  return JSON_CAST_TYPES[type ?? "String"];
+}
+
+class ParserContext {
+  private counter = 0;
+  public readonly schema: EntityOptions[];
+  public readonly features: ClientFeatures;
+
+  constructor(client: QueryClient) {
+    this.schema = (client as any).__schema;
+    this.features = (client as any).__features ?? {};
+  }
+
+  nextParam(): string {
+    return `p${this.counter++}`;
+  }
+
+  nextQuery(): string {
+    return `q${this.counter++}`;
+  }
+
+  isStringField(repo: Repository<any>, name: string): boolean {
+    if (!this.schema) return false;
+    const schemaDef = this.schema.find(
+      (x) => x.name === repo.metadata.targetName,
+    );
     const fieldDef = schemaDef?.fields?.find((x) => x.name === name);
     return fieldDef?.type === "String";
-  };
+  }
 
-  const makeName = (prefix: string, name: string) => {
+  makeName(prefix: string, name: string): string {
     return `${prefix}.${name}`;
-  };
+  }
 
-  const makeAlias = (repo: Repository<any>, prefix: string, name: string) => {
+  makeAlias(repo: Repository<any>, prefix: string, name: string): string {
     const col = repo.metadata.findColumnWithPropertyName(name);
     const alt = col?.databaseName ?? name;
     const p = prefix.replace(/^[_]+/, "");
     const a = `${p}_${alt}`;
     return a;
-  };
+  }
 
-  const normalize = (
+  normalize(
     repo: Repository<any>,
     fieldName: string,
     variable: string,
-  ) => {
-    const { normalization = {} } = features;
+  ): string {
+    const { normalization = {} } = this.features;
     const { lowerCase = false, unaccent = false } = normalization;
 
     // Only apply normalization to string fields
-    if (!isStringField(repo, fieldName)) return variable;
+    if (!this.isStringField(repo, fieldName)) return variable;
 
     let res = variable;
-
     if (lowerCase) res = `lower(${res})`;
     if (unaccent) res = `unaccent(${res})`;
-
     return res;
-  };
+  }
 
-  const makeWhere = (
-    repo: Repository<any>,
-    fieldName: string,
-    name: string,
-    arg: any,
-  ) => {
-    const conditions: string[] = [];
-    const params: Record<string, any> = {};
-
-    if (arg === null || typeof arg !== "object") {
-      arg = { eq: arg };
-    }
-
-    for (const [key, value] of Object.entries(arg)) {
-      if (value === null && (key === "eq" || key === "ne")) {
-        conditions.push(
-          key === "eq" ? `${name} IS NULL` : `${name} IS NOT NULL`,
-        );
-        continue;
-      }
-
-      let op = "=";
-
-      if (key === "eq") op = "=";
-      if (key === "ne") op = "!=";
-
-      if (key === "gt") op = ">";
-      if (key === "ge") op = ">=";
-
-      if (key === "lt") op = "<";
-      if (key === "le") op = "<=";
-
-      if (key === "like") op = "LIKE";
-      if (key === "notLike") op = "NOT LIKE";
-
-      const wrappedName = normalize(repo, fieldName, name);
-
-      if (Array.isArray(value)) {
-        if (key === "in" || key === "notIn") {
-          op = key === "in" ? "IN" : "NOT IN";
-          // Create individual parameters for each array element
-          const paramPlaceholders = value.map((v) => {
-            const p = `p${counter++}`;
-            params[p] = v;
-            return normalize(repo, fieldName, `:${p}`);
-          });
-          conditions.push(
-            `${wrappedName} ${op} (${paramPlaceholders.join(", ")})`,
-          );
-        } else if (key === "between" || key === "notBetween") {
-          op = key === "between" ? "BETWEEN" : "NOT BETWEEN";
-          const param1 = `p${counter++}`;
-          const param2 = `p${counter++}`;
-          const wrappedParam1 = normalize(repo, fieldName, `:${param1}`);
-          const wrappedParam2 = normalize(repo, fieldName, `:${param2}`);
-          conditions.push(
-            `${wrappedName} ${op} ${wrappedParam1} AND ${wrappedParam2}`,
-          );
-          params[param1] = value[0];
-          params[param2] = value[1];
-        }
-      } else {
-        const param = `p${counter++}`;
-        const wrappedParam = normalize(repo, fieldName, `:${param}`);
-        conditions.push(`${wrappedName} ${op} ${wrappedParam}`);
-        params[param] = value;
-      }
-    }
-
-    return {
-      where:
-        conditions.length > 1
-          ? `(${conditions.join(" AND ")})`
-          : conditions[0] || "",
-      params,
-    };
-  };
-
-  const simpleSelect = (repo: Repository<any>) => {
-    const meta = repo.metadata;
-    const select = meta.columns
-      .filter((x) => !meta.findRelationWithPropertyPath(x.propertyName))
-      .filter((x) => !["oid", "text", "jsonb"].includes(x.type as any))
-      .map((x) => x.propertyName)
-      .reduce((prev, name) => ({ ...prev, [name]: true }), {});
-    return select;
-  };
-
-  const processSelect = (
-    repo: Repository<any>,
-    opts: SelectOptions<T>,
-    prefix: string,
-  ) => {
-    let select: Record<string, any> = {};
-    let collections: Record<string, any> = {};
-    let references: Record<string, any> = {};
-    let joins: Record<string, string> = {};
-
-    // if no selection is give, select all simple fields
-    if (Object.keys(opts).length === 0) {
-      opts = simpleSelect(repo);
-    }
-
-    for (const [key, value] of Object.entries(opts)) {
-      const name = makeName(prefix, key);
-      const alias = makeAlias(repo, prefix, key);
-      const relation = repo.metadata.findRelationWithPropertyPath(key);
-      if (relation) {
-        const rRepo: any = repo.manager.getRepository(relation.type);
-        if (value === true && (relation.isOneToOne || relation.isManyToOne)) {
-          const nested = processSelect(rRepo, simpleSelect(rRepo), alias);
-          Object.assign(select, nested.select);
-          joins[name] = alias;
-          continue;
-        }
-        if (relation.isOneToMany || relation.isManyToMany) {
-          const v = value === true ? { select: simpleSelect(rRepo) } : value;
-          const vResult = parseQuery(client, rRepo, v);
-          collections[key] = vResult;
-        } else {
-          const nested: any = parseQuery(client, rRepo, { select: value });
-          references[key] = nested;
-        }
-      } else {
-        select[name] = alias;
-      }
-    }
-    return { select, joins, references, collections };
-  };
-
-  const acceptWhereCauses = (items: any[], joiner: string = "AND") => {
-    const where = items.map((x: any) => x.where).join(` ${joiner} `);
-    const params = items.reduce((prev, x) => ({ ...prev, ...x.params }), {});
-    const joins = items.reduce((prev, x) => ({ ...prev, ...x.joins }), {});
-    return { where, params, joins };
-  };
-
-  const isJson = (repo: Repository<any>, name: string) => {
+  isJson(repo: Repository<any>, name: string): boolean {
     const column = repo.metadata.findColumnWithPropertyName(name);
-    return column && column.type === "jsonb";
-  };
+    return !!(column && column.type === "jsonb");
+  }
 
-  const jsonCastTypes = {
-    String: "text",
-    Int: "integer",
-    Boolean: "boolean",
-    Decimal: "decimal",
-    Date: "timestamp",
-  } as const;
+  sortJoins(joins: Record<string, string>): Record<string, string> {
+    return Object.fromEntries(
+      Object.entries(joins).sort((a, b) => {
+        const a1 = a[1] as string;
+        const b1 = b[1] as string;
+        if (a1 === b1) return 0;
+        if (a1.startsWith(b1)) return 1;
+        if (b1.startsWith(a1)) return -1;
+        return 0;
+      }),
+    );
+  }
+}
 
-  const findJsonType = (value: any) => {
-    if (Array.isArray(value)) value = value[0];
-    if (typeof value === "number") return "Int";
-    if (typeof value === "boolean") return "Boolean";
-    if (/^(-)?(\d+)(\.\d+)?$/.test(value)) return "Decimal";
-    if (/^(\d{4})-(\d{2})-(\d{2}).*$/.test(value)) return "Date";
-    return "String";
-  };
+class JoinHandler {
+  constructor(private context: ParserContext) {}
 
-  const findJsonCastType = (type?: keyof typeof jsonCastTypes) => {
-    return jsonCastTypes[type ?? "String"];
-  };
+  processRelationJoin(
+    repo: Repository<any>,
+    relation: any,
+    key: string,
+    prefix: string,
+  ): { name: string; alias: string } {
+    const name = this.context.makeName(prefix, key);
+    const alias = this.context.makeAlias(repo, prefix, key);
+    return { name, alias };
+  }
 
-  const makeJsonParams = (value: any, type: string) => {
+  getRelationRepository(repo: Repository<any>, relation: any): Repository<any> {
+    return repo.manager.getRepository(relation.type);
+  }
+
+  isToOneRelation(relation: any): boolean {
+    return relation.isOneToOne || relation.isManyToOne;
+  }
+
+  isToManyRelation(relation: any): boolean {
+    return relation.isOneToMany || relation.isManyToMany;
+  }
+}
+
+class JsonQueryHandler {
+  constructor(private context: ParserContext) {}
+
+  processJsonWhere(opts: JsonWhere, prefix: string): WhereResult {
+    const where: WhereResult[] = [];
+
+    let { path, ...rest } = opts;
+    let op: string | undefined;
+    let value: any;
+
+    // only first condition is considered
+    for ([op, value] of Object.entries(rest)) break;
+
+    if (op === undefined) {
+      throw new InvalidJsonFilterError(opts);
+    }
+
+    const type = findJsonCastType(opts.type ?? findJsonType(value));
+    const { condition, vars, params } = this.processJsonCondition(
+      op,
+      value,
+      type,
+    );
+    const expr = vars
+      ? `jsonb_path_exists(${prefix}, '$.${path} ? (${condition})', ${vars})`
+      : `jsonb_path_exists(${prefix}, cast('$.${path} ? (${condition})' as jsonpath))`;
+
+    const w: WhereResult = { where: expr, params, joins: {} };
+    where.push(w);
+
+    return acceptWhereCauses(where);
+  }
+
+  processJsonOrderBy(
+    opts: JsonOrderBy,
+    prefix: string,
+  ): Record<string, OrderBy> {
+    const order: Record<string, OrderBy> = {};
+    for (const opt of opts) {
+      const path = opt.path.split(/\./g).map((x) => `'${x}'`);
+      const args = path.join(", ");
+      const type = findJsonCastType(opt.type);
+      const expr = `cast(jsonb_extract_path_text(${prefix}, ${args}) as ${type})`;
+      order[expr] = opt.order;
+    }
+    return order;
+  }
+
+  private makeJsonParams(value: any, type: string) {
     const arr = Array.isArray(value) ? value : [value];
     const params = arr.reduce((prev, v) => {
-      const p = `p${counter++}`;
+      const p = this.context.nextParam();
       return { ...prev, [p]: v };
     }, {});
     const args = Object.keys(params)
@@ -251,10 +288,10 @@ export const parseQuery = <T extends Entity>(
       vars,
       params,
     };
-  };
+  }
 
-  const processJsonCondition = (op: string, value: any, type: string) => {
-    let { vars, params } = makeJsonParams(value, type);
+  private processJsonCondition(op: string, value: any, type: string) {
+    let { vars, params } = this.makeJsonParams(value, type);
     let keys = Object.keys(params);
 
     let condition: string = "";
@@ -268,7 +305,9 @@ export const parseQuery = <T extends Entity>(
     if (op === "like" || op == "notLike") {
       const p = keys[0];
       const v = params[p];
-      const flags = features?.normalization?.lowerCase ? 'flag "i"' : "";
+      const flags = this.context.features?.normalization?.lowerCase
+        ? 'flag "i"'
+        : "";
       params[p] = v.replace(/%/g, ".*");
       condition = `@ like_regex "^' || :${p} || '$" ${flags}`;
       vars = "";
@@ -296,82 +335,51 @@ export const parseQuery = <T extends Entity>(
       vars,
       params,
     };
-  };
+  }
+}
 
-  const processJsonWhere = (opts: JsonWhere, prefix: string) => {
-    const where: any[] = [];
+class WhereProcessor {
+  constructor(
+    private context: ParserContext,
+    private jsonHandler: JsonQueryHandler,
+    private joinHandler: JoinHandler,
+  ) {}
 
-    let { path, ...rest } = opts;
-    let op;
-    let value;
-
-    // only first condition is considered
-    for ([op, value] of Object.entries(rest)) break;
-
-    if (op === undefined) {
-      throw new Error(`Invalid JSON filter: ${JSON.stringify(opts)}`);
-    }
-
-    const type = findJsonCastType(opts.type ?? findJsonType(value));
-    const { condition, vars, params } = processJsonCondition(op, value, type);
-    const expr = vars
-      ? `jsonb_path_exists(${prefix}, '$.${path} ? (${condition})', ${vars})`
-      : `jsonb_path_exists(${prefix}, cast('$.${path} ? (${condition})' as jsonpath))`;
-
-    const w = { where: expr, params };
-    where.push(w);
-
-    return acceptWhereCauses(where);
-  };
-
-  const processWhere = (
+  process(
     repo: Repository<any>,
-    opts: WhereOptions<T>,
+    opts: WhereOptions<any>,
     prefix: string,
-  ) => {
-    const where: any[] = [];
+  ): WhereResult | undefined {
+    const where: WhereResult[] = [];
+
     for (const [key, value] of Object.entries(opts)) {
       if (key === "OR" || key === "AND" || key === "NOT") {
-        const joiner = key === "OR" ? "OR" : "AND";
-        const wrap = key === "NOT" ? "NOT" : "";
-        if (Array.isArray(value)) {
-          const ws = value.map((x) => processWhere(repo, x, prefix));
-          const w = acceptWhereCauses(ws, joiner);
-          w.where = `${wrap}(${w.where})`;
-          where.push(w);
-        }
+        const result = this.processLogicalOperator(key, value, repo, prefix);
+        if (result) where.push(result);
         continue;
       }
 
-      const name = makeName(prefix, key);
-      const alias = makeAlias(repo, prefix, key);
+      const name = this.context.makeName(prefix, key);
+      const alias = this.context.makeAlias(repo, prefix, key);
 
-      if (isJson(repo, key)) {
-        const w = processJsonWhere(value, name);
+      if (this.context.isJson(repo, key)) {
+        const w = this.jsonHandler.processJsonWhere(value, name);
         where.push(w);
         continue;
       }
 
       const relation = repo.metadata.findRelationWithPropertyPath(key);
       if (relation) {
-        // is null
-        if (value?.id === null || value?.id?.eq === null) {
-          where.push({ where: `${name} IS NULL` });
-          continue;
-        }
-        // not null
-        if (value?.id?.ne === null) {
-          where.push({ where: `${name} IS NOT NULL` });
-          continue;
-        }
-        const rRepo: any = repo.manager.getRepository(relation.type);
-        const w = processWhere(rRepo, value, alias);
-        if (w) {
-          w.joins[name] = alias;
-          where.push(w);
-        }
+        const result = this.processRelationWhere(
+          relation,
+          value,
+          name,
+          alias,
+          repo,
+        );
+        if (result) where.push(result);
       } else {
-        const w = makeWhere(repo, key, name, value);
+        const w = this.makeWhere(repo, key, name, value);
         where.push(w);
       }
     }
@@ -379,198 +387,504 @@ export const parseQuery = <T extends Entity>(
     if (where.length > 0) {
       return acceptWhereCauses(where);
     }
-  };
+  }
 
-  const processOrderByJson = (opts: JsonOrderBy, prefix: string) => {
-    const order: Record<string, any> = {};
-    for (const opt of opts) {
-      const path = opt.path.split(/\./g).map((x) => `'${x}'`);
-      const args = path.join(", ");
-      const type = findJsonCastType(opt.type);
-      const expr = `cast(jsonb_extract_path_text(${prefix}, ${args}) as ${type})`;
-      order[expr] = opt.order;
-    }
-    return order;
-  };
-
-  const processOrderBy = (
+  private processLogicalOperator(
+    key: string,
+    value: any,
     repo: Repository<any>,
-    opts: OrderByOptions<T>,
     prefix: string,
-  ) => {
-    let order: Record<string, any> = {};
-    let joins: Record<string, string> = {};
-    let select: Record<string, any> = {};
+  ): WhereResult | null {
+    const joiner = key === "OR" ? "OR" : "AND";
+    const wrap = key === "NOT" ? "NOT" : "";
 
-    for (const [key, value] of Object.entries(opts)) {
-      const name = makeName(prefix, key);
-      const relation = repo.metadata.findRelationWithPropertyPath(key);
-      if (relation) {
-        const rRepo: any = repo.manager.getRepository(relation.type);
-        const alias = makeAlias(repo, prefix, key);
-        const res = processOrderBy(rRepo, value as OrderByOptions<any>, alias);
-        joins = { [name]: alias, ...joins, ...res.joins };
-        order = { ...order, ...res.order };
-        select = { ...select, ...res.select };
-      } else if (isJson(repo, key)) {
-        const jsonOrder = processOrderByJson(value as JsonOrderBy, name);
-        Object.assign(order, jsonOrder);
+    if (Array.isArray(value)) {
+      const ws = value
+        .map((x) => this.process(repo, x, prefix))
+        .filter((x): x is WhereResult => !!x);
+      if (ws.length === 0) return null;
+
+      const w = acceptWhereCauses(ws, joiner);
+      w.where = `${wrap}(${w.where})`;
+      return w;
+    }
+    return null;
+  }
+
+  private processRelationWhere(
+    relation: any,
+    value: any,
+    name: string,
+    alias: string,
+    repo: Repository<any>,
+  ): WhereResult | null {
+    // is null
+    if (value?.id === null || value?.id?.eq === null) {
+      return { where: `${name} IS NULL`, params: {}, joins: {} };
+    }
+    // not null
+    if (value?.id?.ne === null) {
+      return { where: `${name} IS NOT NULL`, params: {}, joins: {} };
+    }
+
+    const rRepo = this.joinHandler.getRelationRepository(repo, relation);
+    const w = this.process(rRepo, value, alias);
+    if (w) {
+      w.joins = { ...w.joins, [name]: alias };
+      return w;
+    }
+    return null;
+  }
+
+  private makeWhere(
+    repo: Repository<any>,
+    fieldName: string,
+    name: string,
+    arg: any,
+  ): WhereResult {
+    const conditions: string[] = [];
+    const params: Record<string, any> = {};
+
+    if (arg === null || typeof arg !== "object") {
+      arg = { eq: arg };
+    }
+
+    for (const [key, value] of Object.entries(arg)) {
+      if (value === null && (key === "eq" || key === "ne")) {
+        conditions.push(
+          key === "eq" ? `${name} IS NULL` : `${name} IS NOT NULL`,
+        );
+        continue;
+      }
+
+      const op = SQL_OPERATORS[key as keyof typeof SQL_OPERATORS] || "=";
+      const wrappedName = this.context.normalize(repo, fieldName, name);
+
+      if (Array.isArray(value)) {
+        this.processArrayCondition(
+          key,
+          value,
+          wrappedName,
+          fieldName,
+          repo,
+          conditions,
+          params,
+        );
       } else {
-        select[name] = makeAlias(repo, prefix, key);
-        order[normalize(repo, key, name)] = value;
+        const param = this.context.nextParam();
+        const wrappedParam = this.context.normalize(
+          repo,
+          fieldName,
+          `:${param}`,
+        );
+        conditions.push(`${wrappedName} ${op} ${wrappedParam}`);
+        params[param] = value;
       }
     }
-    return { order, joins, select };
-  };
 
-  const isNonNullUnique = (repo: Repository<any>, name: string) => {
+    return {
+      where:
+        conditions.length > 1
+          ? `(${conditions.join(" AND ")})`
+          : conditions[0] || "",
+      params,
+      joins: {},
+    };
+  }
+
+  private processArrayCondition(
+    key: string,
+    value: any[],
+    wrappedName: string,
+    fieldName: string,
+    repo: Repository<any>,
+    conditions: string[],
+    params: Record<string, any>,
+  ): void {
+    if (key === "in" || key === "notIn") {
+      const op = key === "in" ? "IN" : "NOT IN";
+      const paramPlaceholders = value.map((v) => {
+        const p = this.context.nextParam();
+        params[p] = v;
+        return this.context.normalize(repo, fieldName, `:${p}`);
+      });
+      conditions.push(`${wrappedName} ${op} (${paramPlaceholders.join(", ")})`);
+    } else if (key === "between" || key === "notBetween") {
+      const op = key === "between" ? "BETWEEN" : "NOT BETWEEN";
+      const param1 = this.context.nextParam();
+      const param2 = this.context.nextParam();
+      const wrappedParam1 = this.context.normalize(
+        repo,
+        fieldName,
+        `:${param1}`,
+      );
+      const wrappedParam2 = this.context.normalize(
+        repo,
+        fieldName,
+        `:${param2}`,
+      );
+      conditions.push(
+        `${wrappedName} ${op} ${wrappedParam1} AND ${wrappedParam2}`,
+      );
+      params[param1] = value[0];
+      params[param2] = value[1];
+    }
+  }
+}
+
+class SelectProcessor {
+  constructor(
+    private context: ParserContext,
+    private joinHandler: JoinHandler,
+  ) {}
+
+  process(
+    repo: Repository<any>,
+    opts: SelectOptions<any>,
+    prefix: string,
+    client: QueryClient,
+  ): ProcessResult {
+    let select: Record<string, string> = {};
+    let collections: Record<string, ParseResult> = {};
+    let references: Record<string, ParseResult> = {};
+    let joins: Record<string, string> = {};
+
+    // if no selection is given, select all simple fields
+    const selection =
+      Object.keys(opts).length === 0 ? this.getSimpleSelect(repo) : opts;
+
+    for (const [key, value] of Object.entries(selection)) {
+      const { name, alias } = this.joinHandler.processRelationJoin(
+        repo,
+        null,
+        key,
+        prefix,
+      );
+      const relation = repo.metadata.findRelationWithPropertyPath(key);
+
+      if (relation) {
+        const result = this.processRelation(
+          relation,
+          key,
+          value,
+          name,
+          alias,
+          repo,
+          client,
+        );
+        select = { ...select, ...result.select };
+        joins = { ...joins, ...result.joins };
+        collections = { ...collections, ...result.collections };
+        references = { ...references, ...result.references };
+      } else {
+        select[name] = alias;
+      }
+    }
+
+    return { select, joins, references, collections };
+  }
+
+  private getSimpleSelect(repo: Repository<any>): Record<string, boolean> {
+    const meta = repo.metadata;
+    return meta.columns
+      .filter((x) => !meta.findRelationWithPropertyPath(x.propertyName))
+      .filter((x) => !["oid", "text", "jsonb"].includes(x.type as any))
+      .map((x) => x.propertyName)
+      .reduce((prev, name) => ({ ...prev, [name]: true }), {});
+  }
+
+  private processRelation(
+    relation: any,
+    key: string,
+    value: any,
+    name: string,
+    alias: string,
+    repo: Repository<any>,
+    client: QueryClient,
+  ): ProcessResult {
+    const rRepo = this.joinHandler.getRelationRepository(repo, relation);
+    const result: ProcessResult = {
+      select: {},
+      joins: {},
+      references: {},
+      collections: {},
+    };
+
+    if (value === true && this.joinHandler.isToOneRelation(relation)) {
+      const nested = this.process(
+        rRepo,
+        this.getSimpleSelect(rRepo),
+        alias,
+        client,
+      );
+      result.select = { ...result.select, ...nested.select };
+      result.joins[name] = alias;
+      return result;
+    }
+
+    if (this.joinHandler.isToManyRelation(relation)) {
+      const v =
+        value === true ? { select: this.getSimpleSelect(rRepo) } : value;
+      const vResult = parseQuery(client, rRepo, v);
+      result.collections[key] = vResult;
+    } else {
+      const nested = parseQuery(client, rRepo, { select: value });
+      result.references[key] = nested;
+    }
+
+    return result;
+  }
+}
+
+class OrderByProcessor {
+  constructor(
+    private context: ParserContext,
+    private jsonHandler: JsonQueryHandler,
+    private joinHandler: JoinHandler,
+  ) {}
+
+  process(
+    repo: Repository<any>,
+    opts: OrderByOptions<any>,
+    prefix: string,
+  ): OrderResult {
+    let order: Record<string, OrderBy> = {};
+    let joins: Record<string, string> = {};
+    let select: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(opts)) {
+      const name = this.context.makeName(prefix, key);
+      const relation = repo.metadata.findRelationWithPropertyPath(key);
+
+      if (relation) {
+        const result = this.processRelationOrderBy(
+          relation,
+          value,
+          key,
+          name,
+          prefix,
+          repo,
+        );
+        joins = { ...joins, ...result.joins };
+        order = { ...order, ...result.order };
+        select = { ...select, ...result.select };
+      } else if (this.context.isJson(repo, key)) {
+        if (Array.isArray(value)) {
+          const jsonOrder = this.jsonHandler.processJsonOrderBy(
+            value as JsonOrderBy,
+            name,
+          );
+          order = { ...order, ...jsonOrder };
+        }
+      } else {
+        select[name] = this.context.makeAlias(repo, prefix, key);
+        order[this.context.normalize(repo, key, name)] = value as OrderBy;
+      }
+    }
+
+    return { order, joins, select };
+  }
+
+  private processRelationOrderBy(
+    relation: any,
+    value: any,
+    key: string,
+    name: string,
+    prefix: string,
+    repo: Repository<any>,
+  ): OrderResult {
+    const rRepo = this.joinHandler.getRelationRepository(repo, relation);
+    const alias = this.context.makeAlias(repo, prefix, key);
+    const res = this.process(rRepo, value as OrderByOptions<any>, alias);
+
+    return {
+      joins: { [name]: alias, ...res.joins },
+      order: { ...res.order },
+      select: { ...res.select },
+    };
+  }
+
+  ensureUniqueOrderBy(
+    repo: Repository<any>,
+    opts: OrderByOptions<any>,
+  ): Record<string, OrderBy> {
+    const hasUniqueField = Object.keys(opts).some((name) =>
+      this.isNonNullUnique(repo, name),
+    );
+    return hasUniqueField ? {} : { "self.id": "ASC" as OrderBy };
+  }
+
+  private isNonNullUnique(repo: Repository<any>, name: string): boolean {
     const column = repo.metadata.findColumnWithPropertyName(name);
     if (column?.isPrimary) return true;
     if (column?.isNullable) return false;
-    return (
+    return !!(
       column &&
       repo.metadata.uniques.some((x) => {
-        x.columns.length === 1 &&
-          x.columns[0].databaseName === column.databaseName;
+        return (
+          x.columns.length === 1 &&
+          x.columns[0].databaseName === column.databaseName
+        );
       })
     );
-  };
+  }
+}
 
-  const ensureUniqueOrderBy = (
-    repo: Repository<any>,
-    opts: OrderByOptions<T>,
-  ) => {
-    return Object.keys(opts).some((name) => isNonNullUnique(repo, name))
-      ? {}
-      : { "self.id": "ASC" };
-  };
+class QueryParser {
+  private selectProcessor: SelectProcessor;
+  private whereProcessor: WhereProcessor;
+  private orderProcessor: OrderByProcessor;
+  private jsonHandler: JsonQueryHandler;
+  private joinHandler: JoinHandler;
 
-  const {
-    select: selection = {},
-    where: conditions = {},
-    orderBy = {},
-  } = query;
-
-  const {
-    select,
-    joins: selectJoins,
-    references,
-    collections,
-  } = processSelect(repo, selection, "self");
-
-  const {
-    where,
-    params,
-    joins: whereJoins,
-  } = processWhere(repo, conditions, "self") ?? {};
-
-  const {
-    order,
-    joins: orderJoins,
-    select: orderSelect,
-  } = processOrderBy(repo, orderBy, "self") ?? {};
-
-  const { take, skip, cursor } = query;
-
-  // if pagination query, ensure ordering by an unique index
-  if (isPageQuery(query)) {
-    Object.assign(order, ensureUniqueOrderBy(repo, orderBy));
+  constructor(
+    private client: QueryClient,
+    private repo: Repository<any>,
+    private context: ParserContext,
+  ) {
+    this.joinHandler = new JoinHandler(context);
+    this.jsonHandler = new JsonQueryHandler(context);
+    this.selectProcessor = new SelectProcessor(context, this.joinHandler);
+    this.whereProcessor = new WhereProcessor(
+      context,
+      this.jsonHandler,
+      this.joinHandler,
+    );
+    this.orderProcessor = new OrderByProcessor(
+      context,
+      this.jsonHandler,
+      this.joinHandler,
+    );
   }
 
-  // make sure nested joins are ordered else query builder will throw join not found error
-  // e.g `join_table` should come before `join_table.nested`
-  const allJoins = { ...selectJoins, ...whereJoins, ...orderJoins };
-  const joins = Object.fromEntries(
-    Object.entries(allJoins).sort((a, b) => {
-      const a1 = a[1] as string;
-      const b1 = b[1] as string;
-      if (a1 === b1) return 0;
-      if (a1.startsWith(b1)) return 1;
-      if (b1.startsWith(a1)) return -1;
-      return 0;
-    }),
-  );
+  build(query: QueryOptions<any>): ParseResult {
+    const {
+      select: selection = {},
+      where: conditions = {},
+      orderBy = {},
+      take,
+      skip,
+      cursor,
+    } = query;
 
-  const result = {
-    select: { ...select, ...orderSelect },
-    joins,
-    where,
-    order,
-    params,
-    references,
-    collections,
-    take,
-    skip,
-    cursor,
-  };
+    // Process each component
+    const selectResult = this.selectProcessor.process(
+      this.repo,
+      selection,
+      "self",
+      this.client,
+    );
+    const whereResult = this.whereProcessor.process(
+      this.repo,
+      conditions,
+      "self",
+    );
+    const orderResult = this.orderProcessor.process(this.repo, orderBy, "self");
 
-  return JSON.parse(
-    JSON.stringify(result, (k, v) => {
-      if (v === undefined || v === null) return v;
-      if (Array.isArray(v) && v.length === 0) return;
-      if (typeof v === "object" && Object.keys(v).length === 0) return;
-      return v;
-    }),
-  );
+    // Handle pagination ordering
+    let finalOrder = orderResult?.order || {};
+    if (isPageQuery(query)) {
+      const uniqueOrder = this.orderProcessor.ensureUniqueOrderBy(
+        this.repo,
+        orderBy,
+      );
+      finalOrder = { ...finalOrder, ...uniqueOrder };
+    }
+
+    // Combine all joins and sort them
+    const allJoins = {
+      ...selectResult.joins,
+      ...(whereResult?.joins || {}),
+      ...(orderResult?.joins || {}),
+    };
+    const sortedJoins = this.context.sortJoins(allJoins);
+
+    // Build final result
+    const result: ParseResult = {
+      select: { ...selectResult.select, ...(orderResult?.select || {}) },
+      joins: sortedJoins,
+      where: whereResult?.where,
+      order: finalOrder,
+      params: whereResult?.params,
+      references: selectResult.references,
+      collections: selectResult.collections,
+      take,
+      skip,
+      cursor,
+    };
+
+    // Clean up undefined/empty values
+    return this.cleanResult(result);
+  }
+
+  private cleanResult(result: ParseResult): ParseResult {
+    return JSON.parse(
+      JSON.stringify(result, (k, v) => {
+        if (v === undefined || v === null) return v;
+        if (Array.isArray(v) && v.length === 0) return;
+        if (typeof v === "object" && Object.keys(v).length === 0) return;
+        return v;
+      }),
+    );
+  }
+}
+
+export const parseQuery = (
+  client: QueryClient,
+  repo: Repository<any>,
+  query: QueryOptions<any>,
+): ParseResult => {
+  const context = new ParserContext(client);
+  const builder = new QueryParser(client, repo, context);
+
+  try {
+    return builder.build(query);
+  } catch (error) {
+    if (error instanceof ParserError) {
+      throw error;
+    }
+    throw new ParserError(
+      `Failed to parse query: ${error instanceof Error ? error.message : String(error)}`,
+      { query, repository: repo.metadata.targetName },
+    );
+  }
 };
 
-export const isPageQuery = (options: QueryOptions<any> | ParseResult) => {
+export function isPageQuery(options: QueryOptions<any> | ParseResult): boolean {
   const { take, skip } = options;
-  return (take && skip) || (take && skip === void 0);
-};
+  return !!(take && skip) || !!(take && skip === void 0);
+}
 
-export type CursorTuple = [string, OrderBy, any];
-export type Cursor = CursorTuple[];
-
-export const encodeCursor = (cursor: Cursor) => {
+export function encodeCursor(cursor: Cursor): string {
   const json = JSON.stringify(cursor);
   const text = Buffer.from(json, "utf-8").toString("base64");
   return text;
-};
+}
 
-export const decodeCursor = (cursor: string): Cursor => {
+export function decodeCursor(cursor: string): Cursor {
   const text = Buffer.from(cursor, "base64").toString("utf-8");
   const json = JSON.parse(text);
   return json;
-};
+}
 
-const ID_SELECT: Record<string, string> = {
-  "self.id": "self_id",
-};
-
-export const createCursor = (
+export function createCursor(
   options: ParseResult,
   rawValues: Record<string, any>,
-) => {
+): string {
   const { select = {}, order = {} } = options;
   const cur: Cursor = Object.keys(order).map((key) => {
     const n = select[key] ?? ID_SELECT[key];
     const o = order[key];
     const v = rawValues[n];
     return [key, o, v];
-  }, {});
+  });
 
   return encodeCursor(cur);
-};
+}
 
-const ORDER_OPS = {
-  ASC: ">",
-  DESC: "<",
-};
-
-const ORDER_OPS_INVERTED = {
-  ASC: "<",
-  DESC: ">",
-};
-
-const ORDER_INVERTED = {
-  ASC: "DESC",
-  DESC: "ASC",
-};
-
-export const parseCursor = (
+export function parseCursor(
   options: ParseResult,
-): Pick<ParseResult, "where" | "params" | "order"> => {
+): Pick<ParseResult, "where" | "params" | "order"> {
   const { take, cursor, order: orderBy = {} } = options;
 
   if (cursor === void 0) {
@@ -586,7 +900,7 @@ export const parseCursor = (
 
   let count = 0;
 
-  const makeWhere = (items: CursorTuple[], invert: boolean) => {
+  const makeWhere = (items: CursorTuple[], invert: boolean): WhereResult => {
     const [first, ...rest] = items;
     const [key, order, value] = first;
 
@@ -600,14 +914,14 @@ export const parseCursor = (
 
     if (rest && rest.length) {
       const next = makeWhere(rest, invert);
-      if (rest.length > 1) next.where = `(${next.where})`;
+      if (rest.length > 1 && next.where) next.where = `(${next.where})`;
       where = `${key} ${op} :${p} OR (${key} = :${p} AND ${next.where})`;
       params = { ...params, ...next.params };
     } else {
       where = `${key} ${op} :${p}`;
     }
 
-    return { where, params };
+    return { where, params, joins: {} };
   };
 
   const invert = (take ?? 0) < 0;
@@ -622,4 +936,4 @@ export const parseCursor = (
   }
 
   return { where, params };
-};
+}
