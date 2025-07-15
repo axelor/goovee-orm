@@ -1,10 +1,10 @@
 import crypto from "node:crypto";
 
 import { Table } from "typeorm";
-import { DefaultNamingStrategy } from "typeorm/naming-strategy/DefaultNamingStrategy";
-import { NamingStrategyInterface } from "typeorm/naming-strategy/NamingStrategyInterface";
+import { DefaultNamingStrategy } from "typeorm/naming-strategy/DefaultNamingStrategy.js";
+import { NamingStrategyInterface } from "typeorm/naming-strategy/NamingStrategyInterface.js";
 
-import { snakeCase } from "typeorm/util/StringUtils";
+import { snakeCase } from "typeorm/util/StringUtils.js";
 
 const join = (...args: string[]) => args.join("_");
 

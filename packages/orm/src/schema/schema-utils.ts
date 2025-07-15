@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { camelCase, snakeCase } from "typeorm/util/StringUtils";
+import { camelCase, snakeCase } from "typeorm/util/StringUtils.js";
 import { EntityOptions } from "./types";
 
 export const toSnakeCase = (name: string) => snakeCase(name);

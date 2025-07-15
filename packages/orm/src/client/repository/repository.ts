@@ -1,5 +1,5 @@
 import { EntityMetadata } from "typeorm";
-import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
+import { RelationMetadata } from "typeorm/metadata/RelationMetadata.js";
 import { resolveLazy } from "../fields/utils";
 import { parseAggregate, parseQuery } from "../parser";
 import type {

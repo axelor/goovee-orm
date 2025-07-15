@@ -1,14 +1,8 @@
 import { Command } from "commander";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
 import { generate } from "./commands/generate";
+import packageJson from "../../package.json";
 
-const version = (() => {
-  const pkg = join(__dirname, "..", "..", "package.json");
-  const data = JSON.parse(readFileSync(pkg, { encoding: "utf-8" }));
-  return data.version;
-})();
+const version = packageJson.version;
 
 const program = new Command();
 

@@ -1,5 +1,5 @@
 import { EntityManager, QueryBuilder } from "typeorm";
-import { RelationMetadata } from "typeorm/metadata/RelationMetadata";
+import { RelationMetadata } from "typeorm/metadata/RelationMetadata.js";
 import { parseQuery, ParseResult } from "../../parser";
 import type { Entity, QueryClient, WhereOptions } from "../../types";
 import { OrmRepository } from "../types";

@@ -1,6 +1,6 @@
 import { Table, TableColumn } from "typeorm";
-import { PostgresQueryRunner as BasePostgresQueryRunner } from "typeorm/driver/postgres/PostgresQueryRunner";
-import { Query } from "typeorm/driver/Query";
+import { PostgresQueryRunner as BasePostgresQueryRunner } from "typeorm/driver/postgres/PostgresQueryRunner.js";
+import { Query } from "typeorm/driver/Query.js";
 
 export class PostgresQueryRunner extends BasePostgresQueryRunner {
   private isIdColumn(column: string | TableColumn) {

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { camelCase } from "typeorm/util/StringUtils";
+import { camelCase } from "typeorm/util/StringUtils.js";
 
 import { CodeFile } from "../../code-generator/CodeFile";
 import { generateSchema } from "../../schema/schema-generator";

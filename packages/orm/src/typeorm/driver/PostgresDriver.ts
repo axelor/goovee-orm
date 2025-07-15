@@ -1,5 +1,5 @@
 import { DataSource, ReplicationMode } from "typeorm";
-import { PostgresDriver as BasePostgresDriver } from "typeorm/driver/postgres/PostgresDriver";
+import { PostgresDriver as BasePostgresDriver } from "typeorm/driver/postgres/PostgresDriver.js";
 import { PostgresQueryRunner } from "./PostgresQueryRunner";
 
 export class PostgresDriver extends BasePostgresDriver {

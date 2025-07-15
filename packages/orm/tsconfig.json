@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["DOM", "DOM.Iterable", "ES2020"],
-    "module": "CommonJS",
+    "lib": ["ES2020"],
+    "module": "preserve",
+    "moduleDetection": "force",
     "skipLibCheck": true,
 
     "allowJs": true,
@@ -14,8 +15,9 @@
     "emitDecoratorMetadata": true,
 
     /* Bundler mode */
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
