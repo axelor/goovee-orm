@@ -4,10 +4,14 @@
 
 ### ✨ Features
 
+- **Config File Support:** Added support for configuration files (`goovee.config.json`) with multiple schema directory support, custom output directory, and clean flag options.
+
 - **Aggregate Queries:** A powerful new `aggregate` feature has been introduced, allowing for complex data aggregation and analysis. This includes support for `count`, `avg`, `sum`, `min`, and `max` operations, as well as `groupBy` and `having` clauses.
 - **Normalized String Search:** Added support for case-insensitive and accent-insensitive searches on string fields. This can be enabled through the `normalization` feature in the client options.
 - **BigDecimal Support:** Introduced a `BigDecimal` class for handling decimal values with arbitrary precision, preventing common floating-point inaccuracies.
 - **Numeric Filters on String Fields:** It is now possible to use numeric comparison operators (e.g., `gt`, `lt`) on string fields that contain numeric values.
+- **Null Values in CRUD Operations:** Allow `null` values in create and update operations for optional fields, providing more flexibility when creating or updating entities.
+- **AuditableModel with Configurable Audit Fields:** Introduced `AuditableModel` abstract entity with automatic `createdOn` and `updatedOn` timestamp management. Entities extend `AuditableModel` by default for audit functionality, or can be configured with `auditable: false` to extend the base `Model` class instead.
 
 ### 🚀 Performance
 
@@ -24,12 +28,14 @@
 - **Vitest Source Lines:** Fixed an issue where `vitest` was not showing the correct source lines in error stack traces.
 - **`test:e2e` Script:** Fixed the `test:e2e` script for more reliable and informative end-to-end testing.
 - **Type Issues:** Resolved several type inconsistencies in the codebase.
+- **CI Script:** Fixed CI script configuration issues.
 
 ### 🔨 Refactoring
 
 - **Code Organization:** Refactored several modules, including the client repository, generator, parser, and types, into smaller, more manageable files for improved code organization and maintainability.
 - **Static Test Data:** Replaced the `faker` library with static test data to ensure more deterministic and reliable tests.
 - **Base Entity:** Ensured that all generated entities extend the `Model` base class for better consistency and code reuse.
+- **Build System Migration:** Migrated build system from TypeScript to rslib for dual ESM and CommonJS support.
 
 ## v0.0.3
 
