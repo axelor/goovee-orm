@@ -16,6 +16,8 @@ import {
 } from "./parser";
 
 import type {
+  AggregateOptions,
+  AggregatePayload,
   BulkDeleteOptions,
   BulkUpdateOptions,
   CreateOptions,
@@ -355,6 +357,13 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     const qb = repo.createQueryBuilder("self");
     const sq = createSelectQuery(qb, opts);
     return await sq.getCount();
+  }
+
+  @intercept()
+  async aggregate<U extends AggregateOptions<T>>(
+    args: Options<U, AggregateOptions<T>>,
+  ): Promise<AggregatePayload<T, U>[]> {
+    throw new Error("Not implemented yet.");
   }
 
   private async handleReference(
