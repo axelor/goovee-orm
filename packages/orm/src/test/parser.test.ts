@@ -473,9 +473,9 @@ describe("aggregate parser tests", async () => {
   // access the internal typeorm repo for testing
   const getContactRepo = () => (client.contact as any).unwrap();
 
-  it("should parse simple _count aggregation", () => {
+  it("should parse simple count aggregation", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         id: true,
         firstName: true,
       },
@@ -489,14 +489,14 @@ describe("aggregate parser tests", async () => {
       "COUNT(self.firstName)": "count_firstName",
     });
     expect(res.aliasMap).toMatchObject({
-      count_id: "_count.id",
-      count_firstName: "_count.firstName",
+      count_id: "count.id",
+      count_firstName: "count.firstName",
     });
   });
 
-  it("should parse _count with relations", () => {
+  it("should parse count with relations", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         title: {
           id: true,
         },
@@ -519,9 +519,9 @@ describe("aggregate parser tests", async () => {
     });
   });
 
-  it("should parse _count with where conditions", () => {
+  it("should parse count with where conditions", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         id: true,
       },
       where: {
@@ -543,9 +543,9 @@ describe("aggregate parser tests", async () => {
     });
   });
 
-  it("should parse _avg aggregation", () => {
+  it("should parse avg aggregation", () => {
     const opts: AggregateOptions<Contact> = {
-      _avg: {
+      avg: {
         version: true,
       },
     };
@@ -558,9 +558,9 @@ describe("aggregate parser tests", async () => {
     });
   });
 
-  it("should parse _sum aggregation", () => {
+  it("should parse sum aggregation", () => {
     const opts: AggregateOptions<Contact> = {
-      _sum: {
+      sum: {
         version: true,
       },
     };
@@ -573,13 +573,13 @@ describe("aggregate parser tests", async () => {
     });
   });
 
-  it("should parse _min and _max aggregations", () => {
+  it("should parse min and max aggregations", () => {
     const opts: AggregateOptions<Contact> = {
-      _min: {
+      min: {
         version: true,
         firstName: true,
       },
-      _max: {
+      max: {
         version: true,
         lastName: true,
       },
@@ -598,19 +598,19 @@ describe("aggregate parser tests", async () => {
 
   it("should parse multiple aggregate operations together", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         id: true,
       },
-      _avg: {
+      avg: {
         version: true,
       },
-      _sum: {
+      sum: {
         version: true,
       },
-      _min: {
+      min: {
         firstName: true,
       },
-      _max: {
+      max: {
         lastName: true,
       },
     };
@@ -629,7 +629,7 @@ describe("aggregate parser tests", async () => {
 
   it("should parse simple groupBy fields", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         id: true,
       },
       groupBy: {
@@ -654,7 +654,7 @@ describe("aggregate parser tests", async () => {
 
   it("should parse groupBy with relations", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         id: true,
       },
       groupBy: {
@@ -681,7 +681,7 @@ describe("aggregate parser tests", async () => {
 
   it("should parse groupBy with nested relations", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         id: true,
       },
       groupBy: {
@@ -711,10 +711,10 @@ describe("aggregate parser tests", async () => {
 
   it("should parse aggregates with groupBy and where conditions", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         id: true,
       },
-      _avg: {
+      avg: {
         version: true,
       },
       groupBy: {
@@ -754,20 +754,20 @@ describe("aggregate parser tests", async () => {
 
   it("should parse having conditions", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         id: true,
       },
-      _avg: {
+      avg: {
         version: true,
       },
       groupBy: {
         firstName: true,
       },
       having: {
-        _count: {
+        count: {
           id: { gt: 5 },
         },
-        _avg: {
+        avg: {
           version: { ge: 2.0 },
         },
       },
@@ -795,7 +795,7 @@ describe("aggregate parser tests", async () => {
 
   it("should parse having conditions with relations", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         title: {
           id: true,
         },
@@ -804,7 +804,7 @@ describe("aggregate parser tests", async () => {
         firstName: true,
       },
       having: {
-        _count: {
+        count: {
           title: {
             id: { ge: 2 },
           },
@@ -833,16 +833,16 @@ describe("aggregate parser tests", async () => {
 
   it("should parse complete aggregate query with all features", () => {
     const opts: AggregateOptions<Contact> = {
-      _count: {
+      count: {
         id: true,
         addresses: {
           id: true,
         },
       },
-      _avg: {
+      avg: {
         version: true,
       },
-      _max: {
+      max: {
         firstName: true,
       },
       groupBy: {
@@ -855,12 +855,12 @@ describe("aggregate parser tests", async () => {
         version: { gt: 0 },
       },
       having: {
-        _count: {
+        count: {
           addresses: {
             id: { ge: 2 },
           },
         },
-        _avg: {
+        avg: {
           version: { lt: 10 },
         },
       },
@@ -899,8 +899,8 @@ describe("aggregate parser tests", async () => {
       p2: 10,
     });
     expect(res.aliasMap).toMatchObject({
-      avg_version: "_avg.version",
-      max_firstName: "_max.firstName",
+      avg_version: "avg.version",
+      max_firstName: "max.firstName",
       groupBy_lastName: "groupBy.lastName",
       groupBy_title_id: "groupBy.title.id",
     });
@@ -908,7 +908,7 @@ describe("aggregate parser tests", async () => {
 
   it("should parse nested aggregate with complex aliasMap", () => {
     const opts: AggregateOptions<Contact> = {
-      _avg: {
+      avg: {
         addresses: {
           country: {
             version: true,
@@ -928,13 +928,13 @@ describe("aggregate parser tests", async () => {
       "self_addresses.country": "self_addresses_country",
     });
     expect(res.aliasMap).toMatchObject({
-      avg_addre_mjs0ij: "_avg.addresses.country.version",
+      avg_addre_mjs0ij: "avg.addresses.country.version",
     });
   });
 
   it("should handle duplicate field names with unique aliases", () => {
     const opts: AggregateOptions<Contact> = {
-      _avg: {
+      avg: {
         version: true,
         addresses: {
           country: {
@@ -956,8 +956,8 @@ describe("aggregate parser tests", async () => {
       "self_addresses.country": "self_addresses_country",
     });
     expect(res.aliasMap).toMatchObject({
-      avg_version: "_avg.version",
-      avg_addre_mjs0ij: "_avg.addresses.country.version",
+      avg_version: "avg.version",
+      avg_addre_mjs0ij: "avg.addresses.country.version",
     });
   });
 });

@@ -32,11 +32,11 @@ export class AggregateProcessor {
 
     const prefix = "self";
     const {
-      _count,
-      _avg,
-      _sum,
-      _min,
-      _max,
+      count,
+      avg,
+      sum,
+      min,
+      max,
       groupBy,
       where: conditions = {},
       orderBy = {},
@@ -49,65 +49,65 @@ export class AggregateProcessor {
     const whereResult = this.whereProcessor.process(repo, conditions, prefix);
 
     // Process aggregate operations
-    if (_count) {
+    if (count) {
       const countResult = this.processAggregateOperations(
         repo,
-        _count,
+        count,
         prefix,
         "COUNT",
-        "_count",
+        "count",
       );
       select = { ...select, ...countResult.select };
       joins = { ...joins, ...countResult.joins };
       aliasMap = { ...aliasMap, ...countResult.aliasMap };
     }
 
-    if (_avg) {
+    if (avg) {
       const avgResult = this.processAggregateOperations(
         repo,
-        _avg,
+        avg,
         prefix,
         "AVG",
-        "_avg",
+        "avg",
       );
       select = { ...select, ...avgResult.select };
       joins = { ...joins, ...avgResult.joins };
       aliasMap = { ...aliasMap, ...avgResult.aliasMap };
     }
 
-    if (_sum) {
+    if (sum) {
       const sumResult = this.processAggregateOperations(
         repo,
-        _sum,
+        sum,
         prefix,
         "SUM",
-        "_sum",
+        "sum",
       );
       select = { ...select, ...sumResult.select };
       joins = { ...joins, ...sumResult.joins };
       aliasMap = { ...aliasMap, ...sumResult.aliasMap };
     }
 
-    if (_min) {
+    if (min) {
       const minResult = this.processAggregateOperations(
         repo,
-        _min,
+        min,
         prefix,
         "MIN",
-        "_min",
+        "min",
       );
       select = { ...select, ...minResult.select };
       joins = { ...joins, ...minResult.joins };
       aliasMap = { ...aliasMap, ...minResult.aliasMap };
     }
 
-    if (_max) {
+    if (max) {
       const maxResult = this.processAggregateOperations(
         repo,
-        _max,
+        max,
         prefix,
         "MAX",
-        "_max",
+        "max",
       );
       select = { ...select, ...maxResult.select };
       joins = { ...joins, ...maxResult.joins };
@@ -433,7 +433,7 @@ export class AggregateProcessor {
   }
 
   private generateUniqueAlias(operation: string, path: string): string {
-    // Convert path like "_avg.addresses.country.version" to "avg_addresses_country_version"
+    // Convert path like "avg.addresses.country.version" to "avg_addresses_country_version"
     // or "groupBy.title.id" to "groupby_title_id"
     const cleanPath = path.replace(/^_/, "").replace(/\./g, "_");
 

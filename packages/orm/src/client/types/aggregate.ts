@@ -11,14 +11,14 @@ export type Numeric = number | bigint | BigDecimal;
 export type Countable = string | number | boolean | Date | bigint | BigDecimal;
 
 export type AggregateOperation =
-  | "_avg"
-  | "_sum"
-  | "_min"
-  | "_max"
-  | "_count"
+  | "avg"
+  | "sum"
+  | "min"
+  | "max"
+  | "count"
   | "groupBy";
-export type NumericOperation = "_avg" | "_sum";
-export type CountableOperation = "_min" | "_max" | "_count" | "groupBy";
+export type NumericOperation = "avg" | "sum";
+export type CountableOperation = "min" | "max" | "count" | "groupBy";
 
 type FieldType<T, K> = K extends keyof T
   ? T[K] extends undefined
@@ -33,11 +33,11 @@ export type AggregateSelect<T extends Entity, Op extends AggregateOperation> = {
       : never
     : NonNullable<T[K]> extends Entity
       ? K
-      : Op extends "_avg" | "_sum"
+      : Op extends "avg" | "sum"
         ? NonNullable<T[K]> extends Numeric
           ? K
           : never
-        : Op extends "_count" | "_min" | "_max" | "groupBy"
+        : Op extends "count" | "min" | "max" | "groupBy"
           ? NonNullable<T[K]> extends Countable
             ? K
             : never
@@ -50,8 +50,8 @@ export type AggregateSelect<T extends Entity, Op extends AggregateOperation> = {
       : true;
 };
 
-export type NumericSelect<T extends Entity> = AggregateSelect<T, "_avg">;
-export type CountableSelect<T extends Entity> = AggregateSelect<T, "_min">;
+export type NumericSelect<T extends Entity> = AggregateSelect<T, "avg">;
+export type CountableSelect<T extends Entity> = AggregateSelect<T, "min">;
 
 export type FilterShapeFromSelection<S, T extends Entity> = {
   [K in keyof S as S[K] extends never ? never : K]?: S[K] extends true
@@ -146,11 +146,11 @@ export type AggregateOrderBy<T extends Entity> = {
 };
 
 export type AggregateOptions<T extends Entity> = {
-  _avg?: AggregateSelect<T, "_avg">;
-  _sum?: AggregateSelect<T, "_sum">;
-  _min?: AggregateSelect<T, "_min">;
-  _max?: AggregateSelect<T, "_max">;
-  _count?: AggregateSelect<T, "_count">;
+  avg?: AggregateSelect<T, "avg">;
+  sum?: AggregateSelect<T, "sum">;
+  min?: AggregateSelect<T, "min">;
+  max?: AggregateSelect<T, "max">;
+  count?: AggregateSelect<T, "count">;
   groupBy?: AggregateSelect<T, "groupBy">;
   orderBy?: AggregateOrderBy<T>;
   having?: AggregateHaving<T>;
@@ -167,11 +167,11 @@ export type OrderByFromSelection<S> = {
       : never;
 };
 
-type AggregateResultType<T, Op extends AggregateOperation> = Op extends "_count"
+type AggregateResultType<T, Op extends AggregateOperation> = Op extends "count"
   ? number
-  : Op extends "_avg" | "_sum"
+  : Op extends "avg" | "sum"
     ? number
-    : Op extends "_min" | "_max"
+    : Op extends "min" | "max"
       ? T extends Date
         ? Date
         : T extends string

@@ -69,20 +69,20 @@ export const runAggregate = async (
   // Helper function to convert values based on aggregate operation
   const convertAggregateValue = (value: any, originalPath: string): any => {
     const pathParts = originalPath.split(".");
-    const operation = pathParts[0]; // _count, _avg, _sum, _min, _max, groupBy
+    const operation = pathParts[0]; // count, avg, sum, min, max, groupBy
 
     switch (operation) {
-      case "_count":
+      case "count":
         // COUNT should always return a number, even if it's 0
         return value === null ? 0 : parseInt(value, 10);
-      case "_sum":
+      case "sum":
         // SUM can be null if there are no rows, or a number
         return value === null ? null : parseInt(value, 10);
-      case "_avg":
+      case "avg":
         // AVG can be null if there are no rows, or a float
         return value === null ? null : parseFloat(value);
-      case "_min":
-      case "_max":
+      case "min":
+      case "max":
         // For min/max, we need to preserve the original type
         // Numbers should be converted, strings/dates should remain as-is
         if (value === null) return null;
