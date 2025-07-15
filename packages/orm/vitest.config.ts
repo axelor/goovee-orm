@@ -23,7 +23,9 @@ export default defineConfig((env) => {
         async transform(code, id, options) {
           const res = transformSync(code, {
             filename: id,
+            sourceMaps: true,
             jsc: {
+              target: "es2022",
               parser: {
                 syntax: "typescript",
                 decorators: true,
