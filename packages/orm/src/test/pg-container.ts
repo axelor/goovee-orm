@@ -89,21 +89,25 @@ export const createPostgresContainer = async () => {
   const cmd = await which("docker").catch(() => which("podman"));
   const port = await generatePort();
   const name = generateName();
-  const pg = await run(cmd, [
-    "run",
-    "--rm",
-    "--name",
-    name,
-    "-e",
-    "POSTGRES_USER=test",
-    "-e",
-    "POSTGRES_PASSWORD=test",
-    "-e",
-    "POSTGRES_DATABASE=test",
-    "-p",
-    `${port}:5432`,
-    "postgres:alpine",
-  ]);
+  const pg = await run(
+    cmd,
+    [
+      "run",
+      "--rm",
+      "--name",
+      name,
+      "-e",
+      "POSTGRES_USER=test",
+      "-e",
+      "POSTGRES_PASSWORD=test",
+      "-e",
+      "POSTGRES_DATABASE=test",
+      "-p",
+      `${port}:5432`,
+      "postgres:alpine",
+    ],
+    { verbose: false },
+  );
 
   await waitForOutput(pg, "CREATE DATABASE");
   await waitForOutput(pg, "database system is ready to accept connections");
