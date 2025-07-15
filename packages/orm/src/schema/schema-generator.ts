@@ -664,12 +664,20 @@ export const generateSchema = (outDir: string, config: GeneratorConfig) => {
   // generate all other entities
   for (const opts of schema) {
     if (opts.name !== Model.name && opts.name !== AuditableModel.name) {
-      const auditable = opts.extends === "AuditableModel" || opts.auditable !== false;
-      const extendsValue = opts.extends === "Model" && auditable
-        ? AuditableModel.name
-        : opts.extends || (auditable ? AuditableModel.name : Model.name);
+      const auditable =
+        opts.extends === "AuditableModel" || opts.auditable !== false;
+      const extendsValue =
+        opts.extends === "Model" && auditable
+          ? AuditableModel.name
+          : opts.extends || (auditable ? AuditableModel.name : Model.name);
 
-      files.push(generateEntity(outDir, { ...opts, extends: extendsValue, auditable }, config));
+      files.push(
+        generateEntity(
+          outDir,
+          { ...opts, extends: extendsValue, auditable },
+          config,
+        ),
+      );
     }
   }
 

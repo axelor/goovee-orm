@@ -490,9 +490,7 @@ describe("aggregate e2e tests", async () => {
         first.avg.version !== null &&
         first.avg.addresses.country.version !== null
       ) {
-        expect(first.avg.version).not.toBe(
-          first.avg.addresses.country.version,
-        );
+        expect(first.avg.version).not.toBe(first.avg.addresses.country.version);
       }
     }
   });

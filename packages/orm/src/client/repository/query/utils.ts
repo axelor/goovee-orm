@@ -91,15 +91,20 @@ export const createSelectQuery = <T extends Entity>(
 ) => {
   const { select = {}, where, params = {}, joins = {}, order } = options;
 
-  const hasId = !!select["self.id"];
-  const hasVersion = !!select["self.version"];
+  const allSelects: Record<string, string | undefined> = { ...select };
 
-  let sq = builder.select();
+  builder.expressionMap.selects
+    .filter((x) => x.selection !== "self")
+    .forEach((x) => (allSelects[x.selection] = x.aliasName));
 
-  if (!hasId) sq = sq.select("self.id");
-  if (!hasVersion) sq = sq.addSelect("self.version");
+  const selections = Object.entries(allSelects);
 
-  Object.entries(select)
+  const sq =
+    selections.length > 0
+      ? builder.select("self.id").addSelect("self.version")
+      : builder.select();
+
+  selections
     .filter(([name]) => name !== "self.id" && name !== "self.version")
     .forEach(([name, alias]) => sq.addSelect(name, alias));
 
