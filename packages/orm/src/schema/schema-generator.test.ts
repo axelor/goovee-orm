@@ -58,7 +58,6 @@ const UniqueTest = defineEntity({
 const Title = defineEntity({
   name: "Title",
   table: "titles",
-  extends: "Model",
   fields: [
     {
       name: "code",
@@ -76,7 +75,6 @@ const Title = defineEntity({
 const Country = defineEntity({
   name: "Country",
   table: "countries",
-  extends: "Model",
   fields: [
     {
       name: "code",
@@ -94,7 +92,6 @@ const Country = defineEntity({
 const Address = defineEntity({
   name: "Address",
   table: "addresses",
-  extends: "Model",
   fields: [
     {
       name: "contact",
@@ -142,7 +139,6 @@ const Address = defineEntity({
 const Circle = defineEntity({
   name: "Circle",
   table: "circles",
-  extends: "Model",
   fields: [
     {
       name: "code",
@@ -166,7 +162,6 @@ const Circle = defineEntity({
 const Bio = defineEntity({
   name: "Bio",
   table: "bio",
-  extends: "Model",
   fields: [
     {
       name: "contact",
@@ -184,7 +179,6 @@ const Bio = defineEntity({
 const Contact = defineEntity({
   name: "Contact",
   table: "contacts",
-  extends: "Model",
   fields: [
     {
       name: "title",
@@ -311,9 +305,21 @@ const Decimals = defineEntity({
   ],
 });
 
+const NonAuditableEntity = defineEntity({
+  name: "NonAuditableEntity",
+  auditable: false,
+  fields: [
+    {
+      name: "name",
+      type: "String",
+      required: true,
+    },
+  ],
+});
+
 const expectedCode = `\
 import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "@goovee/orm/typeorm";
-import { Model } from "./Model";
+import { AuditableModel } from "./AuditableModel";
 import { Title } from "./Title";
 import { Bio } from "./Bio";
 import { Address } from "./Address";
@@ -322,7 +328,7 @@ import { ContactType } from "./ContactType";
 import { type Text, type Binary, type Json } from "@goovee/orm";
 
 @Entity("contacts")
-export class Contact extends Model {
+export class Contact extends AuditableModel {
   @ManyToOne(() => Title)
   title?: Relation<Title>;
 
@@ -368,7 +374,7 @@ export class Contact extends Model {
 
 const expectedCodeGooveeNaming = `\
 import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "@goovee/orm/typeorm";
-import { Model } from "./Model";
+import { AuditableModel } from "./AuditableModel";
 import { Title } from "./Title";
 import { Bio } from "./Bio";
 import { Address } from "./Address";
@@ -377,7 +383,7 @@ import { ContactType } from "./ContactType";
 import { type Text, type Binary, type Json } from "@goovee/orm";
 
 @Entity("contacts")
-export class Contact extends Model {
+export class Contact extends AuditableModel {
   @ManyToOne(() => Title)
   title?: Relation<Title>;
 
@@ -423,14 +429,14 @@ export class Contact extends Model {
 
 const expectedUniqueCode = `\
 import { Entity, Unique, Index, Column } from "@goovee/orm/typeorm";
-import { Model } from "./Model";
+import { AuditableModel } from "./AuditableModel";
 
 @Entity("unique_test")
 @Unique(["some", "thing"])
 @Unique("uk_some_one", ["some", "one"])
 @Index(["another", "one"], { unique: true })
 @Index("idx_some_one", ["some", "one"], { unique: true })
-export class UniqueTest extends Model {
+export class UniqueTest extends AuditableModel {
   @Index({ unique: true })
   @Column({ nullable: true })
   name?: string;
@@ -452,11 +458,11 @@ export class UniqueTest extends Model {
 
 const expectedSyncCode = `\
 import { Entity, ManyToMany, JoinTable, type Relation } from "@goovee/orm/typeorm";
-import { Model } from "./Model";
+import { AuditableModel } from "./AuditableModel";
 import { SaleTax } from "./SaleTax";
 
 @Entity("sale_order", { synchronize: false })
-export class SaleOrder extends Model {
+export class SaleOrder extends AuditableModel {
   @ManyToMany(() => SaleTax)
   @JoinTable({ name: "sale_order_taxes", joinColumn: { name: "sale_order" }, inverseJoinColumn: { name: "taxes" }, synchronize: false })
   taxes?: Relation<SaleTax>[];
@@ -465,10 +471,10 @@ export class SaleOrder extends Model {
 
 const expectedTemporalsCode = `\
 import { Entity, Column } from "@goovee/orm/typeorm";
-import { Model } from "./Model";
+import { AuditableModel } from "./AuditableModel";
 
 @Entity("temporals")
-export class Temporals extends Model {
+export class Temporals extends AuditableModel {
   @Column({ nullable: true, type: "timestamp" })
   dateTimeField?: Date;
 
@@ -482,16 +488,27 @@ export class Temporals extends Model {
 
 const expectedDecimalsCode = `\
 import { Entity, Column } from "@goovee/orm/typeorm";
-import { Model } from "./Model";
+import { AuditableModel } from "./AuditableModel";
 import { BigDecimal } from "@goovee/orm";
 
 @Entity("decimals")
-export class Decimals extends Model {
+export class Decimals extends AuditableModel {
   @Column({ nullable: true, type: "numeric", transformer: (BigDecimal as any).__transformer })
   rate?: BigDecimal;
 
   @Column({ nullable: true, scale: 2, precision: 10, type: "numeric", transformer: (BigDecimal as any).__transformer })
   amount?: BigDecimal;
+}
+`;
+
+const expectedNonAuditableCode = `\
+import { Entity, Column } from "@goovee/orm/typeorm";
+import { Model } from "./Model";
+
+@Entity("non_auditable_entity")
+export class NonAuditableEntity extends Model {
+  @Column()
+  name!: string;
 }
 `;
 
@@ -509,10 +526,12 @@ const schema = [
   UniqueTest,
   Temporals,
   Decimals,
+  NonAuditableEntity,
 ];
 
 const expectedFiles = [
   "Model.ts",
+  "AuditableModel.ts",
   "AddressType.ts",
   "ContactType.ts",
   "Title.ts",
@@ -526,6 +545,7 @@ const expectedFiles = [
   "UniqueTest.ts",
   "Temporals.ts",
   "Decimals.ts",
+  "NonAuditableEntity.ts",
   "index.ts",
 ].map((x) => path.join(outDir, x));
 
@@ -602,5 +622,16 @@ describe("schema generator tests", () => {
       encoding: "utf-8",
     });
     expect(code).toBe(expectedDecimalsCode);
+  });
+
+  it("should generate non-auditable entity extending Model instead of AuditableModel", () => {
+    generateSchema(outDir, {
+      schema,
+      naming: "goovee",
+    });
+    const code = fs.readFileSync(path.join(outDir, "NonAuditableEntity.ts"), {
+      encoding: "utf-8",
+    });
+    expect(code).toBe(expectedNonAuditableCode);
   });
 });

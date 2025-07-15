@@ -1,7 +1,6 @@
 {
   "name": "Circle",
   "table": "contact_circle",
-  "extends": "Model",
   "fields": [
     {
       "type": "String",

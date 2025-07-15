@@ -594,6 +594,14 @@ const Model = defineEntity({
       type: "Int",
       version: true,
     },
+  ],
+});
+
+const AuditableModel = defineEntity({
+  name: "AuditableModel",
+  abstract: true,
+  extends: "Model",
+  fields: [
     {
       name: "createdOn",
       type: "DateTime",
@@ -606,6 +614,7 @@ const Model = defineEntity({
     },
   ],
 });
+
 export const generateSchema = (outDir: string, config: GeneratorConfig) => {
   const { schema } = config;
   let model = schema.find((x) => x.name === "Model");
@@ -640,6 +649,9 @@ export const generateSchema = (outDir: string, config: GeneratorConfig) => {
   // generate base model
   files.push(generateEntity(outDir, model, config));
 
+  // generate auditable model
+  files.push(generateEntity(outDir, AuditableModel, config));
+
   // find enums
   const enums = schema
     .flatMap((x) => x.fields)
@@ -651,8 +663,13 @@ export const generateSchema = (outDir: string, config: GeneratorConfig) => {
 
   // generate all other entities
   for (const opts of schema) {
-    if (opts.name !== Model.name) {
-      files.push(generateEntity(outDir, { extends: "Model", ...opts }, config));
+    if (opts.name !== Model.name && opts.name !== AuditableModel.name) {
+      const auditable = opts.extends === "AuditableModel" || opts.auditable !== false;
+      const extendsValue = opts.extends === "Model" && auditable
+        ? AuditableModel.name
+        : opts.extends || (auditable ? AuditableModel.name : Model.name);
+
+      files.push(generateEntity(outDir, { ...opts, extends: extendsValue, auditable }, config));
     }
   }
 

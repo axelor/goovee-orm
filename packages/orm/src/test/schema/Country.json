@@ -1,7 +1,6 @@
 {
   "name": "Country",
   "table": "contact_country",
-  "extends": "Model",
   "fields": [
     {
       "type": "String",

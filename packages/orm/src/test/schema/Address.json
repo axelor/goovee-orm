@@ -1,7 +1,6 @@
 {
   "name": "Address",
   "table": "contact_address",
-  "extends": "Model",
   "fields": [
     {
       "type": "ManyToOne",

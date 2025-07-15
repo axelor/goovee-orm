@@ -1,7 +1,6 @@
 {
   "name": "Title",
   "table": "contact_title",
-  "extends": "Model",
   "fields": [
     {
       "type": "String",

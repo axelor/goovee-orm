@@ -1,7 +1,6 @@
 {
   "name": "Contact",
   "table": "contact_contact",
-  "extends": "Model",
   "fields": [
     {
       "type": "ManyToOne",

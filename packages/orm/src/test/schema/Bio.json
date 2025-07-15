@@ -1,7 +1,6 @@
 {
   "name": "Bio",
   "table": "contact_bio",
-  "extends": "Model",
   "fields": [
     {
       "type": "OneToOne",

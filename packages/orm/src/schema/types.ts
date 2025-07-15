@@ -174,6 +174,7 @@ export interface EntityOptions {
   extends?: string;
   implements?: string | string[];
   synchronize?: boolean;
+  auditable?: boolean;
   fields?: PropertyOptions[];
   uniques?: Unique[];
   indexes?: Index[];
