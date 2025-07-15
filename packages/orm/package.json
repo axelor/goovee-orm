@@ -47,22 +47,22 @@
     "goovee": "./src/cli/index-dev.mjs"
   },
   "dependencies": {
-    "commander": "^12.0.0",
+    "commander": "^14.0.0",
     "reflect-metadata": "^0.2.2",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.24"
   },
   "peerDependencies": {
     "graphql": "^16.8.1",
     "pg": "^8.11.5"
   },
   "devDependencies": {
-    "@swc/core": "^1.5.0",
-    "@types/node": "^20.12.7",
-    "@types/pg": "^8.11.5",
-    "@types/yargs": "^17.0.32",
-    "rimraf": "^5.0.5",
+    "@swc/core": "^1.12.2",
+    "@types/node": "^24.0.3",
+    "@types/pg": "^8.15.4",
+    "@types/yargs": "^17.0.33",
+    "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5",
-    "vitest": "^1.5.1"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   }
 }
