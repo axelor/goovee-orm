@@ -70,7 +70,7 @@ describe("Lob tests", async () => {
         const readFileStream = fs.createReadStream(inFile);
         readFileStream.pipe(writer);
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           writer.on("finish", resolve);
           writer.on("error", reject);
         });
@@ -87,7 +87,7 @@ describe("Lob tests", async () => {
           const writeFileStream = fs.createWriteStream(outFile);
           reader.pipe(writeFileStream);
 
-          await new Promise((resolve, reject) => {
+          await new Promise<void>((resolve, reject) => {
             writeFileStream.on("finish", resolve);
             writeFileStream.on("error", reject);
             reader.on("error", reject);
