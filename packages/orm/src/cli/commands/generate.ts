@@ -2,7 +2,7 @@ import fs from "node:fs";
 
 import { Command } from "commander";
 
-import { generateClient } from "../../client/generator";
+import { generateClient, transpileClient } from "../../client/generator";
 import { expandConfig, loadConfig } from "../config";
 
 export const generate = new Command()
@@ -29,5 +29,17 @@ export const generate = new Command()
     }
 
     // generate client
-    generateClient(dirs, outDir);
+    const files = generateClient(dirs, outDir);
+
+    // transpile client?
+    if (schema?.transpile) {
+      const opts =
+        typeof schema.transpile === "object" ? schema.transpile : undefined;
+      // transpile
+      transpileClient(files, opts);
+      // remove typescript files
+      for (const file of files) {
+        fs.rmSync(file, { force: true });
+      }
+    }
   });
