@@ -93,6 +93,7 @@ export type QueryOptions<T extends Entity> = {
   take?: number;
   skip?: number;
   cursor?: string;
+  distinct?: boolean;
 };
 
 // ============================================================================

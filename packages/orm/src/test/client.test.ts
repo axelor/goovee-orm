@@ -1247,4 +1247,23 @@ describe("client pagination tests", async () => {
     expect(prev2[0]).toMatchObject(all[2]);
     expect(prev2[1]).toMatchObject(all[3]);
   });
+
+  it("should support distinct option in queries", async () => {
+    const contact = await client.contact.create({
+      data: {
+        firstName: "TestDistinct",
+        lastName: "User",
+      },
+    });
+
+    const contacts = await client.contact.find({
+      where: { firstName: "TestDistinct" },
+      select: { firstName: true, lastName: true },
+      distinct: true,
+    });
+
+    expect(contacts).toHaveLength(1);
+    expect(contacts[0].firstName).toBe("TestDistinct");
+    expect(contacts[0].lastName).toBe("User");
+  });
 });

@@ -26,6 +26,7 @@ export type ParseResult = {
   take?: number;
   skip?: number;
   cursor?: string;
+  distinct?: boolean;
 };
 
 export type CursorTuple = [string, OrderBy, any];

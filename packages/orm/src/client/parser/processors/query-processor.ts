@@ -43,6 +43,7 @@ export class QueryProcessor {
       take,
       skip,
       cursor,
+      distinct,
     } = query;
 
     // Process each component
@@ -85,6 +86,7 @@ export class QueryProcessor {
       take,
       skip,
       cursor,
+      distinct,
     };
 
     // Clean up undefined/empty values

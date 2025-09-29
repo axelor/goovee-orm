@@ -89,7 +89,7 @@ export const createSelectQuery = <T extends Entity>(
   builder: QueryBuilder<T>,
   options: ParseResult,
 ) => {
-  const { select = {}, where, params = {}, joins = {}, order } = options;
+  const { select = {}, where, params = {}, joins = {}, order, distinct } = options;
 
   const allSelects: Record<string, string | undefined> = { ...select };
 
@@ -109,6 +109,10 @@ export const createSelectQuery = <T extends Entity>(
     .forEach(([name, alias]) => sq.addSelect(name, alias));
 
   Object.entries(joins).forEach(([name, alias]) => sq.leftJoin(name, alias));
+
+  if (distinct) {
+    sq.distinct(true);
+  }
 
   if (where) sq.andWhere(where, params);
   if (order) sq.orderBy(order);
