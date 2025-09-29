@@ -17,9 +17,6 @@ importers:
 
   packages/orm:
     dependencies:
-      '@swc-node/register':
-        specifier: ^1.10.10
-        version: 1.10.10(@swc/core@1.12.2(@swc/helpers@0.5.17))(@swc/types@0.1.23)(typescript@5.8.3)
       commander:
         specifier: ^14.0.0
         version: 14.0.0
@@ -39,6 +36,9 @@ importers:
       '@rslib/core':
         specifier: ^0.10.5
         version: 0.10.5(typescript@5.8.3)
+      '@swc-node/register':
+        specifier: ^1.10.10
+        version: 1.10.10(@swc/core@1.12.2(@swc/helpers@0.5.17))(@swc/types@0.1.23)(typescript@5.8.3)
       '@swc/core':
         specifier: ^1.12.2
         version: 1.12.2(@swc/helpers@0.5.17)

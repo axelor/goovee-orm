@@ -46,10 +46,9 @@
     "dist"
   ],
   "bin": {
-    "goovee": "node --import @swc-node/register/esm-register ./src/cli/index.ts"
+    "goovee": "./src/cli/index-dev.cjs"
   },
   "dependencies": {
-    "@swc-node/register": "^1.10.10",
     "commander": "^14.0.0",
     "glob": "^11.0.3",
     "typeorm": "^0.3.24"
@@ -61,6 +60,7 @@
   "devDependencies": {
     "@rslib/core": "^0.10.5",
     "@swc/core": "^1.12.2",
+    "@swc-node/register": "^1.10.10",
     "@types/node": "^24.0.3",
     "@types/pg": "^8.15.4",
     "@types/yargs": "^17.0.33",
