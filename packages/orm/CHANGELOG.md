@@ -1,10 +1,16 @@
 # Changelog
 
-## [0.0.5] (Unreleased)
+## [0.0.5] (2025-09-29)
 
 ### ✨ Features
 
 - **Client Transpilation Support:** Added support to generate transpiled client code using the Goovee CLI.
+- **Distinct Query Support:** Added `distinct` support for eliminating duplicate results in queries.
+
+### 🐛 Bug Fixes
+
+- **Nested Collection Search:** Fixed duplicate results when searching on nested collection fields.
+- **CLI Build Tool:** Fixed swc-node usage for CLI to improve build performance and compatibility.
 
 ## [0.0.4] (2025-07-15)
 
