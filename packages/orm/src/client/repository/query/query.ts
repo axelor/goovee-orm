@@ -110,6 +110,20 @@ const doQuery = async (
       },
     };
 
+    // enable distinct for nested relations with multi-value joins
+    if (oo.joins && Object.keys(oo.joins).length > 0) {
+      const hasCollectionJoin = Object.keys(oo.joins).some((x) => {
+        const related = x.replace(/^self\./, "");
+        const relatedRepo = rr.metadata.findRelationWithPropertyPath(related);
+        return relatedRepo?.isOneToMany || relatedRepo?.isManyToMany;
+      });
+
+      // we need distinct
+      if (hasCollectionJoin) {
+        oo.distinct = true;
+      }
+    }
+
     const { entities: items, raw: rawItems } = await doQuery(rr, nq, oo);
 
     const itemsById = items.reduce((group, item) => {

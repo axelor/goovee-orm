@@ -1266,4 +1266,49 @@ describe("client pagination tests", async () => {
     expect(contacts[0].firstName).toBe("TestDistinct");
     expect(contacts[0].lastName).toBe("User");
   });
+
+  it("should not return duplicate records on nested where", async () => {
+    const c = await client.contact.create({
+      data: {
+        firstName: "Test",
+        lastName: "User",
+      },
+    });
+
+    const address = await client.address.create({
+      data: {
+        contact: { select: { id: c.id } },
+        street: "Street 1",
+      },
+      select: { id: true, tags: true },
+    });
+
+    // create two tags and assign both of them to the address
+    await Promise.all([
+      client.addressTag.create({
+        data: { name: "Red", address: { select: { id: address.id } } },
+      }),
+      client.addressTag.create({
+        data: { name: "Blue", address: { select: { id: address.id } } },
+      }),
+    ]);
+
+    const contact = await client.contact.findOne({
+      where: { id: c.id },
+      select: {
+        id: true,
+        addresses: {
+          where: {
+            tags: {
+              OR: [{ name: "Red" }, { name: "Blue" }],
+            },
+          },
+        },
+      },
+    });
+
+    expect(contact).toBeDefined();
+    expect(contact!.addresses).toBeDefined();
+    expect(contact!.addresses).toHaveLength(1);
+  });
 });

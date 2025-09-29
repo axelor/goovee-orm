@@ -1,0 +1,16 @@
+{
+  "name": "AddressTag",
+  "table": "address_tag",
+  "fields": [
+    {
+      "type": "String",
+      "name": "name"
+    },
+    {
+      "type": "ManyToOne",
+      "name": "address",
+      "target": "Address"
+    }
+  ]
+}
+

@@ -54,6 +54,12 @@
     {
       "type": "JSON",
       "name": "props"
+    },
+    {
+      "type": "OneToMany",
+      "name": "tags",
+      "target": "AddressTag",
+      "mappedBy": "address"
     }
   ]
 }
