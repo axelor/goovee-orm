@@ -2,6 +2,10 @@
 
 ## [0.0.5] (Unreleased)
 
+### ✨ Features
+
+- **Client Transpilation Support:** Added support to generate transpiled client code using the Goovee CLI.
+
 ## [0.0.4] (2025-07-15)
 
 ### ✨ Features
