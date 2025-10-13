@@ -1,21 +1,74 @@
 {
-  "name": "goovee",
+  "name": "@goovee/orm",
   "version": "0.0.6",
-  "private": true,
-  "workspaces": [
-    "packages/*",
-    "examples/*"
-  ],
+  "author": "Axelor",
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": "https://github.com/axelor/goovee-orm",
   "scripts": {
-    "build": "pnpm --filter @goovee/* build",
-    "release": "pnpm --filter @goovee/* release",
-    "test": "pnpm --filter @goovee/* test",
-    "test:e2e": "pnpm --filter @goovee/* test:e2e",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json,css,scss,html}\""
+    "clean": "rimraf dist",
+    "build": "rimraf dist && rslib build",
+    "dev": "pnpm build --watch",
+    "release": "pnpm publish --no-git-checks",
+    "test": "vitest",
+    "test:e2e": "vitest --mode e2e --reporter=verbose --pool=threads --poolOptions.threads.singleThread=true --test-timeout 10000"
+  },
+  "sideEffects": false,
+  "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*/index.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      },
+      "./*": {
+        "types": "./dist/*/index.d.ts",
+        "import": "./dist/*/index.js",
+        "require": "./dist/*/index.cjs"
+      }
+    },
+    "bin": {
+      "goovee": "./dist/cli/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "goovee": "./src/cli/index-dev.cjs"
+  },
+  "dependencies": {
+    "commander": "^14.0.0",
+    "glob": "^11.0.3",
+    "typeorm": "^0.3.24"
+  },
+  "peerDependencies": {
+    "graphql": "^16.8.1",
+    "pg": "^8.11.5"
   },
   "devDependencies": {
-    "eslint": "^9.30.0",
-    "prettier": "^3.6.2"
+    "@rslib/core": "^0.10.5",
+    "@swc/core": "^1.12.2",
+    "@swc-node/register": "^1.10.10",
+    "@types/node": "^24.0.3",
+    "@types/pg": "^8.15.4",
+    "@types/yargs": "^17.0.33",
+    "dayjs": "^1.11.13",
+    "reflect-metadata": "^0.2.2",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=18.18.0"
