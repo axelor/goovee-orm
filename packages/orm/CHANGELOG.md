@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.0.6] (Unreleased)
+
 ## [0.0.5] (2025-09-29)
 
 ### ✨ Features
