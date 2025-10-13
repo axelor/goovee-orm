@@ -1,8 +1,8 @@
 import { Repository } from "typeorm";
 import { ParserContext } from "../context";
-import { JsonQueryHandler } from "../handlers/json-handler";
 import { JoinHandler } from "../handlers/join-handler";
-import { OrderResult, OrderByOptions, OrderBy, JsonOrderBy } from "../types";
+import { JsonQueryHandler } from "../handlers/json-handler";
+import { JsonOrderBy, OrderBy, OrderByOptions, OrderResult } from "../types";
 
 export class OrderByProcessor {
   constructor(
@@ -45,8 +45,19 @@ export class OrderByProcessor {
           order = { ...order, ...jsonOrder };
         }
       } else {
-        select[name] = this.context.makeAlias(repo, prefix, key);
-        order[this.context.normalize(repo, key, name)] = value as OrderBy;
+        const alias = this.context.makeAlias(repo, prefix, key);
+        const normalized = this.context.normalize(repo, key, name);
+        if (normalized !== name) {
+          // TypeORM tries to look for the alias in order by if expression has `.` in it
+          // so we need to create a new alias without `.` to avoid this issue.
+          const normalizedAlias = `${alias}_normalized`;
+          select[name] = alias;
+          select[normalized] = normalizedAlias;
+          order[normalizedAlias] = value as OrderBy;
+        } else {
+          select[name] = alias;
+          order[name] = value as OrderBy;
+        }
       }
     }
 

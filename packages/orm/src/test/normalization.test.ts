@@ -319,8 +319,8 @@ describe("normalization feature tests", async () => {
       const res = parseQuery(clientWithNormalization, repo, opts);
 
       expect(res.order).toMatchObject({
-        "unaccent(lower(self.firstName))": "ASC",
-        "unaccent(lower(self.lastName))": "DESC",
+        "self_first_name_normalized": "ASC",
+        "self_last_name_normalized": "DESC",
       });
     });
 
@@ -336,8 +336,8 @@ describe("normalization feature tests", async () => {
       const res = parseQuery(clientWithLowerCase, repo, opts);
 
       expect(res.order).toMatchObject({
-        "lower(self.firstName)": "ASC",
-        "lower(self.lastName)": "DESC",
+        "self_first_name_normalized": "ASC",
+        "self_last_name_normalized": "DESC",
       });
     });
 
@@ -353,8 +353,8 @@ describe("normalization feature tests", async () => {
       const res = parseQuery(clientWithUnaccent, repo, opts);
 
       expect(res.order).toMatchObject({
-        "unaccent(self.firstName)": "ASC",
-        "unaccent(self.lastName)": "DESC",
+        "self_first_name_normalized": "ASC",
+        "self_last_name_normalized": "DESC",
       });
     });
 
@@ -625,5 +625,32 @@ describe("normalization feature tests", async () => {
       // Clean up
       await clientWithoutNormalization.contact.deleteAll({});
     });
+  });
+
+  it("should not crash", async () => {
+    await clientWithNormalization.contact.create({
+      data: {
+        firstName: "John",
+        lastName: "Smith",
+        email: "john.smith@example.com",
+        bio: {
+          create: {
+            content: "It's Me!",
+          },
+        },
+      },
+    });
+
+    const contact = await clientWithNormalization.contact.findOne({
+      where: {
+        bio: { content: "It's Me!" },
+      },
+      orderBy: { firstName: "ASC" },
+      take: 10,
+      select: {
+        id: true,
+      },
+    });
+    expect(contact).toBeDefined();
   });
 });
