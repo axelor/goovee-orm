@@ -339,6 +339,57 @@ describe("client tests", async () => {
     expect(x.version).toBe(c.version + 1);
   });
 
+  it("should update many-to-one field to null", async () => {
+    const c = await client.contact.create({
+      data: {
+        firstName: "Some",
+        lastName: "NAME",
+        title: {
+          create: {
+            code: "mr",
+            name: "Mr.",
+          },
+        },
+      },
+      select: {
+        firstName: true,
+        lastName: true,
+        title: {
+          code: true,
+          name: true,
+        },
+      },
+    });
+
+    expect(c.title).toBeDefined();
+    expect(c.title?.name).toBe("Mr.");
+
+    const updated = await client.contact.update({
+      data: {
+        id: c.id,
+        version: c.version,
+        title: {
+          select: {
+            id: null,
+          },
+        },
+      },
+      select: {
+        firstName: true,
+        lastName: true,
+        title: {
+          code: true,
+          name: true,
+        },
+      },
+    });
+
+    expect(updated.firstName).toBe("Some");
+    expect(updated.lastName).toBe("NAME");
+    expect(updated.title).toBeNull();
+    expect(updated.version).toBe(c.version + 1);
+  });
+
   it("should remove a collection field item with update", async () => {
     const contact = await client.contact.create({
       data: {

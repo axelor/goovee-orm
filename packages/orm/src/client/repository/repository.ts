@@ -35,7 +35,7 @@ class RelationHandlers {
     relation: RelationMetadata,
     data: any,
     client: QueryClient,
-    interceptor: Interceptor,
+    interceptor: Interceptor
   ) {
     // we will get arrays from graphql input
     const select = Array.isArray(data.select) ? data.select[0] : data.select;
@@ -50,6 +50,10 @@ class RelationHandlers {
     const ref = new EntityRepository(rRepo, client, interceptor);
 
     if (select) {
+      // if id is null, we want to set the reference to null
+      if (select.id === null && Object.keys(select).length === 1) {
+        return null;
+      }
       const res = await ref.findOne({ where: select });
       if (res) return res;
     }
@@ -69,7 +73,7 @@ class RelationHandlers {
     relation: RelationMetadata,
     data: any,
     client: QueryClient,
-    interceptor: Interceptor,
+    interceptor: Interceptor
   ) {
     const { select, create, update, remove } = data;
     const field = relation.propertyName;
@@ -136,7 +140,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   constructor(
     repo: OrmRepository<T>,
     client: QueryClient,
-    interceptor: Interceptor,
+    interceptor: Interceptor
   ) {
     this.#repo = repo;
     this.#client = client;
@@ -154,7 +158,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   async intercept(
     method: string,
     args: any,
-    next: () => Promise<any>,
+    next: () => Promise<any>
   ): Promise<any> {
     const params: MiddlewareArgs = {
       client: this.#client,
@@ -167,7 +171,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async find<U extends QueryOptions<T>>(
-    args?: Options<U, QueryOptions<T>>,
+    args?: Options<U, QueryOptions<T>>
   ): Promise<Payload<T, U>[]> {
     const client = this.#client;
     const repo = this.#repo;
@@ -178,7 +182,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   }
 
   async findOne<U extends QueryOptions<T>>(
-    args?: Options<U, QueryOptions<T>>,
+    args?: Options<U, QueryOptions<T>>
   ): Promise<Payload<T, U> | null> {
     const result = await this.find({
       ...args,
@@ -200,7 +204,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async aggregate<U extends AggregateOptions<T>>(
-    args: Options<U, AggregateOptions<T>>,
+    args: Options<U, AggregateOptions<T>>
   ): Promise<AggregatePayload<T, U>[]> {
     const client = this.#client;
     const repo = this.#repo;
@@ -211,7 +215,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async create<U extends CreateOptions<T>>(
-    args: Options<U, CreateOptions<T>>,
+    args: Options<U, CreateOptions<T>>
   ): Promise<Payload<T, U>> {
     const repo: any = this.#repo;
     const meta: EntityMetadata = repo.metadata;
@@ -229,7 +233,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
             relation,
             value,
             this.#client,
-            this.#interceptor,
+            this.#interceptor
           );
         }
       } else {
@@ -258,7 +262,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
           relation,
           value,
           this.#client,
-          this.#interceptor,
+          this.#interceptor
         );
       }
     }
@@ -274,7 +278,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async update<U extends UpdateOptions<T>>(
-    args: Options<U, UpdateOptions<T>>,
+    args: Options<U, UpdateOptions<T>>
   ): Promise<Payload<T, U>> {
     const repo: any = this.#repo;
     const { select, data } = args;
@@ -323,7 +327,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
             relation,
             value,
             this.#client,
-            this.#interceptor,
+            this.#interceptor
           );
           if (!isValueSame(item, obj[name])) {
             attrs[name] = item;
@@ -336,7 +340,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
             relation,
             value,
             this.#client,
-            this.#interceptor,
+            this.#interceptor
           );
         }
       } else {
@@ -345,7 +349,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     }
 
     const changed = Object.keys(attrs).some(
-      (x) => !isValueSame(attrs[x], obj[x]),
+      (x) => !isValueSame(attrs[x], obj[x])
     );
 
     if (changed) {
@@ -392,7 +396,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     const qb = createBulkQuery(client, repo, where);
     const updateSet = Object.entries(set).reduce(
       (prev, [k, v]) => ({ ...prev, [k]: valueOrID(v) }),
-      {},
+      {}
     );
     const { affected } = await qb.update(updateSet).execute();
     return affected ?? 0;
