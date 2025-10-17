@@ -15,9 +15,9 @@ describe("data integrity tests", async () => {
               select: { code: "non-existent" },
             },
           },
-        })
+        }),
       ).rejects.toThrow(
-        'Referenced Title not found with criteria: {"code":"non-existent"}'
+        'Referenced Title not found with criteria: {"code":"non-existent"}',
       );
     });
 
@@ -38,9 +38,9 @@ describe("data integrity tests", async () => {
               select: [{ code: "non-existent-circle" }],
             },
           },
-        })
+        }),
       ).rejects.toThrow(
-        'Referenced Circle not found with criteria: {"code":"non-existent-circle"}'
+        'Referenced Circle not found with criteria: {"code":"non-existent-circle"}',
       );
     });
   });
@@ -54,7 +54,7 @@ describe("data integrity tests", async () => {
             version: 0,
             firstName: "Test",
           },
-        })
+        }),
       ).rejects.toThrow("Operation requires valid `id`");
     });
 
@@ -66,7 +66,7 @@ describe("data integrity tests", async () => {
             version: undefined as any,
             firstName: "Test",
           },
-        })
+        }),
       ).rejects.toThrow("Operation requires valid `version`");
     });
 
@@ -75,7 +75,7 @@ describe("data integrity tests", async () => {
         client.contact.delete({
           id: undefined as any,
           version: 0,
-        })
+        }),
       ).rejects.toThrow("Operation requires valid `id`");
     });
 
@@ -84,7 +84,7 @@ describe("data integrity tests", async () => {
         client.contact.delete({
           id: "1",
           version: undefined as any,
-        })
+        }),
       ).rejects.toThrow("Operation requires valid `version`");
     });
 
@@ -103,7 +103,7 @@ describe("data integrity tests", async () => {
             version: 999,
             firstName: "Jane",
           },
-        })
+        }),
       ).rejects.toThrow(/optimistic lock.*failed/i);
     });
 
@@ -119,7 +119,7 @@ describe("data integrity tests", async () => {
         client.contact.delete({
           id: contact.id,
           version: 999,
-        })
+        }),
       ).rejects.toThrow(/optimistic lock.*failed/i);
     });
 
@@ -131,9 +131,9 @@ describe("data integrity tests", async () => {
             version: 0,
             firstName: "Test",
           },
-        })
+        }),
       ).rejects.toThrow(
-        "Optimistic lock failed: Contact with id 99999 not found or has been modified (expected version 0)"
+        "Optimistic lock failed: Contact with id 99999 not found or has been modified (expected version 0)",
       );
     });
   });
@@ -194,7 +194,7 @@ describe("data integrity tests", async () => {
       });
 
       expect(updated!.updatedOn!.getTime()).toBeGreaterThan(
-        initial!.updatedOn!.getTime()
+        initial!.updatedOn!.getTime(),
       );
     });
   });
@@ -238,7 +238,7 @@ describe("data integrity tests", async () => {
               ],
             },
           },
-        })
+        }),
       ).rejects.toThrow(/conflicting operations.*cannot remove and update/i);
     });
 
@@ -270,7 +270,7 @@ describe("data integrity tests", async () => {
               select: [{ id: address.id }],
             },
           },
-        })
+        }),
       ).rejects.toThrow(/conflicting operations.*cannot remove and update/i);
     });
   });
@@ -309,7 +309,7 @@ describe("data integrity tests", async () => {
             version: user2Record!.version,
             firstName: "Jack",
           },
-        })
+        }),
       ).rejects.toThrow(/optimistic lock.*failed/i);
     });
 
