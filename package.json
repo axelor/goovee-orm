@@ -10,7 +10,8 @@
     "dev": "pnpm build --watch",
     "release": "pnpm publish --no-git-checks",
     "test": "vitest",
-    "test:e2e": "vitest --mode e2e --reporter=verbose --pool=threads --poolOptions.threads.singleThread=true --test-timeout 10000"
+    "test:e2e": "vitest --mode e2e --reporter=verbose --pool=threads --poolOptions.threads.singleThread=true --test-timeout 10000",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json,css,scss,html}\""
   },
   "sideEffects": false,
   "type": "module",
@@ -59,12 +60,14 @@
   },
   "devDependencies": {
     "@rslib/core": "^0.10.5",
-    "@swc/core": "^1.12.2",
     "@swc-node/register": "^1.10.10",
+    "@swc/core": "^1.12.2",
     "@types/node": "^24.0.3",
     "@types/pg": "^8.15.4",
     "@types/yargs": "^17.0.33",
     "dayjs": "^1.11.13",
+    "eslint": "^9.37.0",
+    "prettier": "^3.6.2",
     "reflect-metadata": "^0.2.2",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
