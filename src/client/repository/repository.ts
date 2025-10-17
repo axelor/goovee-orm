@@ -404,12 +404,25 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   async updateAll(args: BulkUpdateOptions<T>): Promise<ID> {
     const client = this.#client;
     const repo = this.#repo;
+    const meta = repo.metadata;
     const { set, where } = args;
     const qb = createBulkQuery(client, repo, where);
-    const updateSet = Object.entries(set).reduce(
+    const updateSet: Record<string, any> = Object.entries(set).reduce(
       (prev, [k, v]) => ({ ...prev, [k]: valueOrID(v) }),
       {}
     );
+
+    const { versionColumn, updateDateColumn } = meta;
+
+    if (versionColumn) {
+      updateSet[versionColumn.propertyName] = () =>
+        `"${versionColumn.databaseName}" + 1`;
+    }
+
+    if (updateDateColumn) {
+      updateSet[updateDateColumn.propertyName] = new Date();
+    }
+
     const { affected } = await qb.update(updateSet).execute();
     return affected ?? 0;
   }
