@@ -99,6 +99,25 @@ class RelationHandlers {
     const updateAll = Array.isArray(update) ? update : [update];
     const removeAll = Array.isArray(remove) ? remove : [remove];
 
+    if (remove && (select || update)) {
+      const removeIds = new Set(removeAll.filter((id) => id != null));
+      const selectIds = select
+        ? selectAll.map((s) => s.id).filter((id) => id != null)
+        : [];
+      const updateIds = update
+        ? updateAll.map((u) => u.id).filter((id) => id != null)
+        : [];
+
+      for (const id of [...selectIds, ...updateIds]) {
+        if (removeIds.has(id)) {
+          throw new Error(
+            `Conflicting operations on ${rMeta.name}: ` +
+              `cannot remove and update/select the same item (id: ${id})`
+          );
+        }
+      }
+    }
+
     // Import EntityRepository here to avoid circular dependency
     const { EntityRepository } = await import("./repository");
     const ref = new EntityRepository(rRepo, client, interceptor);

@@ -43,7 +43,6 @@ describe("data integrity tests", async () => {
         'Referenced Circle not found with criteria: {"code":"non-existent-circle"}'
       );
     });
-
   });
 
   describe("optimistic lock validation", () => {
@@ -197,6 +196,82 @@ describe("data integrity tests", async () => {
       expect(updated!.updatedOn!.getTime()).toBeGreaterThan(
         initial!.updatedOn!.getTime()
       );
+    });
+  });
+
+  describe("collection operations validation", () => {
+    it("should throw error when removing and updating same item", async () => {
+      const contact = await client.contact.create({
+        data: {
+          firstName: "John",
+          lastName: "Doe",
+          addresses: {
+            create: {
+              contact: {},
+              street: "Main St",
+            },
+          },
+        },
+        select: {
+          id: true,
+          version: true,
+          addresses: { select: { id: true, version: true } },
+        },
+      });
+
+      const addressId = contact.addresses![0].id;
+      const addressVersion = contact.addresses![0].version;
+
+      await expect(
+        client.contact.update({
+          data: {
+            id: contact.id,
+            version: contact.version,
+            addresses: {
+              remove: [addressId],
+              update: [
+                {
+                  id: addressId,
+                  version: addressVersion,
+                  street: "New St",
+                },
+              ],
+            },
+          },
+        })
+      ).rejects.toThrow(/conflicting operations.*cannot remove and update/i);
+    });
+
+    it("should throw error when removing and selecting same item", async () => {
+      const address = await client.address.create({
+        data: {
+          contact: {},
+          street: "Main St",
+        },
+      });
+
+      const contact = await client.contact.create({
+        data: {
+          firstName: "John",
+          lastName: "Doe",
+          addresses: {
+            select: [{ id: address.id }],
+          },
+        },
+      });
+
+      await expect(
+        client.contact.update({
+          data: {
+            id: contact.id,
+            version: contact.version,
+            addresses: {
+              remove: [address.id],
+              select: [{ id: address.id }],
+            },
+          },
+        })
+      ).rejects.toThrow(/conflicting operations.*cannot remove and update/i);
     });
   });
 
