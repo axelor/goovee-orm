@@ -2,6 +2,22 @@
 
 ## [0.0.6] (Unreleased)
 
+### ✨ Features
+
+- **Documentation:** Added comprehensive usage documentation to README.
+- **Next Release Support:** Added support for `@next` releases with monorepo flattened to single package structure.
+
+### 🐛 Bug Fixes
+
+- **Null Reference Handling:** Many-to-one fields can now be properly set to null.
+- **Normalization OrderBy:** Fixed orderBy issue when normalization feature is enabled.
+- **Entity Reference Validation:** Throw error when a referenced entity is not found during selection.
+
+### 🚀 Performance
+
+- **Data Integrity:** Added comprehensive tests and validation for data integrity features including optimistic locking and collection operations.
+- **LOB Field Types:** Improved support for Large Object (LOB) field types.
+
 ### 🔨 Refactoring
 
 - **Test Organization:** Split large test files (`client.test.ts`, `parser.test.ts`, `normalization.test.ts`) into 13 focused, maintainable modules organized by functionality. This improves code organization, navigation, and maintainability with files averaging ~200 lines each.
