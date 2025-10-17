@@ -288,6 +288,52 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     return res as any;
   }
 
+  #findForUpdate = async (
+    id: ID,
+    version: number,
+    options?: {
+      select?: Record<string, any>;
+      relations?: Record<string, any>;
+    }
+  ) => {
+    const repo: any = this.#repo;
+    const meta = repo.metadata;
+
+    if (id === null || id === undefined) {
+      throw new Error("Operation requires valid `id`.");
+    }
+
+    if (version === null || version === undefined) {
+      throw new Error("Operation requires valid `version`.");
+    }
+
+    const relations = options?.relations;
+    const select = {
+      ...options?.select,
+      id: true,
+      version: true,
+    };
+
+    const obj = await repo.findOne({
+      select,
+      relations,
+      where: { id },
+      lock: {
+        mode: "optimistic",
+        version,
+      },
+    });
+
+    if (obj) {
+      return obj;
+    }
+
+    throw new Error(
+      `Optimistic lock failed: ${meta.name} with id ${id} not found or ` +
+        `has been modified (expected version ${version})`
+    );
+  };
+
   @intercept()
   async update<U extends UpdateOptions<T>>(
     args: Options<U, UpdateOptions<T>>
@@ -319,15 +365,9 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
       }
     }
 
-    // first check if record exists with same version
-    const obj = await repo.findOne({
+    const obj = await this.#findForUpdate(id, version, {
       select: selection,
       relations,
-      where: { id },
-      lock: {
-        mode: "optimistic",
-        version: version,
-      },
     });
 
     for (const [name, value] of Object.entries(rest)) {
@@ -386,15 +426,8 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     const repo: any = this.#repo;
     const { id, version } = args;
 
-    // check version
-    await repo.findOne({
-      select: { id: true, version: true },
-      where: { id },
-      lock: {
-        mode: "optimistic",
-        version,
-      },
-    });
+    // Optimistic lock check
+    await this.#findForUpdate(id, version);
 
     const result = await repo.delete(id);
     return result.affected ?? 0;
