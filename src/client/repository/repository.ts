@@ -55,7 +55,14 @@ class RelationHandlers {
         return null;
       }
       const res = await ref.findOne({ where: select });
-      if (res) return res;
+      if (!res) {
+        throw new Error(
+          `Referenced ${rMeta.name} not found with criteria: ${JSON.stringify(
+            select
+          )}`
+        );
+      }
+      return res;
     }
 
     if (create) {
@@ -115,9 +122,14 @@ class RelationHandlers {
     if (select) {
       for (const where of selectAll) {
         const item = await ref.findOne({ where });
-        if (item) {
-          await builder.addAndRemove(item, item);
+        if (!item) {
+          throw new Error(
+            `Referenced ${rMeta.name} not found with criteria: ${JSON.stringify(
+              where
+            )}`
+          );
         }
+        await builder.addAndRemove(item, item);
       }
     }
 
