@@ -27,6 +27,7 @@ pnpm install @goovee/orm@next
 ```
 
 Development versions follow the format `0.0.6-next.20251013142530.abc123f` where:
+
 - `20251013142530` is the build timestamp
 - `abc123f` is the commit SHA for traceability
 
@@ -74,6 +75,7 @@ Here is an example of schema:
 The ORM supports various field types:
 
 **Basic Types:**
+
 - `String` - Text field with optional size limit
 - `Text` - Large text field (stored as LOB)
 - `Boolean` - True/false values
@@ -84,11 +86,13 @@ The ORM supports various field types:
 - `DateTime` - Date and time
 
 **Special Types:**
+
 - `JSON` - JSON objects (stored as LOB)
 - `Binary` - Binary data (stored as LOB)
 - `Enum` - Enumeration with predefined values
 
 **Relationship Types:**
+
 - `ManyToOne` - Many-to-one relationship
 - `OneToMany` - One-to-many relationship
 - `OneToOne` - One-to-one relationship
@@ -97,6 +101,7 @@ The ORM supports various field types:
 #### Schema Options
 
 Common field options:
+
 - `required`: Make field mandatory
 - `unique`: Ensure unique values
 - `default`: Default value
@@ -133,12 +138,14 @@ This client will contain all the models defined earlier as a type object where e
 The client provides several methods for database operations:
 
 #### Query Methods
+
 - `find` - Search through records with criteria
 - `findOne` - Find first record matching criteria
 - `count` - Count records matching criteria
 - `aggregate` - Perform aggregations (count, sum, avg, min, max)
 
 #### Mutation Methods
+
 - `create` - Create a new record
 - `update` - Update an existing record
 - `delete` - Delete a record
@@ -146,6 +153,7 @@ The client provides several methods for database operations:
 - `deleteAll` - Bulk delete records
 
 #### Transaction Methods
+
 - `$transaction` - Execute operations within a transaction
 
 ### Basic Queries
@@ -153,7 +161,7 @@ The client provides several methods for database operations:
 #### Finding Records
 
 ```javascript
-import {getClient} from "@/goovee";
+import { getClient } from "@/goovee";
 
 // Find all users
 const users = await client.user.find();
@@ -162,8 +170,8 @@ const users = await client.user.find();
 const activeUsers = await client.user.find({
   where: {
     status: "active",
-    age: { gt: 18 }
-  }
+    age: { gt: 18 },
+  },
 });
 
 // Find with specific fields
@@ -171,13 +179,13 @@ const users = await client.user.find({
   select: {
     id: true,
     name: true,
-    email: true
-  }
+    email: true,
+  },
 });
 
 // Find one record
 const user = await client.user.findOne({
-  where: { email: "user@example.com" }
+  where: { email: "user@example.com" },
 });
 ```
 
@@ -188,8 +196,8 @@ const user = await client.user.findOne({
 const user = await client.user.create({
   data: {
     name: "John Doe",
-    email: "john@example.com"
-  }
+    email: "john@example.com",
+  },
 });
 
 // Create with relationships
@@ -200,19 +208,19 @@ const contact = await client.contact.create({
     title: {
       create: {
         code: "ms",
-        name: "Ms."
-      }
+        name: "Ms.",
+      },
     },
     addresses: {
       create: [
         {
           contact: {},
           street: "123 Main St",
-          city: "New York"
-        }
-      ]
-    }
-  }
+          city: "New York",
+        },
+      ],
+    },
+  },
 });
 
 // Create and link to existing record
@@ -221,9 +229,9 @@ const contact = await client.contact.create({
     firstName: "John",
     lastName: "Smith",
     title: {
-      select: { id: existingTitleId }
-    }
-  }
+      select: { id: existingTitleId },
+    },
+  },
 });
 ```
 
@@ -235,8 +243,8 @@ const updated = await client.user.update({
   data: {
     id: user.id,
     version: user.version,
-    name: "Jane Doe"
-  }
+    name: "Jane Doe",
+  },
 });
 
 // Update with nested relationships
@@ -248,10 +256,10 @@ const updated = await client.contact.update({
       update: {
         id: title.id,
         version: title.version,
-        name: "Dr."
-      }
-    }
-  }
+        name: "Dr.",
+      },
+    },
+  },
 });
 
 // Set relationship to null
@@ -260,19 +268,19 @@ const updated = await client.contact.update({
     id: contact.id,
     version: contact.version,
     title: {
-      select: { id: null }
-    }
-  }
+      select: { id: null },
+    },
+  },
 });
 
 // Bulk update
 const count = await client.user.updateAll({
   set: {
-    status: "inactive"
+    status: "inactive",
   },
   where: {
-    lastLogin: { lt: new Date("2024-01-01") }
-  }
+    lastLogin: { lt: new Date("2024-01-01") },
+  },
 });
 ```
 
@@ -283,14 +291,14 @@ const count = await client.user.updateAll({
 const user = await client.user.findOne({ where: { id: userId } });
 await client.user.delete({
   id: user.id,
-  version: user.version
+  version: user.version,
 });
 
 // Bulk delete
 const count = await client.user.deleteAll({
   where: {
-    status: "inactive"
-  }
+    status: "inactive",
+  },
 });
 ```
 
@@ -301,6 +309,7 @@ const count = await client.user.deleteAll({
 The ORM supports various filter operators:
 
 **Comparison Operators:**
+
 - `eq` - Equal to
 - `ne` - Not equal to
 - `gt` - Greater than
@@ -309,16 +318,19 @@ The ORM supports various filter operators:
 - `le` - Less than or equal
 
 **String Operators:**
+
 - `like` - Pattern matching (use % as wildcard)
 - `notLike` - Negative pattern matching
 
 **Array Operators:**
+
 - `in` - Value in array
 - `notIn` - Value not in array
 - `between` - Value between range
 - `notBetween` - Value not in range
 
 **Logical Operators:**
+
 - `AND` - All conditions must match
 - `OR` - At least one condition must match
 - `NOT` - Negate conditions
@@ -328,52 +340,43 @@ The ORM supports various filter operators:
 const users = await client.user.find({
   where: {
     age: { ge: 18, le: 65 },
-    status: { ne: "deleted" }
-  }
+    status: { ne: "deleted" },
+  },
 });
 
 // String filters
 const contacts = await client.contact.find({
   where: {
-    firstName: { like: "J%" },  // starts with J
-    lastName: { like: "%son" }   // ends with son
-  }
+    firstName: { like: "J%" }, // starts with J
+    lastName: { like: "%son" }, // ends with son
+  },
 });
 
 // Array filters
 const users = await client.user.find({
   where: {
     status: { in: ["active", "pending"] },
-    age: { between: [18, 65] }
-  }
+    age: { between: [18, 65] },
+  },
 });
 
 // Logical operators
 const results = await client.contact.find({
   where: {
-    AND: [
-      { firstName: { like: "J%" } },
-      { lastName: { like: "%n" } }
-    ]
-  }
+    AND: [{ firstName: { like: "J%" } }, { lastName: { like: "%n" } }],
+  },
 });
 
 const results = await client.contact.find({
   where: {
-    OR: [
-      { status: "active" },
-      { priority: "high" }
-    ]
-  }
+    OR: [{ status: "active" }, { priority: "high" }],
+  },
 });
 
 const results = await client.contact.find({
   where: {
-    NOT: [
-      { status: "deleted" },
-      { archived: true }
-    ]
-  }
+    NOT: [{ status: "deleted" }, { archived: true }],
+  },
 });
 ```
 
@@ -389,33 +392,33 @@ const contacts = await client.contact.find({
     lastName: true,
     title: {
       name: true,
-      code: true
+      code: true,
     },
     addresses: {
       select: {
         street: true,
         city: true,
         country: {
-          name: true
-        }
-      }
-    }
-  }
+          name: true,
+        },
+      },
+    },
+  },
 });
 
 // Filter by relationship properties
 const contacts = await client.contact.find({
   where: {
     title: {
-      code: { in: ["mr", "ms"] }
+      code: { in: ["mr", "ms"] },
     },
     addresses: {
       city: "New York",
       country: {
-        code: "us"
-      }
-    }
-  }
+        code: "us",
+      },
+    },
+  },
 });
 
 // Filter collections in select
@@ -425,10 +428,10 @@ const contact = await client.contact.findOne({
     firstName: true,
     addresses: {
       where: {
-        type: "home"
-      }
-    }
-  }
+        type: "home",
+      },
+    },
+  },
 });
 ```
 
@@ -445,11 +448,11 @@ const updated = await client.contact.update({
         {
           contact: {},
           street: "456 Oak Ave",
-          city: "Boston"
-        }
-      ]
-    }
-  }
+          city: "Boston",
+        },
+      ],
+    },
+  },
 });
 
 // One-to-Many: Remove children
@@ -458,9 +461,9 @@ const updated = await client.contact.update({
     id: contact.id,
     version: contact.version,
     addresses: {
-      remove: addressId  // or [id1, id2] for multiple
-    }
-  }
+      remove: addressId, // or [id1, id2] for multiple
+    },
+  },
 });
 
 // One-to-Many: Update child
@@ -469,13 +472,15 @@ const updated = await client.contact.update({
     id: contact.id,
     version: contact.version,
     addresses: {
-      update: [{
-        id: address.id,
-        version: address.version,
-        street: "Updated Street"
-      }]
-    }
-  }
+      update: [
+        {
+          id: address.id,
+          version: address.version,
+          street: "Updated Street",
+        },
+      ],
+    },
+  },
 });
 
 // Many-to-Many: Link existing records
@@ -484,12 +489,9 @@ const contact = await client.contact.create({
     firstName: "John",
     lastName: "Doe",
     circles: {
-      select: [
-        { id: circle1.id },
-        { id: circle2.id }
-      ]
-    }
-  }
+      select: [{ id: circle1.id }, { id: circle2.id }],
+    },
+  },
 });
 
 // Many-to-Many: Create and link
@@ -500,10 +502,10 @@ const contact = await client.contact.create({
     circles: {
       create: [
         { code: "family", name: "Family" },
-        { code: "friends", name: "Friends" }
-      ]
-    }
-  }
+        { code: "friends", name: "Friends" },
+      ],
+    },
+  },
 });
 ```
 
@@ -513,26 +515,26 @@ const contact = await client.contact.create({
 // Sort by single field
 const users = await client.user.find({
   orderBy: {
-    name: "ASC"
-  }
+    name: "ASC",
+  },
 });
 
 // Sort by multiple fields
 const contacts = await client.contact.find({
   orderBy: {
     lastName: "ASC",
-    firstName: "DESC"
-  }
+    firstName: "DESC",
+  },
 });
 
 // Sort by relationship fields
 const contacts = await client.contact.find({
   orderBy: {
     title: {
-      name: "ASC"
+      name: "ASC",
     },
-    firstName: "DESC"
-  }
+    firstName: "DESC",
+  },
 });
 
 // Sort nested collections
@@ -541,9 +543,9 @@ const addresses = await client.address.find({
   orderBy: {
     city: "ASC",
     country: {
-      name: "ASC"
-    }
-  }
+      name: "ASC",
+    },
+  },
 });
 ```
 
@@ -554,24 +556,24 @@ const addresses = await client.address.find({
 ```javascript
 // Take first N records
 const first5 = await client.contact.find({
-  take: 5
+  take: 5,
 });
 
 // Skip and take (page 2, size 10)
 const page2 = await client.contact.find({
   skip: 10,
-  take: 10
+  take: 10,
 });
 
 // Take last N records (negative take)
 const last5 = await client.contact.find({
-  take: -5
+  take: -5,
 });
 
 // Skip from end (last 5, skipping last 2)
 const results = await client.contact.find({
   take: -5,
-  skip: 2
+  skip: 2,
 });
 ```
 
@@ -582,12 +584,12 @@ const results = await client.contact.find({
 const firstPage = await client.contact.find({
   select: {
     firstName: true,
-    lastName: true
+    lastName: true,
   },
   take: 10,
   orderBy: {
-    id: "ASC"
-  }
+    id: "ASC",
+  },
 });
 
 // Get next page using cursor
@@ -595,19 +597,19 @@ const lastItem = firstPage[firstPage.length - 1];
 const nextPage = await client.contact.find({
   select: {
     firstName: true,
-    lastName: true
+    lastName: true,
   },
   take: 10,
   cursor: lastItem._cursor,
   orderBy: {
-    id: "ASC"
-  }
+    id: "ASC",
+  },
 });
 
 // Previous page (negative take)
 const prevPage = await client.contact.find({
   take: -10,
-  cursor: currentPage[0]._cursor
+  cursor: currentPage[0]._cursor,
 });
 ```
 
@@ -619,7 +621,7 @@ const totalUsers = await client.user.count();
 
 // Count with filter
 const activeUsers = await client.user.count({
-  where: { status: "active" }
+  where: { status: "active" },
 });
 
 // Aggregate operations
@@ -628,7 +630,7 @@ const stats = await client.order.aggregate({
   sum: { total: true },
   avg: { total: true },
   min: { total: true },
-  max: { total: true }
+  max: { total: true },
 });
 
 // Group by
@@ -636,8 +638,8 @@ const statsByStatus = await client.order.aggregate({
   count: { id: true },
   avg: { total: true },
   groupBy: {
-    status: true
-  }
+    status: true,
+  },
 });
 
 // Group by with relationships
@@ -647,10 +649,10 @@ const statsByCountry = await client.order.aggregate({
   groupBy: {
     customer: {
       country: {
-        code: true
-      }
-    }
-  }
+        code: true,
+      },
+    },
+  },
 });
 
 // Having clause
@@ -660,15 +662,15 @@ const highValueCountries = await client.order.aggregate({
   groupBy: {
     customer: {
       country: {
-        code: true
-      }
-    }
+        code: true,
+      },
+    },
   },
   having: {
     sum: {
-      total: { gt: 100000 }
-    }
-  }
+      total: { gt: 100000 },
+    },
+  },
 });
 ```
 
@@ -680,15 +682,15 @@ await client.$transaction(async (txClient) => {
   const user = await txClient.user.create({
     data: {
       name: "John Doe",
-      email: "john@example.com"
-    }
+      email: "john@example.com",
+    },
   });
 
   await txClient.profile.create({
     data: {
       user: { select: { id: user.id } },
-      bio: "Software developer"
-    }
+      bio: "Software developer",
+    },
   });
 
   // If any operation fails, entire transaction rolls back
@@ -716,22 +718,22 @@ const country = await client.country.create({
   data: {
     code: "US",
     name: "United States",
-    population: "331.9"  // String for precision
-  }
+    population: "331.9", // String for precision
+  },
 });
 
 // Query with decimal comparison
 const populous = await client.country.find({
   where: {
-    population: { gt: "100" }
-  }
+    population: { gt: "100" },
+  },
 });
 
 // Arithmetic comparisons
 const results = await client.country.find({
   where: {
-    population: { between: ["10.00", "500.00"] }
-  }
+    population: { between: ["10.00", "500.00"] },
+  },
 });
 ```
 
@@ -746,13 +748,13 @@ await client.$transaction(async (txClient) => {
       lastName: "Doe",
       notes: Promise.resolve("Long text content..."),
       attrs: Promise.resolve({ key: "value" }),
-      image: Promise.resolve(Buffer.from("binary data", "utf-8"))
+      image: Promise.resolve(Buffer.from("binary data", "utf-8")),
     },
     select: {
       notes: true,
       attrs: true,
-      image: true
-    }
+      image: true,
+    },
   });
 
   // LOB fields are returned as Promises
@@ -767,16 +769,16 @@ await client.$transaction(async (txClient) => {
 ```javascript
 // All records have a version field for optimistic locking
 const user = await client.user.findOne({
-  where: { id: userId }
+  where: { id: userId },
 });
 
 // Update requires current version
 const updated = await client.user.update({
   data: {
     id: user.id,
-    version: user.version,  // Must match current version
-    name: "Updated Name"
-  }
+    version: user.version, // Must match current version
+    name: "Updated Name",
+  },
 });
 
 // Version is automatically incremented
@@ -786,9 +788,9 @@ console.log(updated.version); // user.version + 1
 await client.user.update({
   data: {
     id: user.id,
-    version: 1,  // Outdated version
-    name: "Will fail"
-  }
+    version: 1, // Outdated version
+    name: "Will fail",
+  },
 }); // Throws error or returns null
 ```
 
@@ -799,9 +801,9 @@ await client.user.update({
 const uniqueNames = await client.contact.find({
   select: {
     firstName: true,
-    lastName: true
+    lastName: true,
   },
-  distinct: true
+  distinct: true,
 });
 ```
 

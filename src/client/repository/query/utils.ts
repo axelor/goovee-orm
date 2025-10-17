@@ -89,7 +89,14 @@ export const createSelectQuery = <T extends Entity>(
   builder: QueryBuilder<T>,
   options: ParseResult,
 ) => {
-  const { select = {}, where, params = {}, joins = {}, order, distinct } = options;
+  const {
+    select = {},
+    where,
+    params = {},
+    joins = {},
+    order,
+    distinct,
+  } = options;
 
   const allSelects: Record<string, string | undefined> = { ...select };
 

@@ -2,6 +2,10 @@
 
 ## [0.0.6] (Unreleased)
 
+### 🔨 Refactoring
+
+- **Test Organization:** Split large test files (`client.test.ts`, `parser.test.ts`, `normalization.test.ts`) into 13 focused, maintainable modules organized by functionality. This improves code organization, navigation, and maintainability with files averaging ~200 lines each.
+
 ## [0.0.5] (2025-09-29)
 
 ### ✨ Features

@@ -35,7 +35,7 @@ class RelationHandlers {
     relation: RelationMetadata,
     data: any,
     client: QueryClient,
-    interceptor: Interceptor
+    interceptor: Interceptor,
   ) {
     // we will get arrays from graphql input
     const select = Array.isArray(data.select) ? data.select[0] : data.select;
@@ -58,8 +58,8 @@ class RelationHandlers {
       if (!res) {
         throw new Error(
           `Referenced ${rMeta.name} not found with criteria: ${JSON.stringify(
-            select
-          )}`
+            select,
+          )}`,
         );
       }
       return res;
@@ -80,7 +80,7 @@ class RelationHandlers {
     relation: RelationMetadata,
     data: any,
     client: QueryClient,
-    interceptor: Interceptor
+    interceptor: Interceptor,
   ) {
     const { select, create, update, remove } = data;
     const field = relation.propertyName;
@@ -112,7 +112,7 @@ class RelationHandlers {
         if (removeIds.has(id)) {
           throw new Error(
             `Conflicting operations on ${rMeta.name}: ` +
-              `cannot remove and update/select the same item (id: ${id})`
+              `cannot remove and update/select the same item (id: ${id})`,
           );
         }
       }
@@ -144,8 +144,8 @@ class RelationHandlers {
         if (!item) {
           throw new Error(
             `Referenced ${rMeta.name} not found with criteria: ${JSON.stringify(
-              where
-            )}`
+              where,
+            )}`,
           );
         }
         await builder.addAndRemove(item, item);
@@ -171,7 +171,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   constructor(
     repo: OrmRepository<T>,
     client: QueryClient,
-    interceptor: Interceptor
+    interceptor: Interceptor,
   ) {
     this.#repo = repo;
     this.#client = client;
@@ -189,7 +189,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   async intercept(
     method: string,
     args: any,
-    next: () => Promise<any>
+    next: () => Promise<any>,
   ): Promise<any> {
     const params: MiddlewareArgs = {
       client: this.#client,
@@ -202,7 +202,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async find<U extends QueryOptions<T>>(
-    args?: Options<U, QueryOptions<T>>
+    args?: Options<U, QueryOptions<T>>,
   ): Promise<Payload<T, U>[]> {
     const client = this.#client;
     const repo = this.#repo;
@@ -213,7 +213,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   }
 
   async findOne<U extends QueryOptions<T>>(
-    args?: Options<U, QueryOptions<T>>
+    args?: Options<U, QueryOptions<T>>,
   ): Promise<Payload<T, U> | null> {
     const result = await this.find({
       ...args,
@@ -235,7 +235,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async aggregate<U extends AggregateOptions<T>>(
-    args: Options<U, AggregateOptions<T>>
+    args: Options<U, AggregateOptions<T>>,
   ): Promise<AggregatePayload<T, U>[]> {
     const client = this.#client;
     const repo = this.#repo;
@@ -246,7 +246,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
   @intercept()
   async create<U extends CreateOptions<T>>(
-    args: Options<U, CreateOptions<T>>
+    args: Options<U, CreateOptions<T>>,
   ): Promise<Payload<T, U>> {
     const repo: any = this.#repo;
     const meta: EntityMetadata = repo.metadata;
@@ -264,7 +264,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
             relation,
             value,
             this.#client,
-            this.#interceptor
+            this.#interceptor,
           );
         }
       } else {
@@ -293,7 +293,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
           relation,
           value,
           this.#client,
-          this.#interceptor
+          this.#interceptor,
         );
       }
     }
@@ -313,7 +313,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     options?: {
       select?: Record<string, any>;
       relations?: Record<string, any>;
-    }
+    },
   ) => {
     const repo: any = this.#repo;
     const meta = repo.metadata;
@@ -349,13 +349,13 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
     throw new Error(
       `Optimistic lock failed: ${meta.name} with id ${id} not found or ` +
-        `has been modified (expected version ${version})`
+        `has been modified (expected version ${version})`,
     );
   };
 
   @intercept()
   async update<U extends UpdateOptions<T>>(
-    args: Options<U, UpdateOptions<T>>
+    args: Options<U, UpdateOptions<T>>,
   ): Promise<Payload<T, U>> {
     const repo: any = this.#repo;
     const { select, data } = args;
@@ -398,7 +398,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
             relation,
             value,
             this.#client,
-            this.#interceptor
+            this.#interceptor,
           );
           if (!isValueSame(item, obj[name])) {
             attrs[name] = item;
@@ -411,7 +411,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
             relation,
             value,
             this.#client,
-            this.#interceptor
+            this.#interceptor,
           );
         }
       } else {
@@ -420,7 +420,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     }
 
     const changed = Object.keys(attrs).some(
-      (x) => !isValueSame(attrs[x], obj[x])
+      (x) => !isValueSame(attrs[x], obj[x]),
     );
 
     if (changed) {
@@ -461,7 +461,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     const qb = createBulkQuery(client, repo, where);
     const updateSet: Record<string, any> = Object.entries(set).reduce(
       (prev, [k, v]) => ({ ...prev, [k]: valueOrID(v) }),
-      {}
+      {},
     );
 
     const { versionColumn, updateDateColumn } = meta;

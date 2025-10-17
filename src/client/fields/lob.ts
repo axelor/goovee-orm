@@ -61,7 +61,7 @@ class LobClient {
     const { pos } = await this.query("select lo_tell64($1) as pos", fd);
     if (pos < 0) {
       throw new LobError(
-        `Unable to get current position in LargeObject: ${oid}`
+        `Unable to get current position in LargeObject: ${oid}`,
       );
     }
     return pos;
@@ -71,18 +71,18 @@ class LobClient {
     oid: number,
     fd: number,
     position: number | string,
-    ref: number = Seek.SET
+    ref: number = Seek.SET,
   ) {
     const { pos } = await this.query(
       "select lo_lseek64($1, $2, $3) as pos",
       fd,
       position,
-      ref
+      ref,
     );
 
     if (pos < 0) {
       throw new LobError(
-        `Unable to set current position within LargeObject: ${oid}`
+        `Unable to set current position within LargeObject: ${oid}`,
       );
     }
   }
@@ -91,7 +91,7 @@ class LobClient {
     const { data } = await this.query(
       "select loread($1, $2) as data",
       fd,
-      length
+      length,
     );
     return data;
   }
@@ -100,7 +100,7 @@ class LobClient {
     const { length } = await this.query(
       "select lowrite($1, $2) as length",
       fd,
-      buffer
+      buffer,
     );
     if (length < 0) {
       throw new LobError(`Unable to write to LargeObject: ${oid}`);
@@ -111,7 +111,7 @@ class LobClient {
     const { size } = await this.query(
       "select lo_truncate64($1, $2) as size",
       fd,
-      length
+      length,
     );
     if (size < 0) {
       throw new LobError(`Unable to truncate LargeObject: ${oid}`);
@@ -197,7 +197,7 @@ class LobWriter extends Writable {
   _write(
     chunk: any,
     encoding: BufferEncoding,
-    callback: (error?: Error | null | undefined) => void
+    callback: (error?: Error | null | undefined) => void,
   ) {
     this.#lob.write(chunk).then((data) => callback(), callback);
   }
@@ -321,7 +321,7 @@ export const createLob = async (em: EntityManager, buffer: Buffer) => {
   if (!em.queryRunner?.isTransactionActive) {
     throw new Error(
       "LOB operations require an active transaction. " +
-        "Use client.$transaction(async (tx) => { ... })"
+        "Use client.$transaction(async (tx) => { ... })",
     );
   }
 
@@ -343,7 +343,7 @@ export const readLob = async (em: EntityManager, oid: number) => {
   if (!em.queryRunner?.isTransactionActive) {
     throw new Error(
       "LOB operations require an active transaction. " +
-        "Use client.$transaction(async (tx) => { ... })"
+        "Use client.$transaction(async (tx) => { ... })",
     );
   }
 
