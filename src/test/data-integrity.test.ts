@@ -342,4 +342,56 @@ describe("data integrity tests", async () => {
       }
     });
   });
+
+  describe("delete operation validation", () => {
+    it("should successfully delete a record", async () => {
+      const contact = await client.contact.create({
+        data: {
+          firstName: "ToDelete",
+          lastName: "Test",
+        },
+      });
+
+      const affected = await client.contact.delete({
+        id: contact.id,
+        version: contact.version,
+      });
+
+      expect(affected).toBe(1);
+
+      const found = await client.contact.findOne({
+        where: { id: contact.id },
+      });
+
+      expect(found).toBeNull();
+    });
+
+    it("should handle delete after update", async () => {
+      const contact = await client.contact.create({
+        data: {
+          firstName: "Original",
+          lastName: "Name",
+        },
+      });
+
+      const updated = await client.contact.update({
+        data: {
+          id: contact.id,
+          version: contact.version,
+          firstName: "Updated",
+        },
+      });
+
+      await client.contact.delete({
+        id: updated.id,
+        version: updated.version,
+      });
+
+      const found = await client.contact.findOne({
+        where: { id: contact.id },
+      });
+
+      expect(found).toBeNull();
+    });
+  });
 });

@@ -173,4 +173,102 @@ describe("middleware tests", async () => {
     await client.contact.deleteAll();
     expect(called).toBe(1);
   });
+
+  it("should handle transaction commit", async () => {
+    const client = await getTestClient();
+
+    const result = await client.$transaction(async (tc) => {
+      const title = await tc.title.create({
+        data: {
+          code: "dr",
+          name: "Dr.",
+        },
+      });
+
+      const contact = await tc.contact.create({
+        data: {
+          firstName: "John",
+          lastName: "Doe",
+          title: {
+            select: {
+              id: title.id,
+            },
+          },
+        },
+      });
+
+      return { title, contact };
+    });
+
+    expect(result).toBeDefined();
+    expect(result.title.code).toBe("dr");
+    expect(result.contact.firstName).toBe("John");
+
+    // Verify data was committed
+    const foundContact = await client.contact.findOne({
+      where: { id: result.contact.id },
+      select: {
+        firstName: true,
+        title: {
+          code: true,
+        },
+      },
+    });
+
+    expect(foundContact).toBeDefined();
+    expect(foundContact!.firstName).toBe("John");
+    expect(foundContact!.title?.code).toBe("dr");
+  });
+
+  it("should handle transaction rollback on error", async () => {
+    const client = await getTestClient();
+    const initialCount = await client.title.count();
+
+    await expect(
+      client.$transaction(async (tc) => {
+        await tc.title.create({
+          data: {
+            code: "mr",
+            name: "Mr.",
+          },
+        });
+
+        await tc.title.create({
+          data: {
+            code: "mrs",
+            name: "Mrs.",
+          },
+        });
+
+        // Force an error
+        throw new Error("Transaction failed");
+      }),
+    ).rejects.toThrow("Transaction failed");
+
+    // Verify no data was committed
+    const finalCount = await client.title.count();
+    expect(finalCount).toBe(initialCount);
+  });
+
+  it("should maintain optimistic locking in transaction", async () => {
+    const client = await getTestClient();
+    const contact = await client.contact.create({
+      data: {
+        firstName: "Lock",
+        lastName: "Test",
+      },
+    });
+
+    await expect(
+      client.$transaction(async (tc) => {
+        await tc.contact.update({
+          data: {
+            id: contact.id,
+            version: 999, // Wrong version
+            firstName: "Updated",
+          },
+        });
+      }),
+    ).rejects.toThrow(/optimistic lock.*failed/i);
+  });
 });
