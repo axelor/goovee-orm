@@ -130,4 +130,28 @@ describe("client bulk operations tests", async () => {
       expect(updated.lastName).toBe("Updated");
     }
   });
+  it("should bulk update with where clause", async () => {
+    const contact = await client.contact.create({
+      data: {
+        firstName: "Bulk",
+        lastName: "Test",
+      },
+    });
+
+    await client.contact.updateAll({
+      set: { lastName: "Updated" },
+      where: { firstName: { eq: "Bulk" } },
+    });
+
+    const updated = await client.contact.findOne({
+      where: { firstName: { eq: "Bulk" } },
+      select: { version: true, lastName: true },
+    });
+
+    expect(updated).toBeDefined();
+    if (updated) {
+      expect(updated.version).toBe(1);
+      expect(updated.lastName).toBe("Updated");
+    }
+  });
 });
