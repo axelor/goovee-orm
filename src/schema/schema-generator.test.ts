@@ -482,7 +482,7 @@ export class Temporals extends AuditableModel {
   dateField?: Date;
 
   @Column({ nullable: true, type: "time" })
-  timeField?: Date;
+  timeField?: string;
 }
 `;
 

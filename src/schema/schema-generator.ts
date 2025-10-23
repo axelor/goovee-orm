@@ -35,7 +35,7 @@ const Types: Record<string, string> = {
   Int: "number",
   BigInt: "string",
   Date: "Date",
-  Time: "Date",
+  Time: "string",
   DateTime: "Date",
   Decimal: "BigDecimal",
   Binary: "Binary",
