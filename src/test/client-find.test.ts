@@ -20,6 +20,9 @@ describe("client find tests", async () => {
           select: {
             street: true,
           },
+          orderBy: {
+            street: "ASC",
+          },
         },
       },
       where: {
@@ -46,7 +49,9 @@ describe("client find tests", async () => {
     expect(res!.id).toBeTruthy();
     expect(res!.title).toBeDefined();
     expect(res!.addresses).toBeDefined();
-    expect(res!.addresses?.length).toBeGreaterThan(0);
+    expect(res!.addresses!.length).toBeGreaterThan(0);
+    expect(res!.addresses![0].street).toBeDefined();
+    expect(res!.addresses![0].street).toBeTypeOf("string");
   });
 
   it("should count", async () => {

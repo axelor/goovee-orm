@@ -135,7 +135,7 @@ type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
   : Arg extends true
     ? T
     : T extends Array<infer A>
-      ? Arg extends { select: infer Select }
+      ? Arg extends { select: infer Select; [key: string]: any }
         ? A extends Entity
           ? PayloadSelect<A, Select>[]
           : never
