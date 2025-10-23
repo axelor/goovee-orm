@@ -26,6 +26,6 @@ describe("ambiguous column test", async () => {
       take: 7,
     });
 
-    expect(res).resolves.toBeTruthy();
+    await expect(res).resolves.toBeTruthy();
   });
 });
