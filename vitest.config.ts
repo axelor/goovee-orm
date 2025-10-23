@@ -1,17 +1,20 @@
 import path from "node:path";
 
 import { transformSync } from "@swc/core";
-import { defaultExclude, defineConfig } from "vitest/config";
+import { defaultExclude, defineConfig, ViteUserConfig } from "vitest/config";
 
 const unitTests = {
   include: ["src/**/*.test.ts"],
   exclude: [...defaultExclude, "src/test"],
 };
 
-const e2eTests = {
+const e2eTests: ViteUserConfig["test"] = {
   include: ["src/test/**/*.test.ts"],
   setupFiles: ["src/test/test-setup.ts"],
   globalSetup: ["src/test/global-setup.ts"],
+  pool: "threads",
+  isolate: false,
+  maxWorkers: 1,
 };
 
 export default defineConfig((env) => {

@@ -10,7 +10,7 @@
     "dev": "pnpm build --watch",
     "release": "pnpm publish --no-git-checks",
     "test": "vitest",
-    "test:e2e": "vitest --mode e2e --reporter=verbose --pool=threads --poolOptions.threads.singleThread=true --test-timeout 10000",
+    "test:e2e": "vitest --mode e2e --reporter=verbose --test-timeout 10000",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css,scss,html}\""
   },
   "sideEffects": false,
@@ -50,31 +50,31 @@
     "goovee": "./src/cli/index-dev.cjs"
   },
   "dependencies": {
-    "commander": "^14.0.0",
+    "commander": "^14.0.1",
     "glob": "^11.0.3",
-    "typeorm": "^0.3.24"
+    "typeorm": "^0.3.27"
   },
   "peerDependencies": {
     "graphql": "^16.8.1",
     "pg": "^8.11.5"
   },
   "devDependencies": {
-    "@rslib/core": "^0.10.5",
-    "@swc-node/register": "^1.10.10",
-    "@swc/core": "^1.12.2",
-    "@types/node": "^24.0.3",
-    "@types/pg": "^8.15.4",
+    "@rslib/core": "^0.16.1",
+    "@swc-node/register": "^1.11.1",
+    "@swc/core": "^1.13.5",
+    "@types/node": "^24.9.1",
+    "@types/pg": "^8.15.5",
     "@types/yargs": "^17.0.33",
-    "dayjs": "^1.11.13",
-    "eslint": "^9.37.0",
+    "dayjs": "^1.11.18",
+    "eslint": "^9.38.0",
     "prettier": "^3.6.2",
     "reflect-metadata": "^0.2.2",
     "rimraf": "^6.0.1",
-    "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.2"
   },
   "engines": {
     "node": ">=18.18.0"
   },
-  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac"
+  "packageManager": "pnpm@10.19.0+sha512.c9fc7236e92adf5c8af42fd5bf1612df99c2ceb62f27047032f4720b33f8eacdde311865e91c411f2774f618d82f320808ecb51718bfa82c060c4ba7c76a32b8"
 }
