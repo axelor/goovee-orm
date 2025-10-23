@@ -118,7 +118,10 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
 
     // temporal types
     if (type === "DateTime") arg.type = "timestamp";
-    if (type === "Date") arg.type = "date";
+    if (type === "Date") {
+      arg.type = "date";
+      arg.transformer = new ImportName("DateTransformer", "@goovee/orm");
+    }
     if (type === "Time") arg.type = "time";
 
     // decimal type

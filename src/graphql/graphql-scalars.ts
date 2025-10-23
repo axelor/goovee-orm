@@ -43,6 +43,12 @@ export const GraphQLDate = new GraphQLScalarType({
   name: "Date",
   description: "The `Date` scalar type",
   serialize(outputValue) {
+    if (outputValue instanceof Date) {
+      const yyyy = outputValue.getFullYear();
+      const mm = String(outputValue.getMonth() + 1).padStart(2, "0");
+      const dd = String(outputValue.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
     return outputValue;
   },
   parseValue(inputValue) {

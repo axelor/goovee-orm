@@ -321,11 +321,11 @@ const expectedCode = `\
 import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "@goovee/orm/typeorm";
 import { AuditableModel } from "./AuditableModel";
 import { Title } from "./Title";
+import { DateTransformer, type Text, type Binary, type Json } from "@goovee/orm";
 import { Bio } from "./Bio";
 import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
-import { type Text, type Binary, type Json } from "@goovee/orm";
 
 @Entity("contacts")
 export class Contact extends AuditableModel {
@@ -338,7 +338,7 @@ export class Contact extends AuditableModel {
   @Column()
   lastName!: string;
 
-  @Column({ nullable: true, type: "date" })
+  @Column({ nullable: true, type: "date", transformer: DateTransformer })
   dateOfBirth?: Date;
 
   @Column({ nullable: true })
@@ -376,11 +376,11 @@ const expectedCodeGooveeNaming = `\
 import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMany, ManyToMany, JoinTable } from "@goovee/orm/typeorm";
 import { AuditableModel } from "./AuditableModel";
 import { Title } from "./Title";
+import { DateTransformer, type Text, type Binary, type Json } from "@goovee/orm";
 import { Bio } from "./Bio";
 import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
-import { type Text, type Binary, type Json } from "@goovee/orm";
 
 @Entity("contacts")
 export class Contact extends AuditableModel {
@@ -393,7 +393,7 @@ export class Contact extends AuditableModel {
   @Column()
   lastName!: string;
 
-  @Column({ nullable: true, type: "date" })
+  @Column({ nullable: true, type: "date", transformer: DateTransformer })
   dateOfBirth?: Date;
 
   @Column({ nullable: true })
@@ -472,13 +472,14 @@ export class SaleOrder extends AuditableModel {
 const expectedTemporalsCode = `\
 import { Entity, Column } from "@goovee/orm/typeorm";
 import { AuditableModel } from "./AuditableModel";
+import { DateTransformer } from "@goovee/orm";
 
 @Entity("temporals")
 export class Temporals extends AuditableModel {
   @Column({ nullable: true, type: "timestamp" })
   dateTimeField?: Date;
 
-  @Column({ nullable: true, type: "date" })
+  @Column({ nullable: true, type: "date", transformer: DateTransformer })
   dateField?: Date;
 
   @Column({ nullable: true, type: "time" })
