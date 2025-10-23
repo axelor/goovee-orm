@@ -4,23 +4,43 @@
 
 ### ✨ Features
 
+- **Bulk Insert API:** Added `createAll` method for efficient batch insertion of multiple records using a single INSERT statement, with support for relationships (ManyToOne, OneToOne) and nested creates (fixes #5).
+- **Compact Selection:** When `select` is empty object `{}` or relational fields are selected with `true`, now returns only `id` and `version` fields for optimized queries. Create operations without select continue to return all simple fields (fixes #7).
 - **Documentation:** Added comprehensive usage documentation to README.
-- **Next Release Support:** Added support for `@next` releases with monorepo flattened to single package structure.
+- **Next Release Support:** Added support for `@next` releases with monorepo flattened to single package structure. Users can install stable releases or development builds from dev branch.
+- **Next.js Example:** Added Next.js example with Goovee ORM integration.
+- **GraphQL Example:** Added GraphQL example with GraphQL Yoga.
 
 ### 🐛 Bug Fixes
 
-- **Null Reference Handling:** Many-to-one fields can now be properly set to null.
-- **Normalization OrderBy:** Fixed orderBy issue when normalization feature is enabled.
-- **Entity Reference Validation:** Throw error when a referenced entity is not found during selection.
+- **Select Type Safety:** Fixed select return types to use required keys with optional values instead of optional keys, improving type safety during refactoring (fixes #6).
+- **Nullable Field Types:** Improved generated entity types to properly include null for optional fields and primitive fields with null unions.
+- **Entity Type Nullability:** Added null to Entity type definition for better null handling support.
+- **Column Type Generation:** Explicitly specify column types for primitive fields with null unions to avoid reflect-metadata returning 'Object' type.
+- **Null Reference Handling:** Many-to-one fields can now be properly set to null using `{ select: { id: null } }` syntax.
+- **Normalization OrderBy:** Fixed orderBy issue when normalization feature is enabled by using normalized select alias.
+- **Entity Reference Validation:** Throw error when a referenced entity is not found, preventing silent failures and data integrity issues.
+- **OrderBy Type Narrowing:** Fixed type narrowing for nested collection selections with orderBy (fixes #4).
+- **Bulk Update Where Clause:** Fixed bulk update operations when using where clause filters (fixes #2).
+- **Date Field Type Mapping:** Fixed Date field types to properly map to string representation to avoid date shift issues.
+- **Time Field Type Mapping:** Fixed Time field types to properly map to string representation.
 
-### 🚀 Performance
+### 🚀 Performance & Data Integrity
 
-- **Data Integrity:** Added comprehensive tests and validation for data integrity features including optimistic locking and collection operations.
-- **LOB Field Types:** Improved support for Large Object (LOB) field types.
+- **Optimistic Lock Validation:** Improved optimistic lock validation ensuring id and version are provided for update/delete operations, with clear error messages when optimistic lock fails or record not found.
+- **Bulk Update Version Management:** Bulk operations now automatically increment version and update timestamp fields to maintain data consistency even when bypassing optimistic locking for performance.
+- **Collection Operation Validation:** Added validation to prevent conflicting collection operations where the same item ID appears in both remove and update/select operations.
+- **LOB Field Types:** Improved LOB field types support with proper transaction handling - LOB objects now properly closed in try-finally blocks and LOB operations require active transaction.
+- **Enhanced Test Coverage:** Added comprehensive tests for data integrity features including advanced counting, multi-field sorting, complex nested queries, transaction mechanisms, and bulk operation edge cases.
 
 ### 🔨 Refactoring
 
-- **Test Organization:** Split large test files (`client.test.ts`, `parser.test.ts`, `normalization.test.ts`) into 13 focused, maintainable modules organized by functionality. This improves code organization, navigation, and maintainability with files averaging ~200 lines each.
+- **Create Operation:** Extracted helper methods to reduce code duplication between `create` and `createAll` operations.
+- **Test Organization:** Split three large test files into 13 smaller, focused, and maintainable modules for better organization and maintainability.
+
+### 🧹 Chore
+
+- **Dependencies:** Upgraded various dependencies to their latest versions.
 
 ## [0.0.5] (2025-09-29)
 
