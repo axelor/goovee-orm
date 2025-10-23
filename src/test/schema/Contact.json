@@ -33,6 +33,14 @@
       "name": "dateOfBirth"
     },
     {
+      "type": "Time",
+      "name": "timeOfBirth"
+    },
+    {
+      "type": "DateTime",
+      "name": "registeredOn"
+    },
+    {
       "type": "String",
       "name": "email"
     },
