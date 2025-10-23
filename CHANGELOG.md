@@ -6,21 +6,34 @@
 
 - **Documentation:** Added comprehensive usage documentation to README.
 - **Next Release Support:** Added support for `@next` releases with monorepo flattened to single package structure.
+- **Next.js Example:** Added Next.js example with Goovee ORM integration.
+- **GraphQL Example:** Added GraphQL example with GraphQL Yoga.
 
 ### 🐛 Bug Fixes
 
 - **Null Reference Handling:** Many-to-one fields can now be properly set to null.
 - **Normalization OrderBy:** Fixed orderBy issue when normalization feature is enabled.
-- **Entity Reference Validation:** Throw error when a referenced entity is not found during selection.
+- **Entity Reference Validation:** Throw error when a referenced entity is not found.
+- **OrderBy Type Narrowing:** Fixed type narrowing for nested collection selections with orderBy (fixes #4).
+- **Bulk Update Where Clause:** Fixed bulk update operations when using where clause filters (fixes #2).
+- **Date Field Type Mapping:** Fixed Date field types to properly map to string representation.
+- **Time Field Type Mapping:** Fixed Time field types to properly map to string representation.
 
-### 🚀 Performance
+### 🚀 Performance & Data Integrity
 
-- **Data Integrity:** Added comprehensive tests and validation for data integrity features including optimistic locking and collection operations.
-- **LOB Field Types:** Improved support for Large Object (LOB) field types.
+- **Optimistic Lock Validation:** Improved optimistic lock validation with clear error messages.
+- **Bulk Update Version Management:** Bulk operations now automatically increment version and update timestamp fields.
+- **Collection Operation Validation:** Added validation to prevent conflicting collection operations.
+- **LOB Field Types:** Improved LOB field types support with proper transaction handling.
+- **Enhanced Test Coverage:** Added comprehensive tests for data integrity features.
 
 ### 🔨 Refactoring
 
-- **Test Organization:** Split large test files (`client.test.ts`, `parser.test.ts`, `normalization.test.ts`) into 13 focused, maintainable modules organized by functionality. This improves code organization, navigation, and maintainability with files averaging ~200 lines each.
+- **Test Organization:** Split large test files into 13 focused, maintainable modules.
+
+### 🧹 Chore
+
+- **Dependencies:** Upgraded various dependencies to their latest versions.
 
 ## [0.0.5] (2025-09-29)
 
