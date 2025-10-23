@@ -475,7 +475,13 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
       updateSet[updateDateColumn.propertyName] = new Date();
     }
 
-    const { affected } = await qb.update(updateSet).execute();
+    // Similar issue as in deleteAll, we cannot do JOIN in UPDATE
+    const ub = repo
+      .createQueryBuilder("me")
+      .select("me.id")
+      .whereExists(qb.andWhere(`self.id = ${repo.metadata.tableName}."id"`));
+
+    const { affected } = await ub.update(updateSet).execute();
     return affected ?? 0;
   }
 
