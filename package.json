@@ -10,7 +10,7 @@
     "dev": "pnpm build --watch",
     "release": "pnpm publish --no-git-checks",
     "test": "vitest",
-    "test:e2e": "vitest --mode e2e --reporter=verbose --pool=threads --poolOptions.threads.singleThread=true --test-timeout 10000",
+    "test:e2e": "vitest --mode e2e --reporter=verbose --pool=threads --poolOptions.threads.singleThread=true --test-timeout 10000 --typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css,scss,html}\""
   },
   "sideEffects": false,
