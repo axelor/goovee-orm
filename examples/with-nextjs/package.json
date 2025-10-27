@@ -1,0 +1,35 @@
+{
+  "name": "with-nextjs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --experimental-build-mode compile",
+    "start": "next start",
+    "lint": "eslint",
+    "generate": "goovee generate",
+    "seed": "node -r @swc-node/register goovee/scripts/seed.ts"
+  },
+  "workspaces": [
+    ".",
+    "examples/*"
+  ],
+  "dependencies": {
+    "@goovee/orm": "workspace:^",
+    "dotenv": "^17.2.3",
+    "next": "16.0.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@swc-node/register": "^1.11.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
