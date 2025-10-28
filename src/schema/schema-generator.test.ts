@@ -339,7 +339,7 @@ export class Contact extends AuditableModel {
   lastName!: string;
 
   @Column({ nullable: true, type: "date" })
-  dateOfBirth?: Date;
+  dateOfBirth?: string;
 
   @Column({ nullable: true })
   Phone?: string;
@@ -394,7 +394,7 @@ export class Contact extends AuditableModel {
   lastName!: string;
 
   @Column({ nullable: true, type: "date" })
-  dateOfBirth?: Date;
+  dateOfBirth?: string;
 
   @Column({ nullable: true })
   Phone?: string;
@@ -479,7 +479,7 @@ export class Temporals extends AuditableModel {
   dateTimeField?: Date;
 
   @Column({ nullable: true, type: "date" })
-  dateField?: Date;
+  dateField?: string;
 
   @Column({ nullable: true, type: "time" })
   timeField?: string;

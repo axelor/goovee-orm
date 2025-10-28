@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { describe, expect, it } from "vitest";
 import { getTestClient } from "./client.utils";
 
@@ -7,20 +6,19 @@ describe("client temporal types tests", async () => {
 
   it("should handle Date field correctly", async () => {
     const expected = "2000-05-15";
-    const testDate = new Date(expected);
     const contact = await client.contact.create({
       data: {
         firstName: "Alice",
         lastName: "Wonder",
-        dateOfBirth: testDate,
+        dateOfBirth: expected,
       },
       select: {
         dateOfBirth: true,
       },
     });
     expect(contact.dateOfBirth).toBeDefined();
-    expect(contact.dateOfBirth).toBeInstanceOf(Date);
-    expect(dayjs(contact.dateOfBirth).format("YYYY-MM-DD")).toBe(expected);
+    expect(typeof contact.dateOfBirth).toBe("string");
+    expect(contact.dateOfBirth).toBe(expected);
   });
 
   it("should handle Time field correctly", async () => {
@@ -59,7 +57,7 @@ describe("client temporal types tests", async () => {
   });
 
   it("should filter by Date field correctly", async () => {
-    const testDate = new Date("1990-01-01");
+    const testDate = "1990-01-01";
     const contact = await client.contact.create({
       data: {
         firstName: "Diana",
@@ -84,6 +82,6 @@ describe("client temporal types tests", async () => {
     });
 
     expect(result.length).toBeGreaterThan(0);
-    expect(result[0].dateOfBirth).toEqual(testDate);
+    expect(result[0].dateOfBirth).toBe("1990-01-01");
   });
 });
