@@ -19,8 +19,8 @@ describe("client temporal types tests", async () => {
       },
     });
     expect(contact.dateOfBirth).toBeDefined();
-    expect(contact.dateOfBirth).toBeInstanceOf(Date);
-    expect(dayjs(contact.dateOfBirth).format("YYYY-MM-DD")).toBe(expected);
+    expect(typeof contact.dateOfBirth).toBe("string");
+    expect(contact.dateOfBirth).toBe(expected);
   });
 
   it("should handle Time field correctly", async () => {
@@ -84,6 +84,6 @@ describe("client temporal types tests", async () => {
     });
 
     expect(result.length).toBeGreaterThan(0);
-    expect(result[0].dateOfBirth).toEqual(testDate);
+    expect(result[0].dateOfBirth).toBe("1990-01-01");
   });
 });
