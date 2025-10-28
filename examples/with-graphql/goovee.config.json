@@ -1,0 +1,6 @@
+{
+  "schema": {
+    "transpile": true,
+    "outDir": "./src/goovee/db"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "Post",
+  "table": "blog_post",
+  "fields": [
+    {
+      "type": "String",
+      "name": "title",
+      "size": 255,
+      "required": true
+    },
+    {
+      "type": "String",
+      "name": "slug",
+      "size": 255,
+      "required": true,
+      "unique": true
+    },
+    {
+      "type": "Text",
+      "name": "content"
+    },
+    {
+      "type": "ManyToOne",
+      "name": "author",
+      "required": true,
+      "target": "Author"
+    },
+    {
+      "type": "Enum",
+      "name": "status",
+      "enumType": "PostStatus",
+      "enumList": [
+        {
+          "name": "Draft",
+          "value": "draft"
+        },
+        {
+          "name": "Published",
+          "value": "published"
+        },
+        {
+          "name": "Archived",
+          "value": "archived"
+        }
+      ]
+    },
+    {
+      "type": "DateTime",
+      "name": "publishedOn"
+    }
+  ]
+}

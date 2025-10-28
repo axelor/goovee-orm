@@ -1,0 +1,34 @@
+{
+  "name": "Author",
+  "table": "blog_author",
+  "fields": [
+    {
+      "type": "String",
+      "name": "name",
+      "size": 255,
+      "required": true
+    },
+    {
+      "type": "String",
+      "name": "email",
+      "size": 255,
+      "required": true,
+      "unique": true
+    },
+    {
+      "type": "String",
+      "name": "bio",
+      "size": 500
+    },
+    {
+      "type": "String",
+      "name": "website",
+      "size": 255
+    },
+    {
+      "type": "Date",
+      "name": "joinedOn",
+      "required": true
+    }
+  ]
+}
