@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getClient } from "@/goovee";
-import { FormattedDate } from "@/app/components/FormattedDate";
+import { FormattedDate } from "@/app/components/ClientFormattedDate";
 
 interface AuthorPageProps {
   params: Promise<{
