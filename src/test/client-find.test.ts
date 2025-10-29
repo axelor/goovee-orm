@@ -174,4 +174,17 @@ describe("client find tests", async () => {
     expect(address?.street).toBeUndefined();
     expect(address?.city).toBeUndefined();
   });
+
+  it("should not leak parent fields when selecting nested relation", async () => {
+    await createData(client);
+
+    const contact = await client.contact.findOne({
+      select: { title: { id: true } },
+      where: { id: 1 },
+    });
+
+    expect(contact).toBeDefined();
+    //@ts-expect-error firstName is not defined
+    expect(contact?.firstName).toBeUndefined();
+  });
 });
