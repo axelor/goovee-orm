@@ -70,6 +70,13 @@ export class SelectProcessor {
       .reduce((prev, name) => ({ ...prev, [name]: true }), {});
   }
 
+  private getCompactSelect(repo: Repository<any>): Record<string, boolean> {
+    return {
+      id: true,
+      version: true,
+    };
+  }
+
   private processRelation(
     relation: any,
     key: string,
@@ -90,7 +97,7 @@ export class SelectProcessor {
     if (value === true && this.joinHandler.isToOneRelation(relation)) {
       const nested = this.process(
         rRepo,
-        this.getSimpleSelect(rRepo),
+        this.getCompactSelect(rRepo),
         alias,
         client,
       );
@@ -101,7 +108,7 @@ export class SelectProcessor {
 
     if (this.joinHandler.isToManyRelation(relation)) {
       const v =
-        value === true ? { select: this.getSimpleSelect(rRepo) } : value;
+        value === true ? { select: this.getCompactSelect(rRepo) } : value;
       const vResult = QueryProcessor.parse(client, rRepo, v);
       result.collections[key] = vResult;
     } else {

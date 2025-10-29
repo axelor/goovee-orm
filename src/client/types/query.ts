@@ -125,15 +125,21 @@ export type SelectKeys<T, S> = Pick<
 >;
 
 type PayloadSelect<T extends Entity, Select> = ResultIdentity<T> & {
-  [K in keyof SelectKeys<T, Select>]: K extends keyof Select & keyof T
-    ? PayloadSelectArg<T[K], Select[K]>
+  [K in keyof SelectKeys<T, Select>]-?: K extends keyof Select & keyof T
+    ? PayloadSelectArg<T[K], Select[K]> | null | undefined
     : never;
 };
 
 type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
   ? never
   : Arg extends true
-    ? T
+    ? T extends Array<infer A>
+      ? A extends Entity
+        ? ResultIdentity<A>[]
+        : T
+      : T extends Entity
+        ? ResultIdentity<T>
+        : T
     : T extends Array<infer A>
       ? Arg extends { select: infer Select; [key: string]: any }
         ? A extends Entity

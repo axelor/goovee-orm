@@ -5,6 +5,7 @@
 ### ✨ Features
 
 - **Bulk Insert API:** Added `createAll` method for efficient batch insertion of multiple records (fixes #5).
+- **Relational Field Selection:** When selecting relational fields with `true`, now returns only `id` and `version` fields for optimized queries (fixes #7).
 - **Documentation:** Added comprehensive usage documentation to README.
 - **Next Release Support:** Added support for `@next` releases with monorepo flattened to single package structure.
 - **Next.js Example:** Added Next.js example with Goovee ORM integration.
@@ -12,6 +13,7 @@
 
 ### 🐛 Bug Fixes
 
+- **Select Type Safety:** Fixed select return types to use required keys with optional values instead of optional keys, improving type safety during refactoring (fixes #6).
 - **Null Reference Handling:** Many-to-one fields can now be properly set to null.
 - **Normalization OrderBy:** Fixed orderBy issue when normalization feature is enabled.
 - **Entity Reference Validation:** Throw error when a referenced entity is not found.
