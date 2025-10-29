@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getClient } from "@/goovee";
-import { FormattedDate } from "../components/FormattedDate";
+import { FormattedDate } from "../components/ClientFormattedDate";
 
 export default async function AuthorsPage() {
   const client = await getClient();
