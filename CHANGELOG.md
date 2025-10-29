@@ -4,6 +4,7 @@
 
 ### ✨ Features
 
+- **Bulk Insert API:** Added `createAll` method for efficient batch insertion of multiple records (fixes #5).
 - **Documentation:** Added comprehensive usage documentation to README.
 - **Next Release Support:** Added support for `@next` releases with monorepo flattened to single package structure.
 - **Next.js Example:** Added Next.js example with Goovee ORM integration.
@@ -29,6 +30,7 @@
 
 ### 🔨 Refactoring
 
+- **Create Operation:** Extracted helper methods to reduce code duplication between `create` and `createAll`.
 - **Test Organization:** Split large test files into 13 focused, maintainable modules.
 
 ### 🧹 Chore
