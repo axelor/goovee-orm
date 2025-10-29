@@ -75,6 +75,9 @@ describe("client filtering tests", async () => {
       },
     });
     const found = await client.country.find({
+      select: {
+        code: true,
+      },
       where: {
         population: {
           gt: "30",

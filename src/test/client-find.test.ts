@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getTestClient } from "./client.utils";
-import { Contact } from "./db/models";
+import { Address, Contact, Title } from "./db/models";
 import { createData } from "./fixture";
 
 describe("client find tests", async () => {
@@ -135,5 +135,89 @@ describe("client find tests", async () => {
     if (result?.addresses && result.addresses.length > 0) {
       expect(result.addresses[0].country).toBeDefined();
     }
+  });
+
+  it("should select only id and version when relational field is true", async () => {
+    await createData(client);
+
+    const x = await client.title.findOne({
+      select: {},
+      where: { id: 1 },
+    });
+
+    const contact = await client.contact.findOne({
+      select: {
+        firstName: true,
+        lastName: true,
+        title: true, // should only return id and version
+        addresses: true, // should only return id and version for each address
+      },
+      where: {
+        id: 1,
+      },
+    });
+
+    expect(contact).toBeDefined();
+    expect(contact?.firstName).toBeDefined();
+    expect(contact?.lastName).toBeDefined();
+
+    // Title should have id and version defined
+    expect(contact?.title).toBeDefined();
+    expect(contact?.title?.id).toBeDefined();
+    expect(contact?.title?.version).toBeDefined();
+
+    const title = contact?.title as Title;
+    expect(title?.code).toBeUndefined();
+    expect(title?.name).toBeUndefined();
+
+    // Addresses should have id and version only
+    expect(contact?.addresses).toBeDefined();
+    expect(contact?.addresses?.[0]?.id).toBeDefined();
+    expect(contact?.addresses?.[0]?.version).toBeDefined();
+
+    const address = contact?.addresses?.[0] as Address;
+    expect(address?.street).toBeUndefined();
+    expect(address?.city).toBeUndefined();
+  });
+
+  it("should select only id and version when select is empty", async () => {
+    await createData(client);
+
+    const res = await client.contact.findOne({
+      where: {
+        id: 1,
+      },
+    });
+
+    expect(res).toBeDefined();
+    expect(res?.id).toBeDefined();
+    expect(res?.version).toBeDefined();
+
+    const contact = res as Contact;
+
+    expect(contact?.firstName).toBeUndefined();
+    expect(contact?.lastName).toBeUndefined();
+    expect(contact?.email).toBeUndefined();
+  });
+
+  it("should select only id and version when select is empty object", async () => {
+    await createData(client);
+
+    const res = await client.contact.findOne({
+      select: {},
+      where: {
+        id: 1,
+      },
+    });
+
+    expect(res).toBeDefined();
+    expect(res?.id).toBeDefined();
+    expect(res?.version).toBeDefined();
+
+    const contact = res as Contact;
+
+    expect(contact?.firstName).toBeUndefined();
+    expect(contact?.lastName).toBeUndefined();
+    expect(contact?.email).toBeUndefined();
   });
 });

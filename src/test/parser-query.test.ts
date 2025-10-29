@@ -90,7 +90,9 @@ describe("query parser tests", async () => {
 
     expect(res.select).toBeDefined();
     expect(res.select).toHaveProperty("self.id");
-    expect(res.select).toHaveProperty("self.fullName");
+    expect(res.select).toHaveProperty("self.version");
+    expect(res.select).not.toHaveProperty("self.firstName");
+    expect(res.select).not.toHaveProperty("self.fullName");
     expect(res.select).not.toHaveProperty("self.image");
     expect(res.select).not.toHaveProperty("self.attrs");
 
@@ -101,8 +103,6 @@ describe("query parser tests", async () => {
       select: {
         "self_title.id": "self_title_id",
         "self_title.version": "self_title_version",
-        "self_title.code": "self_title_code",
-        "self_title.name": "self_title_name",
       },
       joins: {
         "self.title": "self_title",
@@ -118,12 +118,6 @@ describe("query parser tests", async () => {
           select: {
             "self.id": "self_id",
             "self.version": "self_version",
-            "self.type": "self_type",
-            "self.street": "self_street",
-            "self.area": "self_area",
-            "self.city": "self_city",
-            "self.zip": "self_zip",
-            "self.state": "self_state",
           },
         },
       },
