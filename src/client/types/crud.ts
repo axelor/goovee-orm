@@ -75,6 +75,11 @@ export type DeleteOptions<T extends Entity> = InputIdentity<T>;
 // Bulk Opetations
 // ============================================================================
 
+export type BulkCreateOptions<T extends Entity> = {
+  data: CreateArgs<T>[];
+  select?: SelectOptions<T>;
+};
+
 export type BulkSetArg<T> =
   T extends Array<infer P>
     ? P extends Entity

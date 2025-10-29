@@ -1,6 +1,7 @@
 import type { AggregateOptions, AggregatePayload } from "./aggregate";
 import type { Entity, ID, Options } from "./base";
 import type {
+  BulkCreateOptions,
   BulkDeleteOptions,
   BulkUpdateOptions,
   CreateOptions,
@@ -42,6 +43,10 @@ export interface Repository<T extends Entity> {
   aggregate<U extends AggregateOptions<T>>(
     args: Options<U, AggregateOptions<T>>,
   ): Promise<AggregatePayload<T, U>[]>;
+
+  createAll<U extends BulkCreateOptions<T>>(
+    args: Options<U, BulkCreateOptions<T>>,
+  ): Promise<Payload<T, U>[]>;
 
   updateAll(args: BulkUpdateOptions<T>): Promise<ID>;
 

@@ -1,12 +1,14 @@
-import { EntityMetadata } from "typeorm";
+import { DeepPartial, EntityMetadata } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata.js";
 import { resolveLazy } from "../fields/utils";
 import { parseAggregate, parseQuery } from "../parser";
 import type {
   AggregateOptions,
   AggregatePayload,
+  BulkCreateOptions,
   BulkDeleteOptions,
   BulkUpdateOptions,
+  CreateArgs,
   CreateOptions,
   DeleteOptions,
   Entity,
@@ -244,15 +246,12 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     return result;
   }
 
-  @intercept()
-  async create<U extends CreateOptions<T>>(
-    args: Options<U, CreateOptions<T>>,
-  ): Promise<Payload<T, U>> {
-    const repo: any = this.#repo;
-    const meta: EntityMetadata = repo.metadata;
+  async #handleCreate<T extends Entity>(
+    repo: OrmRepository<T>,
+    meta: EntityMetadata,
+    data: CreateArgs<T>,
+  ) {
     const attrs: Record<string, any> = {};
-
-    const { select, data } = args;
 
     // first handle single value fields
     for (const [name, value] of Object.entries(data)) {
@@ -280,9 +279,16 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
       attrs[meta.updateDateColumn.propertyName] = new Date();
     }
 
-    // save
-    const obj = await repo.save(repo.create(attrs));
+    // create entity
+    return repo.create(attrs as DeepPartial<T>);
+  }
 
+  async #handleCreateCollections(
+    repo: OrmRepository<T>,
+    meta: EntityMetadata,
+    obj: T,
+    data: CreateArgs<T>,
+  ) {
     // now handle collection fields
     for (const [name, value] of Object.entries(data)) {
       const relation = meta.findRelationWithPropertyPath(name);
@@ -297,8 +303,27 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
         );
       }
     }
+  }
 
-    // now load the selection
+  @intercept()
+  async create<U extends CreateOptions<T>>(
+    args: Options<U, CreateOptions<T>>,
+  ): Promise<Payload<T, U>> {
+    const repo: any = this.#repo;
+    const meta: EntityMetadata = repo.metadata;
+
+    const { select, data } = args;
+
+    // prepare
+    const attrs = await this.#handleCreate(repo, meta, data);
+
+    // save
+    const obj = await repo.save(attrs);
+
+    // handle collections
+    await this.#handleCreateCollections(repo, meta, obj, data);
+
+    // load the selection
     const res = this.findOne({
       select,
       where: { id: obj.id },
@@ -450,6 +475,46 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
 
     const result = await repo.delete(id);
     return result.affected ?? 0;
+  }
+
+  @intercept()
+  async createAll<U extends BulkCreateOptions<T>>(
+    args: Options<U, BulkCreateOptions<T>>,
+  ): Promise<Payload<T, U>[]> {
+    const repo: any = this.#repo;
+    const meta: EntityMetadata = repo.metadata;
+    const { select, data } = args;
+
+    // early return
+    if (data == null || data.length === 0) {
+      return [];
+    }
+
+    // prepare all items
+    const objects = await Promise.all(
+      data.map((item) => this.#handleCreate(repo, meta, item)),
+    );
+
+    // save them all
+    const objs: T[] = await repo.save(objects);
+
+    // now handle collections
+    await Promise.all(
+      objs.map((obj, index) =>
+        this.#handleCreateCollections(repo, meta, obj, data[index]),
+      ),
+    );
+
+    // load the selection
+    const ids = objs.map((obj) => obj.id!);
+    const res = await this.find({
+      select,
+      where: {
+        id: { in: ids },
+      } as any,
+    });
+
+    return res as any;
   }
 
   @intercept()
