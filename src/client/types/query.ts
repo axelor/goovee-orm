@@ -125,15 +125,23 @@ export type SelectKeys<T, S> = Pick<
 >;
 
 type PayloadSelect<T extends Entity, Select> = ResultIdentity<T> & {
-  [K in keyof SelectKeys<T, Select>]: K extends keyof Select & keyof T
-    ? PayloadSelectArg<T[K], Select[K]>
+  [K in keyof SelectKeys<T, Select>]-?: K extends keyof Select & keyof T
+    ? undefined extends T[K]
+      ? PayloadSelectArg<NonNullable<T[K]>, Select[K]> | null
+      : PayloadSelectArg<T[K], Select[K]>
     : never;
 };
 
 type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
   ? never
   : Arg extends true
-    ? T
+    ? T extends Array<infer A>
+      ? A extends Entity
+        ? ResultIdentity<A>[]
+        : T
+      : T extends Entity
+        ? ResultIdentity<T>
+        : T
     : T extends Array<infer A>
       ? Arg extends { select: infer Select; [key: string]: any }
         ? A extends Entity
@@ -149,13 +157,31 @@ type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
 export type PayloadSimple<T extends Entity> = ResultIdentity<T> &
   OmitByType<T, Json | Text | Binary | Entity | Entity[] | undefined>;
 
-export type PayloadArg<T extends Entity, Q> = Q extends { select: infer S }
-  ? PayloadSelect<T, S>
-  : PayloadSimple<T>;
+export type PayloadArg<
+  Type extends Entity,
+  Query,
+  Empty = ResultIdentity<Type>,
+> = Query extends {
+  select: infer Select;
+}
+  ? Select extends Record<string, never>
+    ? Empty
+    : PayloadSelect<Type, Select>
+  : Empty;
 
-export type Payload<T extends Entity, Q> = PayloadArg<T, Q> & {
+export type Payload<
+  Type extends Entity,
+  Query,
+  Empty = ResultIdentity<Type>,
+> = PayloadArg<Type, Query, Empty> & {
   _count?: string;
   _cursor?: string;
   _hasNext?: boolean;
   _hasPrev?: boolean;
 };
+
+export type CreatePayload<Type extends Entity, Query> = Payload<
+  Type,
+  Query,
+  PayloadSimple<Type>
+>;

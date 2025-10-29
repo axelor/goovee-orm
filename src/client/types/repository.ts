@@ -8,7 +8,7 @@ import type {
   DeleteOptions,
   UpdateOptions,
 } from "./crud";
-import type { Payload, QueryOptions } from "./query";
+import type { CreatePayload, Payload, QueryOptions } from "./query";
 
 // ============================================================================
 // Repository Interface
@@ -29,7 +29,7 @@ export interface Repository<T extends Entity> {
 
   create<U extends CreateOptions<T>>(
     args: Options<U, CreateOptions<T>>,
-  ): Promise<Payload<T, U>>;
+  ): Promise<CreatePayload<T, U>>;
 
   update<U extends UpdateOptions<T>>(
     args: Options<U, UpdateOptions<T>>,
@@ -46,7 +46,7 @@ export interface Repository<T extends Entity> {
 
   createAll<U extends BulkCreateOptions<T>>(
     args: Options<U, BulkCreateOptions<T>>,
-  ): Promise<Payload<T, U>[]>;
+  ): Promise<CreatePayload<T, U>[]>;
 
   updateAll(args: BulkUpdateOptions<T>): Promise<ID>;
 

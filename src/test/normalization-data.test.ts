@@ -69,6 +69,10 @@ describe("normalization data tests", async () => {
     });
 
     const results = await clientWithLowerCase.contact.find({
+      select: {
+        firstName: true,
+        lastName: true,
+      },
       where: {
         firstName: "john", // lowercase search
       },
@@ -90,6 +94,10 @@ describe("normalization data tests", async () => {
     });
 
     const results = await clientWithUnaccent.contact.find({
+      select: {
+        firstName: true,
+        lastName: true,
+      },
       where: {
         firstName: "Jose", // unaccented search
       },
@@ -111,6 +119,10 @@ describe("normalization data tests", async () => {
     });
 
     const results = await clientWithNormalization.contact.find({
+      select: {
+        firstName: true,
+        lastName: true,
+      },
       where: {
         firstName: "jose", // lowercase and unaccented search
       },
@@ -132,6 +144,10 @@ describe("normalization data tests", async () => {
     });
 
     const results = await clientWithNormalization.contact.find({
+      select: {
+        firstName: true,
+        lastName: true,
+      },
       where: {
         lastName: { like: "gonz%" }, // lowercase and unaccented partial match
       },
@@ -160,6 +176,9 @@ describe("normalization data tests", async () => {
     });
 
     const results = await clientWithNormalization.contact.find({
+      select: {
+        firstName: true,
+      },
       where: {
         firstName: { in: ["jose", "maria"] }, // lowercase and unaccented list
       },
@@ -240,6 +259,9 @@ describe("normalization data tests", async () => {
     });
 
     const results = await clientWithNormalization.contact.find({
+      select: {
+        email: true,
+      },
       where: {
         email: { like: "%GONZALEZ%" }, // uppercase search
       },
@@ -275,6 +297,9 @@ describe("normalization data tests", async () => {
 
     // Order with normalization should be case and accent insensitive
     const results = await clientWithNormalization.contact.find({
+      select: {
+        firstName: true,
+      },
       orderBy: {
         firstName: "ASC",
       },

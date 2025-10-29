@@ -9,6 +9,26 @@ import {
 } from "../types";
 import { QueryProcessor } from "./query-processor";
 
+export function getSimpleSelect(
+  repo: Repository<any>,
+): Record<string, boolean> {
+  const meta = repo.metadata;
+  return meta.columns
+    .filter((x) => !meta.findRelationWithPropertyPath(x.propertyName))
+    .filter((x) => !["oid", "text", "jsonb"].includes(x.type as any))
+    .map((x) => x.propertyName)
+    .reduce((prev, name) => ({ ...prev, [name]: true }), {});
+}
+
+export function getCompactSelect(
+  repo: Repository<any>,
+): Record<string, boolean> {
+  return {
+    id: true,
+    version: true,
+  };
+}
+
 export class SelectProcessor {
   constructor(
     private context: ParserContext,
@@ -26,9 +46,9 @@ export class SelectProcessor {
     let references: Record<string, ParseResult> = {};
     let joins: Record<string, string> = {};
 
-    // if no selection is given, select all simple fields
+    // if no selection is given, select only id and version
     const selection =
-      Object.keys(opts).length === 0 ? this.getSimpleSelect(repo) : opts;
+      Object.keys(opts).length === 0 ? getCompactSelect(repo) : opts;
 
     for (const [key, value] of Object.entries(selection)) {
       const { name, alias } = this.joinHandler.processRelationJoin(
@@ -61,15 +81,6 @@ export class SelectProcessor {
     return { select, joins, references, collections };
   }
 
-  private getSimpleSelect(repo: Repository<any>): Record<string, boolean> {
-    const meta = repo.metadata;
-    return meta.columns
-      .filter((x) => !meta.findRelationWithPropertyPath(x.propertyName))
-      .filter((x) => !["oid", "text", "jsonb"].includes(x.type as any))
-      .map((x) => x.propertyName)
-      .reduce((prev, name) => ({ ...prev, [name]: true }), {});
-  }
-
   private processRelation(
     relation: any,
     key: string,
@@ -90,7 +101,7 @@ export class SelectProcessor {
     if (value === true && this.joinHandler.isToOneRelation(relation)) {
       const nested = this.process(
         rRepo,
-        this.getSimpleSelect(rRepo),
+        getCompactSelect(rRepo),
         alias,
         client,
       );
@@ -100,8 +111,7 @@ export class SelectProcessor {
     }
 
     if (this.joinHandler.isToManyRelation(relation)) {
-      const v =
-        value === true ? { select: this.getSimpleSelect(rRepo) } : value;
+      const v = value === true ? { select: getCompactSelect(rRepo) } : value;
       const vResult = QueryProcessor.parse(client, rRepo, v);
       result.collections[key] = vResult;
     } else {

@@ -10,6 +10,7 @@ import type {
   BulkUpdateOptions,
   CreateArgs,
   CreateOptions,
+  CreatePayload,
   DeleteOptions,
   Entity,
   ID,
@@ -30,6 +31,7 @@ import {
 } from "./query";
 import { OrmRepository } from "./types";
 import { isValueSame, valueOrID } from "./utils";
+import { getSimpleSelect } from "../parser/processors/select-processor";
 
 class RelationHandlers {
   static async handleReference(
@@ -308,7 +310,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   @intercept()
   async create<U extends CreateOptions<T>>(
     args: Options<U, CreateOptions<T>>,
-  ): Promise<Payload<T, U>> {
+  ): Promise<CreatePayload<T, U>> {
     const repo: any = this.#repo;
     const meta: EntityMetadata = repo.metadata;
 
@@ -323,9 +325,12 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     // handle collections
     await this.#handleCreateCollections(repo, meta, obj, data);
 
+    // use simple select if no selection is given
+    const selection = select ?? (getSimpleSelect(repo) as U["select"]);
+
     // load the selection
     const res = this.findOne({
-      select,
+      select: selection,
       where: { id: obj.id },
     });
 
@@ -480,7 +485,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   @intercept()
   async createAll<U extends BulkCreateOptions<T>>(
     args: Options<U, BulkCreateOptions<T>>,
-  ): Promise<Payload<T, U>[]> {
+  ): Promise<CreatePayload<T, U>[]> {
     const repo: any = this.#repo;
     const meta: EntityMetadata = repo.metadata;
     const { select, data } = args;
@@ -505,10 +510,13 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
       ),
     );
 
+    // use simple select if no selection is given
+    const selection = select ?? (getSimpleSelect(repo) as U["select"]);
+
     // load the selection
     const ids = objs.map((obj) => obj.id!);
     const res = await this.find({
-      select,
+      select: selection,
       where: {
         id: { in: ids },
       } as any,
