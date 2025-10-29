@@ -82,7 +82,7 @@ export default async function AuthorsPage() {
                       <span>
                         Joined{" "}
                         <FormattedDate
-                          date={author.joinedOn}
+                          value={author.joinedOn}
                           format="date-only"
                         />
                       </span>

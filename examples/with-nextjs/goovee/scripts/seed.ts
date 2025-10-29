@@ -1,5 +1,6 @@
 import { getClient } from "@/goovee";
 import { Client } from "@/goovee/db/client";
+import "load-swc-env";
 
 async function seed(client: Client) {
   // Check if data already exists
@@ -16,7 +17,7 @@ async function seed(client: Client) {
       email: "john.doe@example.com",
       bio: "John is a software engineer passionate about web technologies and open source. He loves writing about JavaScript, TypeScript, and modern frameworks.",
       website: "https://johndoe.dev",
-      joinedOn: new Date("2020-01-15"),
+      joinedOn: "2020-01-15",
     },
   });
 
@@ -26,7 +27,7 @@ async function seed(client: Client) {
       email: "jane.smith@example.com",
       bio: "Jane is a full-stack developer with expertise in React, Node.js, and database design. She enjoys teaching and sharing knowledge with the developer community.",
       website: "https://janesmith.com",
-      joinedOn: new Date("2021-06-22"),
+      joinedOn: "2021-06-22",
     },
   });
 
