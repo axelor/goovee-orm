@@ -26,10 +26,10 @@ export type Binary = Promise<Buffer>;
 // ============================================================================
 
 export type Entity = {
-  readonly id?: ID;
-  readonly version?: number;
-  readonly createdOn?: Date;
-  readonly updatedOn?: Date;
+  readonly id?: ID | null;
+  readonly version?: number | null;
+  readonly createdOn?: Date | null;
+  readonly updatedOn?: Date | null;
 };
 
 export type EntityClass<T extends Entity = Entity> = new () => T;
