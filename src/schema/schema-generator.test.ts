@@ -332,19 +332,19 @@ export class Contact extends AuditableModel {
   @ManyToOne(() => Title)
   title?: Relation<Title> | null;
 
-  @Column()
+  @Column({ type: "varchar" })
   firstName!: string;
 
-  @Column()
+  @Column({ type: "varchar" })
   lastName!: string;
 
   @Column({ nullable: true, type: "date" })
   dateOfBirth?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: "varchar" })
   Phone?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: "varchar" })
   email?: string | null;
 
   @OneToOne(() => Bio, (x) => x.contact)
@@ -387,19 +387,19 @@ export class Contact extends AuditableModel {
   @ManyToOne(() => Title)
   title?: Relation<Title> | null;
 
-  @Column()
+  @Column({ type: "varchar" })
   firstName!: string;
 
-  @Column()
+  @Column({ type: "varchar" })
   lastName!: string;
 
   @Column({ nullable: true, type: "date" })
   dateOfBirth?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: "varchar" })
   Phone?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: "varchar" })
   email?: string | null;
 
   @OneToOne(() => Bio, (x) => x.contact)
@@ -438,20 +438,20 @@ import { AuditableModel } from "./AuditableModel";
 @Index("idx_some_one", ["some", "one"], { unique: true })
 export class UniqueTest extends AuditableModel {
   @Index({ unique: true })
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: "varchar" })
   name?: string | null;
 
   @Index()
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: "varchar" })
   some?: string | null;
 
-  @Column({ nullable: true, unique: true })
+  @Column({ nullable: true, type: "varchar", unique: true })
   thing?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: "varchar" })
   another?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: "varchar" })
   one?: string | null;
 }
 `;
@@ -507,7 +507,7 @@ import { Model } from "./Model";
 
 @Entity("non_auditable_entity")
 export class NonAuditableEntity extends Model {
-  @Column()
+  @Column({ type: "varchar" })
   name!: string;
 }
 `;

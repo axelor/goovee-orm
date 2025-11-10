@@ -109,6 +109,12 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
 
     const d = newDecorator(decorator);
 
+    // primitive types
+    if (type === "String") arg.type = "varchar";
+    if (type === "Int") arg.type = "integer";
+    if (type === "BigInt") arg.type = "bigint";
+    if (type === "Boolean") arg.type = "boolean";
+
     if (decorator === "Column" && ["JSON", "Text", "Binary"].includes(type)) {
       if (type === "Text") arg.type = "text";
       if (type === "JSON") arg.type = "jsonb";
