@@ -330,7 +330,7 @@ import { type Text, type Binary, type Json } from "@goovee/orm";
 @Entity("contacts")
 export class Contact extends AuditableModel {
   @ManyToOne(() => Title)
-  title?: Relation<Title>;
+  title?: Relation<Title> | null;
 
   @Column()
   firstName!: string;
@@ -339,36 +339,36 @@ export class Contact extends AuditableModel {
   lastName!: string;
 
   @Column({ nullable: true, type: "date" })
-  dateOfBirth?: string;
+  dateOfBirth?: string | null;
 
   @Column({ nullable: true })
-  Phone?: string;
+  Phone?: string | null;
 
   @Column({ nullable: true })
-  email?: string;
+  email?: string | null;
 
   @OneToOne(() => Bio, (x) => x.contact)
   @JoinColumn()
-  bio?: Relation<Bio>;
+  bio?: Relation<Bio> | null;
 
   @OneToMany(() => Address, (x) => x.contact)
-  addresses?: Relation<Address>[];
+  addresses?: Relation<Address>[] | null;
 
   @ManyToMany(() => Circle, (x) => x.contacts)
   @JoinTable()
-  circles?: Relation<Circle>[];
+  circles?: Relation<Circle>[] | null;
 
   @Column({ enum: ContactType, nullable: true, type: "integer", default: ContactType.PARTNER })
-  type?: ContactType;
+  type?: ContactType | null;
 
   @Column({ nullable: true, type: "text", select: false })
-  notes?: Text;
+  notes?: Text | null;
 
   @Column({ nullable: true, type: "oid" as any, select: false })
-  photo?: Binary;
+  photo?: Binary | null;
 
   @Column({ nullable: true, type: "jsonb", select: false })
-  attrs?: Json;
+  attrs?: Json | null;
 }
 `;
 
@@ -385,7 +385,7 @@ import { type Text, type Binary, type Json } from "@goovee/orm";
 @Entity("contacts")
 export class Contact extends AuditableModel {
   @ManyToOne(() => Title)
-  title?: Relation<Title>;
+  title?: Relation<Title> | null;
 
   @Column()
   firstName!: string;
@@ -394,36 +394,36 @@ export class Contact extends AuditableModel {
   lastName!: string;
 
   @Column({ nullable: true, type: "date" })
-  dateOfBirth?: string;
+  dateOfBirth?: string | null;
 
   @Column({ nullable: true })
-  Phone?: string;
+  Phone?: string | null;
 
   @Column({ nullable: true })
-  email?: string;
+  email?: string | null;
 
   @OneToOne(() => Bio, (x) => x.contact)
   @JoinColumn()
-  bio?: Relation<Bio>;
+  bio?: Relation<Bio> | null;
 
   @OneToMany(() => Address, (x) => x.contact)
-  addresses?: Relation<Address>[];
+  addresses?: Relation<Address>[] | null;
 
   @ManyToMany(() => Circle, (x) => x.contacts)
   @JoinTable({ name: "contacts_circles", joinColumn: { name: "contacts" }, inverseJoinColumn: { name: "circles" } })
-  circles?: Relation<Circle>[];
+  circles?: Relation<Circle>[] | null;
 
   @Column({ enum: ContactType, nullable: true, type: "integer", default: ContactType.PARTNER })
-  type?: ContactType;
+  type?: ContactType | null;
 
   @Column({ nullable: true, type: "text", select: false })
-  notes?: Text;
+  notes?: Text | null;
 
   @Column({ nullable: true, type: "oid" as any, select: false })
-  photo?: Binary;
+  photo?: Binary | null;
 
   @Column({ nullable: true, type: "jsonb", select: false })
-  attrs?: Json;
+  attrs?: Json | null;
 }
 `;
 
@@ -439,20 +439,20 @@ import { AuditableModel } from "./AuditableModel";
 export class UniqueTest extends AuditableModel {
   @Index({ unique: true })
   @Column({ nullable: true })
-  name?: string;
+  name?: string | null;
 
   @Index()
   @Column({ nullable: true })
-  some?: string;
+  some?: string | null;
 
   @Column({ nullable: true, unique: true })
-  thing?: string;
+  thing?: string | null;
 
   @Column({ nullable: true })
-  another?: string;
+  another?: string | null;
 
   @Column({ nullable: true })
-  one?: string;
+  one?: string | null;
 }
 `;
 
@@ -465,7 +465,7 @@ import { SaleTax } from "./SaleTax";
 export class SaleOrder extends AuditableModel {
   @ManyToMany(() => SaleTax)
   @JoinTable({ name: "sale_order_taxes", joinColumn: { name: "sale_order" }, inverseJoinColumn: { name: "taxes" }, synchronize: false })
-  taxes?: Relation<SaleTax>[];
+  taxes?: Relation<SaleTax>[] | null;
 }
 `;
 
@@ -476,13 +476,13 @@ import { AuditableModel } from "./AuditableModel";
 @Entity("temporals")
 export class Temporals extends AuditableModel {
   @Column({ nullable: true, type: "timestamp" })
-  dateTimeField?: Date;
+  dateTimeField?: Date | null;
 
   @Column({ nullable: true, type: "date" })
-  dateField?: string;
+  dateField?: string | null;
 
   @Column({ nullable: true, type: "time" })
-  timeField?: string;
+  timeField?: string | null;
 }
 `;
 
@@ -494,10 +494,10 @@ import { BigDecimal } from "@goovee/orm";
 @Entity("decimals")
 export class Decimals extends AuditableModel {
   @Column({ nullable: true, type: "numeric", transformer: (BigDecimal as any).__transformer })
-  rate?: BigDecimal;
+  rate?: BigDecimal | null;
 
   @Column({ nullable: true, scale: 2, precision: 10, type: "numeric", transformer: (BigDecimal as any).__transformer })
-  amount?: BigDecimal;
+  amount?: BigDecimal | null;
 }
 `;
 

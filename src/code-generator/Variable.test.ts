@@ -57,7 +57,7 @@ describe("Variable tests", () => {
       field: true,
     });
     const code = emit(variable);
-    expect(code).equals("hello?: string;");
+    expect(code).equals("hello?: string | null;");
   });
 
   it("should emit jsdoc", () => {

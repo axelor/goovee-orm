@@ -17,8 +17,8 @@ describe("Type tests", () => {
     const code = emit(type);
     expect(code).toBe(`\
 type Page = {
-  start?: number = 0;
-  end?: number;
+  start?: number | null = 0;
+  end?: number | null;
 }`);
   });
 
