@@ -57,7 +57,7 @@ describe("Class tests", () => {
 export class Test extends Entity {
   name!: string;
 
-  readonly type?: string = "some";
+  readonly type?: string | null = "some";
 
   get title() {
     return this.name;

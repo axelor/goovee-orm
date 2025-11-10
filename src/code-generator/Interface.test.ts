@@ -30,7 +30,7 @@ describe("Interface tests", () => {
     expect(code).toBe(`\
 interface Type extends Some, Another {
   name: string;
-  readonly age?: number = 200;
+  readonly age?: number | null = 200;
   test(): number;
 }`);
   });

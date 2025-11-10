@@ -59,7 +59,14 @@ export class Variable extends Decorable implements Emittable {
       if (field || (value === void 0 && !name.startsWith("...")))
         file.write("?");
     }
-    if (type) file.write(": ").write(type);
+    if (type) {
+      file.write(": ");
+      if (!this.opts.required && this.opts.field) {
+        file.write(type).write(" | null");
+      } else {
+        file.write(type);
+      }
+    }
     if (value !== void 0) {
       file.write(" = ");
       if (type === "string" || quote) {
