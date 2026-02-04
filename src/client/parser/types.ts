@@ -73,16 +73,28 @@ export const JSON_CAST_TYPES = {
 export const ORDER_OPS = {
   ASC: ">",
   DESC: "<",
+  ASC_NULLS_FIRST: ">",
+  ASC_NULLS_LAST: ">",
+  DESC_NULLS_FIRST: "<",
+  DESC_NULLS_LAST: "<",
 } as const;
 
 export const ORDER_OPS_INVERTED = {
   ASC: "<",
   DESC: ">",
+  ASC_NULLS_FIRST: "<",
+  ASC_NULLS_LAST: "<",
+  DESC_NULLS_FIRST: ">",
+  DESC_NULLS_LAST: ">",
 } as const;
 
 export const ORDER_INVERTED = {
   ASC: "DESC",
   DESC: "ASC",
+  ASC_NULLS_FIRST: "DESC_NULLS_LAST",
+  ASC_NULLS_LAST: "DESC_NULLS_FIRST",
+  DESC_NULLS_FIRST: "ASC_NULLS_LAST",
+  DESC_NULLS_LAST: "ASC_NULLS_FIRST",
 } as const;
 
 export const ID_SELECT: Record<string, string> = {

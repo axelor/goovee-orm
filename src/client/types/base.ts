@@ -60,4 +60,10 @@ export type Options<T, U> = {
   [K in keyof T]: K extends keyof U ? T[K] : never;
 };
 
-export type OrderBy = "ASC" | "DESC";
+export type OrderBy =
+  | "ASC"
+  | "DESC"
+  | "ASC_NULLS_FIRST"
+  | "ASC_NULLS_LAST"
+  | "DESC_NULLS_FIRST"
+  | "DESC_NULLS_LAST";

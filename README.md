@@ -547,7 +547,21 @@ const addresses = await client.address.find({
     },
   },
 });
+
+// Control NULL placement explicitly
+const contacts = await client.contact.find({
+  orderBy: {
+    lastName: "ASC_NULLS_LAST",
+    firstName: "DESC_NULLS_FIRST",
+  },
+});
 ```
+
+Supported values: `"ASC"`, `"DESC"`, `"ASC_NULLS_FIRST"`, `"ASC_NULLS_LAST"`,
+`"DESC_NULLS_FIRST"`, `"DESC_NULLS_LAST"`. Plain `"ASC"`/`"DESC"` use the
+database default (PostgreSQL: `ASC` → NULLS LAST, `DESC` → NULLS FIRST); use
+the explicit variants when you need to pin NULL placement independently of
+sort direction.
 
 #### Pagination
 

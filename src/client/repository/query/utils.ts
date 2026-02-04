@@ -1,8 +1,25 @@
-import { EntityManager, QueryBuilder } from "typeorm";
+import { EntityManager, OrderByCondition, QueryBuilder } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata.js";
 import { parseQuery, ParseResult } from "../../parser";
 import type { Entity, QueryClient, WhereOptions } from "../../types";
 import { OrmRepository } from "../types";
+
+type OrderByValue = OrderByCondition[string];
+
+const SQL_ORDER: Record<string, OrderByValue> = {
+  ASC: "ASC",
+  DESC: "DESC",
+  ASC_NULLS_FIRST: { order: "ASC", nulls: "NULLS FIRST" },
+  ASC_NULLS_LAST: { order: "ASC", nulls: "NULLS LAST" },
+  DESC_NULLS_FIRST: { order: "DESC", nulls: "NULLS FIRST" },
+  DESC_NULLS_LAST: { order: "DESC", nulls: "NULLS LAST" },
+};
+
+export const toSqlOrder = (order: Record<string, string>): OrderByCondition =>
+  Object.entries(order).reduce(
+    (prev, [k, v]) => ({ ...prev, [k]: SQL_ORDER[v] }),
+    {} as OrderByCondition,
+  );
 
 export const relationQuery = (
   manager: EntityManager,
@@ -122,7 +139,7 @@ export const createSelectQuery = <T extends Entity>(
   }
 
   if (where) sq.andWhere(where, params);
-  if (order) sq.orderBy(order);
+  if (order) sq.orderBy(toSqlOrder(order));
 
   return sq;
 };

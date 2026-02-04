@@ -69,4 +69,21 @@ describe("GraphQL schema tests", async () => {
     const schema = buildGraphQLSchema([user]);
     expect(schema.getType("UserType")).toBeDefined();
   });
+
+  it("should have NULLS FIRST/LAST in OrderBy enum", async () => {
+    const user = defineEntity({
+      name: "User",
+      fields: [{ name: "name", type: "String" }],
+    });
+    const schema = buildGraphQLSchema([user]);
+    const orderBy = schema.getType("OrderBy") as any;
+    expect(orderBy).toBeDefined();
+    const values = orderBy.getValues().map((x: any) => x.name);
+    expect(values).toContain("ASC");
+    expect(values).toContain("DESC");
+    expect(values).toContain("ASC_NULLS_FIRST");
+    expect(values).toContain("ASC_NULLS_LAST");
+    expect(values).toContain("DESC_NULLS_FIRST");
+    expect(values).toContain("DESC_NULLS_LAST");
+  });
 });
