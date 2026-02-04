@@ -118,7 +118,7 @@ export const createPostgresContainer = async () => {
       "POSTGRES_MAX_WAL_SENDERS=0",
       // Use tmpfs for faster I/O
       "--tmpfs",
-      "/var/lib/postgresql/data:rw,noexec,nosuid,size=512m",
+      "/var/lib/postgresql:rw,noexec,nosuid,size=512m",
       "-p",
       `${port}:5432`,
       "postgres:alpine",
