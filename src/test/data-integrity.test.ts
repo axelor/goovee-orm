@@ -273,6 +273,43 @@ describe("data integrity tests", async () => {
         }),
       ).rejects.toThrow(/conflicting operations.*cannot remove and update/i);
     });
+
+    it("should allow unlinking and deleting with same version", async () => {
+      const address = await client.address.create({
+        data: {
+          contact: {},
+          street: "Main St",
+        },
+      });
+
+      const tag = await client.addressTag.create({
+        data: {
+          name: "Tag 1",
+          address: {
+            select: { id: address.id },
+          },
+        },
+      });
+
+      // Unlink tag from address
+      await client.address.update({
+        data: {
+          id: address.id,
+          version: address.version,
+          tags: {
+            remove: [tag.id],
+          },
+        },
+        select: { id: true },
+      });
+
+      // Try to delete the tag using its original version
+      // This will fail if unlinking increments the child's version
+      await client.addressTag.delete({
+        id: tag.id,
+        version: tag.version,
+      });
+    });
   });
 
   describe("concurrent modification scenarios", () => {
