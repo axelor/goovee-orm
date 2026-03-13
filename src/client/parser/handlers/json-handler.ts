@@ -104,9 +104,11 @@ export class JsonQueryHandler {
 
     if (type === "decimal") {
       condition = condition.replace(/@/g, "@.double()");
+      condition = condition.replace(/\$(\w+)/g, "$$$1.double()");
     }
-    if (type === "datetime") {
+    if (type === "datetime" || type === "Date" || type === "timestamp") {
       condition = condition.replace(/@/g, "@.datetime()");
+      condition = condition.replace(/\$(\w+)/g, "$$$1.datetime()");
     }
 
     if (op.startsWith("not")) condition = `!(${condition})`;

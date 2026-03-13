@@ -416,7 +416,7 @@ describe("query parser tests", async () => {
         "self.addresses": "self_addresses",
       },
       where:
-        "jsonb_path_exists(self.attrs, '$.name ? (@ == $p0)', jsonb_build_object('p0', cast(:p0 as text))) AND jsonb_path_exists(self_bio.me, '$.some ? (@ == $p1 || @ == $p2 || @ == $p3)', jsonb_build_object('p1', cast(:p1 as integer), 'p2', cast(:p2 as integer), 'p3', cast(:p3 as integer))) AND jsonb_path_exists(self_addresses.props, '$.some ? (@ >= $p4 && @ <= $p5)', jsonb_build_object('p4', cast(:p4 as timestamp), 'p5', cast(:p5 as timestamp)))",
+        "jsonb_path_exists(self.attrs, '$.name ? (@ == $p0)', jsonb_build_object('p0', cast(:p0 as text))) AND jsonb_path_exists(self_bio.me, '$.some ? (@ == $p1 || @ == $p2 || @ == $p3)', jsonb_build_object('p1', cast(:p1 as integer), 'p2', cast(:p2 as integer), 'p3', cast(:p3 as integer))) AND jsonb_path_exists(self_addresses.props, '$.some ? (@.datetime() >= $p4.datetime() && @.datetime() <= $p5.datetime())', jsonb_build_object('p4', cast(:p4 as timestamp), 'p5', cast(:p5 as timestamp)))",
       params: {
         p0: "some",
         p1: 1,
