@@ -9,6 +9,7 @@ import { ParseResult } from "../types";
 import { OrderByProcessor } from "./order-processor";
 import { SelectProcessor } from "./select-processor";
 import { WhereProcessor } from "./where-processor";
+import { cleanResult } from "./util";
 
 export class QueryProcessor {
   private selectProcessor: SelectProcessor;
@@ -90,34 +91,7 @@ export class QueryProcessor {
     };
 
     // Clean up undefined/empty values
-    return this.cleanResult(result);
-  }
-
-  private cleanResult(result: ParseResult): ParseResult {
-    const clean = (v: any): any => {
-      if (v === undefined || v === null) return v;
-      if (v instanceof Date) return v;
-      if (typeof Buffer !== "undefined" && v instanceof Buffer) return v;
-      if (Array.isArray(v)) {
-        const cleaned = v.map(clean).filter((x) => x !== undefined);
-        return cleaned.length === 0 ? undefined : cleaned;
-      }
-      if (typeof v === "object") {
-        if (v.constructor === Object) {
-          const out: Record<string, any> = {};
-          for (const [k, val] of Object.entries(v)) {
-            const cleaned = clean(val);
-            if (cleaned !== undefined) out[k] = cleaned;
-          }
-          return Object.keys(out).length === 0 ? undefined : out;
-        }
-        if (typeof v.toJSON === "function") {
-          return v.toJSON();
-        }
-      }
-      return v;
-    };
-    return (clean(result) || {}) as ParseResult;
+    return cleanResult(result);
   }
 
   static parse(

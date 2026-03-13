@@ -4,6 +4,7 @@ import { JoinHandler } from "../handlers/join-handler";
 import { JsonQueryHandler } from "../handlers/json-handler";
 import { AggregateOptions, ParseResult, QueryClient } from "../types";
 import { WhereProcessor } from "./where-processor";
+import { cleanResult } from "./util";
 
 export class AggregateProcessor {
   private context: ParserContext;
@@ -160,7 +161,7 @@ export class AggregateProcessor {
       skip,
     };
 
-    return this.cleanResult(result);
+    return cleanResult(result);
   }
 
   private processAggregateOperations(
@@ -451,33 +452,6 @@ export class AggregateProcessor {
       le: "<=",
     };
     return operators[operator] || "=";
-  }
-
-  private cleanResult(result: ParseResult): ParseResult {
-    const clean = (v: any): any => {
-      if (v === undefined || v === null) return v;
-      if (v instanceof Date) return v;
-      if (typeof Buffer !== "undefined" && v instanceof Buffer) return v;
-      if (Array.isArray(v)) {
-        const cleaned = v.map(clean).filter((x) => x !== undefined);
-        return cleaned.length === 0 ? undefined : cleaned;
-      }
-      if (typeof v === "object") {
-        if (v.constructor === Object) {
-          const out: Record<string, any> = {};
-          for (const [k, val] of Object.entries(v)) {
-            const cleaned = clean(val);
-            if (cleaned !== undefined) out[k] = cleaned;
-          }
-          return Object.keys(out).length === 0 ? undefined : out;
-        }
-        if (typeof v.toJSON === "function") {
-          return v.toJSON();
-        }
-      }
-      return v;
-    };
-    return (clean(result) || {}) as ParseResult;
   }
 
   static parse(
