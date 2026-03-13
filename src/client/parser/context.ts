@@ -15,10 +15,13 @@ export function acceptWhereCauses(
 
 export function findJsonType(value: any): keyof typeof JSON_CAST_TYPES {
   if (Array.isArray(value)) value = value[0];
+  if (value === null || value === undefined) return "String";
   if (typeof value === "number") return "Int";
   if (typeof value === "boolean") return "Boolean";
-  if (/^(-)?(\d+)(\.\d+)?$/.test(value)) return "Decimal";
-  if (/^(\d{4})-(\d{2})-(\d{2}).*$/.test(value)) return "Date";
+  if (typeof value === "string") {
+    if (/^(-)?(\d+)(\.\d+)?$/.test(value)) return "Decimal";
+    if (/^(\d{4})-(\d{2})-(\d{2}).*$/.test(value)) return "Date";
+  }
   return "String";
 }
 
