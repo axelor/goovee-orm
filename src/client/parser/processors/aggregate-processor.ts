@@ -454,14 +454,30 @@ export class AggregateProcessor {
   }
 
   private cleanResult(result: ParseResult): ParseResult {
-    return JSON.parse(
-      JSON.stringify(result, (k, v) => {
-        if (v === undefined || v === null) return v;
-        if (Array.isArray(v) && v.length === 0) return;
-        if (typeof v === "object" && Object.keys(v).length === 0) return;
-        return v;
-      }),
-    );
+    const clean = (v: any): any => {
+      if (v === undefined || v === null) return v;
+      if (v instanceof Date) return v;
+      if (typeof Buffer !== "undefined" && v instanceof Buffer) return v;
+      if (Array.isArray(v)) {
+        const cleaned = v.map(clean).filter((x) => x !== undefined);
+        return cleaned.length === 0 ? undefined : cleaned;
+      }
+      if (typeof v === "object") {
+        if (v.constructor === Object) {
+          const out: Record<string, any> = {};
+          for (const [k, val] of Object.entries(v)) {
+            const cleaned = clean(val);
+            if (cleaned !== undefined) out[k] = cleaned;
+          }
+          return Object.keys(out).length === 0 ? undefined : out;
+        }
+        if (typeof v.toJSON === "function") {
+          return v.toJSON();
+        }
+      }
+      return v;
+    };
+    return (clean(result) || {}) as ParseResult;
   }
 
   static parse(
