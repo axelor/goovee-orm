@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { BigDecimal } from "../client";
 import { getTestClient } from "./client.utils";
 import { createData, clearData } from "./fixture";
 
@@ -193,6 +194,17 @@ describe("json filter tests", async () => {
     it("eq", async () => {
       expect(await findBySalary({ eq: exact })).toHaveLength(1);
       expect(await findBySalary({ eq: high })).toHaveLength(0);
+    });
+
+    it("infers Decimal from BigDecimal values", async () => {
+      const res = await client.contact.find({
+        where: {
+          attrs: { path: "salary", eq: new BigDecimal(exact) },
+        },
+        select: { id: true },
+      });
+
+      expect(res).toHaveLength(1);
     });
 
     it("ne", async () => {
