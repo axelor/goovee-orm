@@ -4,6 +4,7 @@ import { JoinHandler } from "../handlers/join-handler";
 import { JsonQueryHandler } from "../handlers/json-handler";
 import { AggregateOptions, ParseResult, QueryClient } from "../types";
 import { WhereProcessor } from "./where-processor";
+import { cleanResult } from "./util";
 
 export class AggregateProcessor {
   private context: ParserContext;
@@ -160,7 +161,7 @@ export class AggregateProcessor {
       skip,
     };
 
-    return this.cleanResult(result);
+    return cleanResult(result);
   }
 
   private processAggregateOperations(
@@ -451,17 +452,6 @@ export class AggregateProcessor {
       le: "<=",
     };
     return operators[operator] || "=";
-  }
-
-  private cleanResult(result: ParseResult): ParseResult {
-    return JSON.parse(
-      JSON.stringify(result, (k, v) => {
-        if (v === undefined || v === null) return v;
-        if (Array.isArray(v) && v.length === 0) return;
-        if (typeof v === "object" && Object.keys(v).length === 0) return;
-        return v;
-      }),
-    );
   }
 
   static parse(

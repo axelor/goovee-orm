@@ -9,6 +9,7 @@ import { ParseResult } from "../types";
 import { OrderByProcessor } from "./order-processor";
 import { SelectProcessor } from "./select-processor";
 import { WhereProcessor } from "./where-processor";
+import { cleanResult } from "./util";
 
 export class QueryProcessor {
   private selectProcessor: SelectProcessor;
@@ -90,18 +91,7 @@ export class QueryProcessor {
     };
 
     // Clean up undefined/empty values
-    return this.cleanResult(result);
-  }
-
-  private cleanResult(result: ParseResult): ParseResult {
-    return JSON.parse(
-      JSON.stringify(result, (k, v) => {
-        if (v === undefined || v === null) return v;
-        if (Array.isArray(v) && v.length === 0) return;
-        if (typeof v === "object" && Object.keys(v).length === 0) return;
-        return v;
-      }),
-    );
+    return cleanResult(result);
   }
 
   static parse(
