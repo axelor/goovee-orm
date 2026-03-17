@@ -74,6 +74,7 @@ export class JsonQueryHandler {
   private processJsonCondition(op: string, value: any, type: string) {
     let { vars, params } = this.makeJsonParams(value, type);
     let keys = Object.keys(params);
+    const isLikeOperator = op === "like" || op === "notLike";
 
     let condition: string = "";
     if (op === "eq") condition = `@ == $${keys[0]}`;
@@ -83,7 +84,7 @@ export class JsonQueryHandler {
     if (op === "lt") condition = `@ < $${keys[0]}`;
     if (op === "le") condition = `@ <= $${keys[0]}`;
 
-    if (op === "like" || op == "notLike") {
+    if (isLikeOperator) {
       const p = keys[0];
       const v = params[p];
       const flags = this.context.features?.normalization?.lowerCase
@@ -102,11 +103,15 @@ export class JsonQueryHandler {
       condition = `@ >= $${keys[0]} && @ <= $${keys[1]}`;
     }
 
-    if (type === "decimal") {
+    if (!isLikeOperator && type === "decimal") {
       condition = condition.replace(/@/g, "@.double()");
+      // JSONPath variables are emitted as $pN placeholders, so rewrite all of them symmetrically.
       condition = condition.replace(/\$(\w+)/g, "$$$1.double()");
     }
-    if (type === "datetime" || type === "Date" || type === "timestamp") {
+    if (
+      !isLikeOperator &&
+      (type === "datetime" || type === "Date" || type === "timestamp")
+    ) {
       condition = condition.replace(/@/g, "@.datetime()");
       condition = condition.replace(/\$(\w+)/g, "$$$1.datetime()");
     }

@@ -10,7 +10,8 @@ export const cleanResult = (result: ParseResult): ParseResult => {
       return cleaned.length === 0 ? undefined : cleaned;
     }
     if (typeof v === "object") {
-      if (v.constructor === Object) {
+      const proto = Object.getPrototypeOf(v);
+      if (proto === Object.prototype || proto === null) {
         const out: Record<string, any> = {};
         for (const [k, val] of Object.entries(v)) {
           const cleaned = clean(val);

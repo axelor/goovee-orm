@@ -140,6 +140,27 @@ describe("query parser tests", async () => {
     });
   });
 
+  it("should infer Date instances in json filters", () => {
+    const opts: QueryOptions<Contact> = {
+      where: {
+        attrs: {
+          path: "createdAt",
+          ge: new Date("2020-01-02T00:00:00.000Z"),
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseQuery(client, repo, opts);
+    expect(res).toMatchObject({
+      where:
+        "jsonb_path_exists(self.attrs, '$.createdAt ? (@.datetime() >= $p0.datetime())', jsonb_build_object('p0', cast(:p0 as timestamp)))",
+      params: {
+        p0: new Date("2020-01-02T00:00:00.000Z"),
+      },
+    });
+  });
+
   it("should parse simple `where` options with operators", () => {
     const opts: QueryOptions<Contact> = {
       where: {
@@ -223,6 +244,28 @@ describe("query parser tests", async () => {
         p0: "Mr.",
         p1: "Paris",
         p2: "fr",
+      },
+    });
+  });
+
+  it("should not cast like filters even when a json type is provided", () => {
+    const opts: QueryOptions<Contact> = {
+      where: {
+        attrs: {
+          path: "salary",
+          like: "5%",
+          type: "Decimal",
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseQuery(client, repo, opts);
+    expect(res).toMatchObject({
+      where:
+        `jsonb_path_exists(self.attrs, cast('$.salary ? (@ like_regex "^' || :p0 || '$" )' as jsonpath))`,
+      params: {
+        p0: "5.*",
       },
     });
   });

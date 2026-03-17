@@ -17,6 +17,7 @@ export function acceptWhereCauses(
 export function findJsonType(value: any): keyof typeof JSON_CAST_TYPES {
   if (Array.isArray(value)) value = value[0];
   if (value === null || value === undefined) return "String";
+  if (value instanceof Date) return "Date";
   if (typeof value === "number") return "Int";
   if (typeof value === "bigint") return "Decimal";
   if (typeof value === "boolean") return "Boolean";
