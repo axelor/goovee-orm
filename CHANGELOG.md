@@ -2,7 +2,14 @@
 
 ## [0.0.7] (Unreleased)
 
-TBD
+### 🐛 Bug Fixes
+
+- **JSON Filter Type Inference:** Improved JSON path type inference to distinguish integer-like strings from decimal strings, infer `Decimal` from `BigDecimal` instances, and avoid false coercion for non-string values.
+- **JSON Filter Casting and Date Handling:** Fixed JSON path comparison casting for `between` and `in` style operators, cast both operands consistently to avoid type-mismatch errors, and preserve `Date` values during parser cleanup.
+- **Safe JSON Path Validation:** Hardened JSON path handling by parsing and validating path segments before SQL generation, while preserving supported array paths such as `tags[*].color`.
+- **BigDecimal Precision Guard:** Added a maximum precision limit for `BigDecimal` parsing to avoid pathological oversized inputs causing excessive resource usage.
+- **LOB Read Limit:** Added a default maximum size limit for `readLob` to prevent memory exhaustion when loading large objects.
+- **Protected Field Validation:** Reject writes to schema fields marked `internal`, and reject updates to fields marked `readonly`.
 
 ## [0.0.6] (2025-11-17)
 
