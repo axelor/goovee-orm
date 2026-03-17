@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.8] (Unreleased)
+
+TBD
+
 ## [0.0.7] (2026-03-17)
 
 ### 🐛 Bug Fixes
