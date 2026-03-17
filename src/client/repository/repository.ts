@@ -2,6 +2,7 @@ import { DeepPartial, EntityMetadata } from "typeorm";
 import { RelationMetadata } from "typeorm/metadata/RelationMetadata.js";
 import { resolveLazy } from "../fields/utils";
 import { parseAggregate, parseQuery } from "../parser";
+import type { EntityOptions, PropertyOptions } from "../../schema/types";
 import type {
   AggregateOptions,
   AggregatePayload,
@@ -32,6 +33,39 @@ import {
 import { OrmRepository } from "./types";
 import { isValueSame, valueOrID } from "./utils";
 import { getSimpleSelect } from "../parser/processors/select-processor";
+
+function getProtectedFields(
+  client: QueryClient,
+  entityName: string,
+  mode: "create" | "update",
+): Set<string> {
+  const schema: EntityOptions[] = (client as any).__schema ?? [];
+  const entity = schema.find((e) => e.name === entityName);
+  if (!entity?.fields) return new Set();
+  return new Set(
+    entity.fields
+      .filter((f: PropertyOptions) => {
+        if (f.internal) return true;
+        if (mode === "update" && "readonly" in f && f.readonly) return true;
+        return false;
+      })
+      .map((f: PropertyOptions) => f.name),
+  );
+}
+
+function rejectProtectedFields(
+  fields: string[],
+  protectedFields: Set<string>,
+  entityName: string,
+): void {
+  for (const name of fields) {
+    if (protectedFields.has(name)) {
+      throw new Error(
+        `Field '${name}' on ${entityName} is protected and cannot be set`,
+      );
+    }
+  }
+}
 
 class RelationHandlers {
   static async handleReference(
@@ -253,6 +287,9 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     meta: EntityMetadata,
     data: CreateArgs<T>,
   ) {
+    const protectedFields = getProtectedFields(this.#client, meta.name, "create");
+    rejectProtectedFields(Object.keys(data), protectedFields, meta.name);
+
     const attrs: Record<string, any> = {};
 
     // first handle single value fields
@@ -392,6 +429,9 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     const { id, version, ...rest } = data;
 
     const meta = repo.metadata;
+    const protectedFields = getProtectedFields(this.#client, meta.name, "update");
+    rejectProtectedFields(Object.keys(rest), protectedFields, meta.name);
+
     const attrs: Record<string, any> = {};
 
     // load existing single value fields
