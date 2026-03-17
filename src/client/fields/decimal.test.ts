@@ -46,6 +46,12 @@ describe("BigDecimal", () => {
         "Invalid number format",
       );
     });
+
+    it("should reject oversized precision", () => {
+      expect(() => new BigDecimal("1".repeat(1001))).toThrow(
+        "exceeds maximum",
+      );
+    });
   });
 
   describe("Static Constants", () => {

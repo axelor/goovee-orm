@@ -11,6 +11,9 @@ export enum RoundingMode {
   UNNECESSARY = "UNNECESSARY",
 }
 
+/** Maximum number of digits allowed in a BigDecimal value */
+const MAX_DIGITS = 1000;
+
 export class BigDecimal {
   #value: bigint;
   #scale: number;
@@ -41,6 +44,13 @@ export class BigDecimal {
       const integerPart = parts[0].replace(/^-/, "");
       const decimalPart = parts[1] || "";
       const isNegative = value.startsWith("-");
+
+      const totalDigits = integerPart.length + decimalPart.length;
+      if (totalDigits > MAX_DIGITS) {
+        throw new Error(
+          `BigDecimal precision (${totalDigits} digits) exceeds maximum (${MAX_DIGITS})`,
+        );
+      }
 
       this.#scale = decimalPart.length;
       const combined = integerPart + decimalPart;
