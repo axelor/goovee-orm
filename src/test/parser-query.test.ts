@@ -182,6 +182,41 @@ describe("query parser tests", async () => {
     });
   });
 
+  it("should parse array json paths safely", () => {
+    const opts: QueryOptions<Contact> = {
+      where: {
+        attrs: {
+          path: "tags[*].color",
+          eq: "red",
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseQuery(client, repo, opts);
+    expect(res).toMatchObject({
+      where:
+        "jsonb_path_exists(self.attrs, '$.tags[*].color ? (@ == $p0)', jsonb_build_object('p0', cast(:p0 as text)))",
+      params: {
+        p0: "red",
+      },
+    });
+  });
+
+  it("should reject invalid json paths", () => {
+    const opts: QueryOptions<Contact> = {
+      where: {
+        attrs: {
+          path: "tags[*].color')) OR true --",
+          eq: "red",
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    expect(() => parseQuery(client, repo, opts)).toThrow("Invalid JSON path");
+  });
+
   it("should parse simple `where` options with operators", () => {
     const opts: QueryOptions<Contact> = {
       where: {

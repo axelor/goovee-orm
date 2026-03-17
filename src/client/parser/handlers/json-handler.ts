@@ -7,6 +7,78 @@ import {
 import { JsonWhere, JsonOrderBy, OrderBy, WhereResult } from "../types";
 import { InvalidJsonFilterError } from "../errors";
 
+type JsonPathSegment =
+  | { kind: "field"; value: string }
+  | { kind: "index"; value: string }
+  | { kind: "wildcard" };
+
+function parseJsonPath(path: string): JsonPathSegment[] {
+  const segments: JsonPathSegment[] = [];
+  let index = 0;
+
+  while (index < path.length) {
+    const field = path.slice(index).match(/^[a-zA-Z_][a-zA-Z0-9_]*/)?.[0];
+    if (!field) {
+      throw new Error(`Invalid JSON path: ${path}`);
+    }
+
+    segments.push({ kind: "field", value: field });
+    index += field.length;
+
+    while (path[index] === "[") {
+      const close = path.indexOf("]", index);
+      if (close === -1) {
+        throw new Error(`Invalid JSON path: ${path}`);
+      }
+
+      const token = path.slice(index + 1, close);
+      if (token === "*") {
+        segments.push({ kind: "wildcard" });
+      } else if (/^\d+$/.test(token)) {
+        segments.push({ kind: "index", value: token });
+      } else {
+        throw new Error(`Invalid JSON path: ${path}`);
+      }
+
+      index = close + 1;
+    }
+
+    if (index === path.length) {
+      break;
+    }
+
+    if (path[index] !== ".") {
+      throw new Error(`Invalid JSON path: ${path}`);
+    }
+
+    index += 1;
+  }
+
+  return segments;
+}
+
+function buildJsonPath(segments: JsonPathSegment[]): string {
+  return segments.reduce((path, segment) => {
+    if (segment.kind === "field") return `${path}.${segment.value}`;
+    if (segment.kind === "index") return `${path}[${segment.value}]`;
+    return `${path}[*]`;
+  }, "$");
+}
+
+function buildJsonExtractArgs(
+  segments: JsonPathSegment[],
+  rawPath: string,
+): string {
+  const args = segments.map((segment) => {
+    if (segment.kind === "wildcard") {
+      throw new Error(`Invalid JSON path for orderBy: ${rawPath}`);
+    }
+    return `'${segment.value}'`;
+  });
+
+  return args.join(", ");
+}
+
 export class JsonQueryHandler {
   constructor(private context: ParserContext) {}
 
@@ -14,6 +86,7 @@ export class JsonQueryHandler {
     const where: WhereResult[] = [];
 
     let { path, ...rest } = opts;
+    const segments = parseJsonPath(path);
     let op: string | undefined;
     let value: any;
 
@@ -30,9 +103,10 @@ export class JsonQueryHandler {
       value,
       type,
     );
+    const jsonPath = buildJsonPath(segments);
     const expr = vars
-      ? `jsonb_path_exists(${prefix}, '$.${path} ? (${condition})', ${vars})`
-      : `jsonb_path_exists(${prefix}, cast('$.${path} ? (${condition})' as jsonpath))`;
+      ? `jsonb_path_exists(${prefix}, '${jsonPath} ? (${condition})', ${vars})`
+      : `jsonb_path_exists(${prefix}, cast('${jsonPath} ? (${condition})' as jsonpath))`;
 
     const w: WhereResult = { where: expr, params, joins: {} };
     where.push(w);
@@ -46,8 +120,8 @@ export class JsonQueryHandler {
   ): Record<string, OrderBy> {
     const order: Record<string, OrderBy> = {};
     for (const opt of opts) {
-      const path = opt.path.split(/\./g).map((x) => `'${x}'`);
-      const args = path.join(", ");
+      const segments = parseJsonPath(opt.path);
+      const args = buildJsonExtractArgs(segments, opt.path);
       const type = findJsonCastType(opt.type);
       const expr = `cast(jsonb_extract_path_text(${prefix}, ${args}) as ${type})`;
       order[expr] = opt.order;
