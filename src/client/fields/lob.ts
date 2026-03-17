@@ -337,7 +337,14 @@ export const createLob = async (em: EntityManager, buffer: Buffer) => {
   }
 };
 
-export const readLob = async (em: EntityManager, oid: number) => {
+/** Default max LOB read size: 100 MB */
+const DEFAULT_MAX_LOB_SIZE = 100 * 1024 * 1024;
+
+export const readLob = async (
+  em: EntityManager,
+  oid: number,
+  maxSize: number = DEFAULT_MAX_LOB_SIZE,
+) => {
   if (oid === null || oid === undefined) return null;
 
   if (!em.queryRunner?.isTransactionActive) {
@@ -351,7 +358,12 @@ export const readLob = async (em: EntityManager, oid: number) => {
   const lob = await lm.open(oid);
 
   try {
-    const size = BigInt(await lob.size());
+    const size = Number(await lob.size());
+    if (size > maxSize) {
+      throw new Error(
+        `LOB size (${size} bytes) exceeds maximum allowed size (${maxSize} bytes)`,
+      );
+    }
     let buffer = await lob.read(1024);
     while (buffer.length < size) {
       const next = await lob.read(1024);

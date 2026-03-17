@@ -3,7 +3,7 @@ import path from "node:path";
 import { Repository } from "typeorm";
 
 import { describe, expect, it } from "vitest";
-import { LargeObjectManager } from "../client/fields/lob";
+import { LargeObjectManager, readLob } from "../client/fields/lob";
 import { getTestClient } from "./client.utils";
 import { Contact } from "./db/models";
 
@@ -149,6 +149,27 @@ describe("Lob tests", async () => {
       });
 
       expect((await updated.image)?.toString()).toBe("World!!!");
+    });
+  });
+
+  it("should reject reads above max lob size", async () => {
+    await client.$transaction(async (c) => {
+      const repo = (c.contact as any).unwrap();
+      const em = repo.manager;
+
+      const lm = new LargeObjectManager(em);
+      const oid = await lm.create();
+      const lob = await lm.open(oid);
+
+      try {
+        await lob.write(Buffer.from("Hello World!!", "ascii"));
+      } finally {
+        await lob.close();
+      }
+
+      await expect(readLob(em, oid, 4)).rejects.toThrow(
+        "exceeds maximum allowed size",
+      );
     });
   });
 });
