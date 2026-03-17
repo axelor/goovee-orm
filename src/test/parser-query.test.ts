@@ -161,6 +161,27 @@ describe("query parser tests", async () => {
     });
   });
 
+  it('should infer integer json filters from numeric strings like "42"', () => {
+    const opts: QueryOptions<Contact> = {
+      where: {
+        attrs: {
+          path: "age",
+          eq: "42",
+        },
+      },
+    };
+
+    const repo = getContactRepo();
+    const res = parseQuery(client, repo, opts);
+    expect(res).toMatchObject({
+      where:
+        "jsonb_path_exists(self.attrs, '$.age ? (@ == $p0)', jsonb_build_object('p0', cast(:p0 as integer)))",
+      params: {
+        p0: "42",
+      },
+    });
+  });
+
   it("should parse simple `where` options with operators", () => {
     const opts: QueryOptions<Contact> = {
       where: {

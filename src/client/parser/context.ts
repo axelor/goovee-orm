@@ -23,7 +23,8 @@ export function findJsonType(value: any): keyof typeof JSON_CAST_TYPES {
   if (typeof value === "boolean") return "Boolean";
   if (value instanceof BigDecimal) return "Decimal";
   if (typeof value === "string") {
-    if (/^(-)?(\d+)(\.\d+)?$/.test(value)) return "Decimal";
+    if (/^-?\d+$/.test(value)) return "Int";
+    if (/^-?\d+\.\d+$/.test(value)) return "Decimal";
     if (/^(\d{4})-(\d{2})-(\d{2}).*$/.test(value)) return "Date";
   }
   return "String";
