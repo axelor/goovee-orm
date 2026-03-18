@@ -93,8 +93,10 @@ export class ParserContext {
 
   isStringField(repo: Repository<any>, name: string): boolean {
     if (!this.schema) return false;
+    const ns = repo.metadata.connection.namingStrategy;
     const schemaDef = this.schema.find(
-      (x) => x.table === repo.metadata.tableName,
+      (x) =>
+        ns.tableName(x.name, x.table) === repo.metadata.tableNameWithoutPrefix,
     );
     const fieldDef = schemaDef?.fields?.find((x) => x.name === name);
     return fieldDef?.type === "String";
