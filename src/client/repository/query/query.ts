@@ -94,7 +94,7 @@ const doQuery = async (
       );
     }
 
-    const rr = repo.manager.getRepository(relation.inverseEntityMetadata.name);
+    const rr = repo.manager.getRepository(relation.inverseEntityMetadata.target);
     const nq = relationQuery(repo.manager, relation)
       .clone()
       .setParameter("__parents", ids);
