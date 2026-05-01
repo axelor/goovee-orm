@@ -21,7 +21,11 @@ export const createFile = (outDir: string, fileName: string, content: any) => {
   return fileName;
 };
 
-const createClient = (schema: EntityOptions[], names: string[]) => {
+const createClient = (
+  schema: EntityOptions[],
+  names: string[],
+  extension: string,
+) => {
   const file = new CodeFile("index.ts");
   const pkgName = "@goovee/orm";
   file.write(`\
@@ -43,7 +47,7 @@ import {
     file.write(`${name},`);
     file.write("\n");
   }
-  file.write('} from "../models";');
+  file.write(`} from "../models/index${extension}";`);
   file.write("\n");
   file.write("\n");
 
@@ -86,9 +90,14 @@ export function createSchema(): GraphQLSchema {
   return file.toJSON();
 };
 
-export const generateClient = (schemaDirs: string[], outDir: string) => {
+export const generateClient = (
+  schemaDirs: string[],
+  outDir: string,
+  options?: { transpile?: boolean },
+) => {
   const modelsDir = path.join(outDir, "models");
   const clientDir = path.join(outDir, "client");
+  const extension = options?.transpile ? ".js" : "";
 
   const schema = schemaDirs.flatMap(readSchema);
   const files: string[] = [];
@@ -103,9 +112,11 @@ export const generateClient = (schemaDirs: string[], outDir: string) => {
     visited.add(name);
   }
 
-  files.push(...generateSchema(modelsDir, { schema, naming: "goovee" }));
+  files.push(
+    ...generateSchema(modelsDir, { schema, naming: "goovee", extension }),
+  );
 
-  createFile(clientDir, "index.ts", createClient(schema, names));
+  createFile(clientDir, "index.ts", createClient(schema, names, extension));
 
   files.push(path.join(clientDir, "index.ts"));
 
@@ -146,7 +157,7 @@ const TS_MODULE_TYPES: Record<string, ts.ModuleKind> = {
   nodenext: ts.ModuleKind.NodeNext,
 };
 
-function prepateCompilerOptions(options?: TranspileConfig) {
+function prepareCompilerOptions(options?: TranspileConfig) {
   const cfgFile = ts.findConfigFile(".", ts.sys.fileExists, "tsconfig.json");
   const cfg = cfgFile
     ? ts.readConfigFile(cfgFile, ts.sys.readFile).config || {}
@@ -166,7 +177,7 @@ function prepateCompilerOptions(options?: TranspileConfig) {
 }
 
 export const transpileClient = (files: string[], options?: TranspileConfig) => {
-  const opts = prepateCompilerOptions(options);
+  const opts = prepareCompilerOptions(options);
   const outputFiles: string[] = [];
 
   const filePaths = files.map((x) => path.resolve(x));

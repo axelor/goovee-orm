@@ -1,9 +1,27 @@
 import fs from "node:fs";
+import path from "node:path";
 
 import { Command } from "commander";
 
 import { generateClient, transpileClient } from "../../client/generator";
+import type { TranspileConfig } from "../../client/types";
 import { expandConfig, loadConfig } from "../config";
+
+export function buildPackageJson(
+  transpile: boolean | TranspileConfig,
+): Record<string, unknown> {
+  const opts =
+    typeof transpile === "object" && transpile !== null ? transpile : {};
+  return {
+    name: opts.packageName ?? "@goovee/generated",
+    version: "1.0.0",
+    type: opts.module === "commonjs" ? "commonjs" : "module",
+    exports: {
+      "./models": "./models/index.js",
+      "./client": "./client/index.js",
+    },
+  };
+}
 
 export const generate = new Command()
   .name("generate")
@@ -29,7 +47,9 @@ export const generate = new Command()
     }
 
     // generate client
-    const files = generateClient(dirs, outDir);
+    const files = generateClient(dirs, outDir, {
+      transpile: !!schema.transpile,
+    });
 
     // transpile client?
     if (schema?.transpile) {
@@ -41,5 +61,9 @@ export const generate = new Command()
       for (const file of files) {
         fs.rmSync(file, { force: true });
       }
+      fs.writeFileSync(
+        path.join(outDir, "package.json"),
+        JSON.stringify(buildPackageJson(schema.transpile), null, 2) + "\n",
+      );
     }
   });

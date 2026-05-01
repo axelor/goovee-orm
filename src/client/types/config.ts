@@ -17,6 +17,12 @@ export type TranspileConfig = {
    * Defaults to `esnext`
    */
   module?: "commonjs" | "esnext";
+
+  /**
+   * Package name written into the generated `package.json`.
+   * Defaults to `@goovee/generated`.
+   */
+  packageName?: string;
 };
 
 /**

@@ -177,7 +177,8 @@ class FieldGenerator<P extends PropertyOptions = PropertyOptions>
 class EnumFieldGenerator extends FieldGenerator<EnumProperty> {
   protected get actualType() {
     const { enumType } = this.options;
-    return new ImportName(enumType, `./${enumType}`);
+    const ext = this.entity.config.extension ?? "";
+    return new ImportName(enumType, `./${enumType}${ext}`);
   }
 
   protected decorators(options: EnumProperty) {
@@ -232,7 +233,8 @@ class RelationalField<
   protected get actualType() {
     const { type, target } = this.options;
     const collection = type.endsWith("ToMany");
-    return new RelationImportName(collection, target, `./${target}`);
+    const ext = this.entity.config.extension ?? "";
+    return new RelationImportName(collection, target, `./${target}${ext}`);
   }
   protected get inverseRelation() {
     const { name, type, target } = this.options;
@@ -409,6 +411,11 @@ class EnumGenerator implements CodeGenerator {
 export type GeneratorConfig = {
   schema: EntityOptions[];
   naming?: "goovee" | "default";
+  /**
+   * Extension suffix to append to relative import specifiers (e.g. `.js`).
+   * Required for ESM/NodeNext consumers; leave empty for raw `.ts` consumption.
+   */
+  extension?: string;
 };
 
 class EntityGenerator implements CodeGenerator {
@@ -459,7 +466,8 @@ class EntityGenerator implements CodeGenerator {
 
   private get extends() {
     const name = this.options.extends;
-    if (name && name !== this.name) return new ImportName(name, `./${name}`);
+    const ext = this.config.extension ?? "";
+    if (name && name !== this.name) return new ImportName(name, `./${name}${ext}`);
   }
 
   private get implements() {
@@ -468,7 +476,8 @@ class EntityGenerator implements CodeGenerator {
       if (typeof types === "string") types = [types];
       const filtered = types.filter((name: string) => name !== this.name);
       if (filtered.length === 0) return;
-      return filtered.map((name: string) => new ImportName(name, `./${name}`));
+      const ext = this.config.extension ?? "";
+      return filtered.map((name: string) => new ImportName(name, `./${name}${ext}`));
     }
   }
 
@@ -528,9 +537,11 @@ class EntityGenerator implements CodeGenerator {
 
 class IndexGenerator implements CodeGenerator {
   private names;
+  private extension;
 
-  constructor(names: string[]) {
+  constructor(names: string[], extension: string) {
     this.names = names;
+    this.extension = extension;
   }
 
   get name() {
@@ -541,7 +552,7 @@ class IndexGenerator implements CodeGenerator {
     return {
       emit: (file) => {
         for (const name of this.names) {
-          file.write(`export { ${name} } from "./${name}";`);
+          file.write(`export { ${name} } from "./${name}${this.extension}";`);
           file.write("\n");
         }
       },
@@ -583,8 +594,12 @@ const generateEntity = (
   return save(outDir, type);
 };
 
-const generateIndex = (outDir: string, names: string[]) => {
-  const type = new IndexGenerator(names);
+const generateIndex = (
+  outDir: string,
+  names: string[],
+  extension: string,
+) => {
+  const type = new IndexGenerator(names, extension);
   return save(outDir, type);
 };
 
@@ -693,7 +708,7 @@ export const generateSchema = (outDir: string, config: GeneratorConfig) => {
   const names = files
     .map((x) => path.basename(x))
     .map((x) => x.replace(".ts", ""));
-  files.push(generateIndex(outDir, names));
+  files.push(generateIndex(outDir, names, config.extension ?? ""));
 
   return files;
 };
