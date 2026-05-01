@@ -110,7 +110,53 @@ Common field options:
 - `index`: Create database index
 - `nullable`: Allow null values
 
-Then you can generate ORM config using: `npx goovee generate`. Once executed, this CLI will generate a class for each model defined in the project with the fields defined. It will also generate the global client of the application which should be used to access data. All generated code will be in the folder goovee/.generated.
+Then you can generate ORM config using: `npx goovee generate`. Once executed, this CLI will generate a class for each model defined in the project with the fields defined. It will also generate the global client of the application which should be used to access data. All generated code will be in the folder `goovee/.generated` by default, or as configured by `outDir`.
+
+### Code Generation Configuration
+
+Configure `transpile` to generate code as an external package (prevents bundler mangling in Next.js):
+
+Configure `transpile` in `goovee.config.json`:
+
+```json
+{
+  "schema": {
+    "outDir": "node_modules/@goovee/generated",
+    "transpile": true
+  }
+}
+```
+
+Or with a custom package name (for monorepo):
+
+```json
+{
+  "schema": {
+    "outDir": "packages/db",
+    "transpile": { "packageName": "@myorg/db" }
+  }
+}
+```
+
+Then configure Next.js to skip mangling:
+
+```js
+// next.config.mjs
+const nextConfig = {
+  serverExternalPackages: ["@goovee/generated"], // or your custom package name
+};
+export default nextConfig;
+```
+
+For monorepo workspaces, add to your app's `package.json`:
+
+```json
+{
+  "dependencies": {
+    "@myorg/db": "workspace:*"
+  }
+}
+```
 
 Then, you need to create a client getter function. This should be done once in the project in an index file at the root of goovee folder to be used later for data access or modification in the application.
 
