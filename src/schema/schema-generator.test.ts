@@ -624,6 +624,38 @@ describe("schema generator tests", () => {
     expect(code).toBe(expectedDecimalsCode);
   });
 
+  it("should append extension to relative import specifiers when configured", () => {
+    generateSchema(outDir, {
+      schema,
+      naming: "goovee",
+      extension: ".js",
+    });
+    const code = fs.readFileSync(path.join(outDir, "Contact.ts"), {
+      encoding: "utf-8",
+    });
+    expect(code).toContain('from "./AuditableModel.js"');
+    expect(code).toContain('from "./Title.js"');
+    expect(code).toContain('from "./ContactType.js"');
+    expect(code).not.toMatch(/from "\.\/[A-Z][A-Za-z]*"/);
+
+    const indexCode = fs.readFileSync(path.join(outDir, "index.ts"), {
+      encoding: "utf-8",
+    });
+    expect(indexCode).toContain('from "./Contact.js"');
+  });
+
+  it("should emit extensionless imports when no extension is configured", () => {
+    generateSchema(outDir, {
+      schema,
+      naming: "goovee",
+    });
+    const code = fs.readFileSync(path.join(outDir, "Contact.ts"), {
+      encoding: "utf-8",
+    });
+    expect(code).toContain('from "./AuditableModel"');
+    expect(code).not.toMatch(/from "\.\/[A-Z][A-Za-z]*\.js"/);
+  });
+
   it("should generate non-auditable entity extending Model instead of AuditableModel", () => {
     generateSchema(outDir, {
       schema,
