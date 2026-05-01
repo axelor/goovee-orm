@@ -45,7 +45,10 @@ export class CodeFile {
     const iw = new CodeWriter();
     const tw = new CodeWriter();
 
+    const selfName = path.basename(this.fileName, path.extname(this.fileName));
     for (const [module, names] of Object.entries(this.imports)) {
+      const moduleName = path.basename(module, path.extname(module));
+      if (module.startsWith("./") && moduleName === selfName) continue;
       iw.write(`import { ${[...names].join(", ")} } from "${module}";`);
       iw.write("\n");
     }
