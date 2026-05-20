@@ -89,7 +89,7 @@ export type BulkSetArg<T> =
       : T
     : T extends Entity
       ? { id: ID | null }
-      : T;
+      : LeafArg<T>;
 
 export type BulkSetOptions<
   T extends Entity,
