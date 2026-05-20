@@ -139,4 +139,69 @@ describe("client BigDecimal tests", async () => {
     expect(gtZeroResults.map((r) => r.code)).toContain("P1");
     expect(gtZeroResults.map((r) => r.code)).not.toContain("Z1");
   });
+
+  it("should accept string, number, bigint, and BigDecimal and null values in update for BigDecimal fields", async () => {
+    const country = await client.country.create({
+      data: {
+        code: "UP",
+        name: "Update Test",
+        population: "100.00",
+      },
+    });
+
+    // Update with string
+    let updated = await client.country.update({
+      data: {
+        id: country.id,
+        version: country.version,
+        population: "200.00",
+      },
+      select: { population: true },
+    });
+    expect(updated.population?.toString()).toBe("200.00");
+
+    // Update with number
+    updated = await client.country.update({
+      data: {
+        id: country.id,
+        version: updated.version,
+        population: 300.5,
+      },
+      select: { population: true },
+    });
+    expect(updated.population?.toString()).toBe("300.5");
+
+    // Update with bigint
+    updated = await client.country.update({
+      data: {
+        id: country.id,
+        version: updated.version,
+        population: 400n,
+      },
+      select: { population: true },
+    });
+    expect(updated.population?.toString()).toBe("400");
+
+    // Update with BigDecimal instance
+    updated = await client.country.update({
+      data: {
+        id: country.id,
+        version: updated.version,
+        population: new BigDecimal("500.25"),
+      },
+      select: { population: true },
+    });
+    expect(updated.population?.toString()).toBe("500.25");
+
+    // Update with null
+    updated = await client.country.update({
+      data: {
+        id: country.id,
+        version: updated.version,
+        population: null,
+      },
+      select: { population: true },
+    });
+    expect(updated.population).toBeNull();
+  });
 });

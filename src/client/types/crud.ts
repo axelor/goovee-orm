@@ -18,6 +18,10 @@ interface NestedCreateManyArg<T extends Entity> {
 
 type AllowNull<T> = T extends undefined ? T | null : T;
 
+type LeafArg<T> = T extends BigDecimal
+  ? AllowNull<string | number | bigint | T>
+  : AllowNull<T>;
+
 export type CreateArg<T> =
   T extends Array<infer P>
     ? P extends Entity
@@ -25,9 +29,7 @@ export type CreateArg<T> =
       : T
     : T extends Entity
       ? NestedCreateArg<T>
-      : T extends BigDecimal
-        ? AllowNull<string | number | bigint | T>
-        : AllowNull<T>;
+      : LeafArg<T>;
 
 export type CreateArgs<T extends Entity> = {
   [K in keyof T]: CreateArg<T[K]>;
@@ -58,7 +60,7 @@ export type UpdateArg<T> =
       : T
     : T extends Entity
       ? NestedUpdateArg<T>
-      : AllowNull<T>;
+      : LeafArg<T>;
 
 export type UpdateArgs<T extends Entity> = InputIdentity<T> & {
   [K in keyof T]?: UpdateArg<T[K]>;
@@ -87,7 +89,7 @@ export type BulkSetArg<T> =
       : T
     : T extends Entity
       ? { id: ID | null }
-      : T;
+      : LeafArg<T>;
 
 export type BulkSetOptions<
   T extends Entity,

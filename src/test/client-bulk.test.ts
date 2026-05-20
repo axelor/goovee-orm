@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BigDecimal } from "../client";
 import { getTestClient } from "./client.utils";
 import { createData } from "./fixture";
 
@@ -264,6 +265,77 @@ describe("client bulk operations tests", async () => {
 
     expect(result).toBeDefined();
     expect(result.length).toBe(0);
+  });
+
+  it("should bulk update with string, number, bigint, BigDecimal, and null values for BigDecimal fields", async () => {
+    await client.country.create({
+      data: { code: "BU", name: "Bulk Update Test", population: "100.00" },
+    });
+
+    // Bulk update with string
+    let updated = await client.country.updateAll({
+      set: { population: "200.50" },
+      where: { code: "BU" },
+    });
+    expect(updated).toBe(1);
+
+    let result = await client.country.findOne({
+      where: { code: "BU" },
+      select: { population: true },
+    });
+    expect(result?.population?.toString()).toBe("200.50");
+
+    // Bulk update with number
+    updated = await client.country.updateAll({
+      set: { population: 300.75 },
+      where: { code: "BU" },
+    });
+    expect(updated).toBe(1);
+
+    result = await client.country.findOne({
+      where: { code: "BU" },
+      select: { population: true },
+    });
+    expect(result?.population?.toString()).toBe("300.75");
+
+    // Bulk update with bigint
+    updated = await client.country.updateAll({
+      set: { population: 400n },
+      where: { code: "BU" },
+    });
+    expect(updated).toBe(1);
+
+    result = await client.country.findOne({
+      where: { code: "BU" },
+      select: { population: true },
+    });
+    expect(result?.population?.toString()).toBe("400");
+
+    // Bulk update with BigDecimal instance
+    updated = await client.country.updateAll({
+      set: { population: new BigDecimal("500.25") },
+      where: { code: "BU" },
+    });
+    expect(updated).toBe(1);
+
+    result = await client.country.findOne({
+      where: { code: "BU" },
+      select: { population: true },
+    });
+    expect(result?.population?.toString()).toBe("500.25");
+
+    // Bulk update with null
+    updated = await client.country.updateAll({
+      set: { population: null },
+      where: { code: "BU" },
+    });
+    expect(updated).toBe(1);
+
+    result = await client.country.findOne({
+      where: { code: "BU" },
+      select: { population: true },
+    });
+    expect(result?.population).toBeNull();
   });
 
   it("should auto-set timestamps on bulk create", async () => {
