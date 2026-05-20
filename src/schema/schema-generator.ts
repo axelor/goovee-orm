@@ -458,15 +458,17 @@ class EntityGenerator implements CodeGenerator {
   }
 
   private get extends() {
-    let name = this.options.extends;
-    if (name) return new ImportName(name, `./${name}`);
+    const name = this.options.extends;
+    if (name && name !== this.name) return new ImportName(name, `./${name}`);
   }
 
   private get implements() {
     let types = this.options.implements;
     if (types) {
       if (typeof types === "string") types = [types];
-      return types.map((name: string) => new ImportName(name, `./${name}`));
+      const filtered = types.filter((name: string) => name !== this.name);
+      if (filtered.length === 0) return;
+      return filtered.map((name: string) => new ImportName(name, `./${name}`));
     }
   }
 

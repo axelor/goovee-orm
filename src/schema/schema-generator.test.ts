@@ -634,4 +634,31 @@ describe("schema generator tests", () => {
     });
     expect(code).toBe(expectedNonAuditableCode);
   });
+
+  it("should not emit self-references for extends/implements matching the entity name", () => {
+    const SelfRef = defineEntity({
+      name: "SelfRef",
+      auditable: false,
+      extends: "SelfRef",
+      implements: ["SelfRef", "Auditable"],
+      fields: [
+        {
+          name: "label",
+          type: "String",
+          required: true,
+        },
+      ],
+    });
+
+    generateSchema(outDir, { schema: [SelfRef] });
+    const code = fs.readFileSync(path.join(outDir, "SelfRef.ts"), {
+      encoding: "utf-8",
+    });
+
+    expect(code).not.toMatch(/from "\.\/SelfRef"/);
+    expect(code).not.toMatch(/extends\s+SelfRef\b/);
+    expect(code).not.toMatch(/implements[^{]*\bSelfRef\b/);
+    expect(code).toMatch(/implements\s+Auditable\b/);
+    expect(code).toMatch(/from "\.\/Auditable"/);
+  });
 });
