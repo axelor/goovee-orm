@@ -58,7 +58,9 @@ export type UpdateArg<T> =
       : T
     : T extends Entity
       ? NestedUpdateArg<T>
-      : AllowNull<T>;
+      : T extends BigDecimal
+        ? AllowNull<string | number | bigint | T>
+        : AllowNull<T>;
 
 export type UpdateArgs<T extends Entity> = InputIdentity<T> & {
   [K in keyof T]?: UpdateArg<T[K]>;
