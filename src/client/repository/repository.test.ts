@@ -7,7 +7,17 @@ describe("EntityRepository protected field guards", () => {
     ({
       metadata: {
         name: "Thing",
+        tableName: "thing",
+        tableNameWithoutPrefix: "thing",
         findRelationWithPropertyPath: () => null,
+        connection: {
+          namingStrategy: {
+            tableName: (
+              targetName: string,
+              userSpecifiedName: string | undefined,
+            ) => userSpecifiedName ?? targetName.toLowerCase(),
+          },
+        },
       },
       create: vi.fn(),
       save: vi.fn(),
@@ -19,6 +29,7 @@ describe("EntityRepository protected field guards", () => {
       __schema: [
         {
           name: "Thing",
+          table: "thing",
           fields: [
             { name: "secret", type: "String", internal: true },
             { name: "auditStamp", type: "DateTime", readonly: true },
