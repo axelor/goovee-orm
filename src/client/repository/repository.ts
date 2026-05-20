@@ -35,12 +35,16 @@ import { isValueSame, valueOrID } from "./utils";
 import { getSimpleSelect } from "../parser/processors/select-processor";
 
 function getProtectedFields(
+  repo: OrmRepository<any>,
   client: QueryClient,
-  entityName: string,
   mode: "create" | "update",
 ): Set<string> {
+  const ns = repo.metadata.connection.namingStrategy;
   const schema: EntityOptions[] = (client as any).__schema ?? [];
-  const entity = schema.find((e) => e.name === entityName);
+  const entity = schema.find(
+    (e) =>
+      ns.tableName(e.name, e.table) === repo.metadata.tableNameWithoutPrefix,
+  );
   if (!entity?.fields) return new Set();
   return new Set(
     entity.fields
@@ -81,7 +85,7 @@ class RelationHandlers {
     const update = Array.isArray(data.update) ? data.update[0] : data.update;
 
     const rMeta = relation.inverseEntityMetadata;
-    const rRepo = repo.manager.getRepository(rMeta.name);
+    const rRepo = repo.manager.getRepository(rMeta.target);
 
     // Import EntityRepository here to avoid circular dependency
     const { EntityRepository } = await import("./repository");
@@ -124,7 +128,7 @@ class RelationHandlers {
     const field = relation.propertyName;
     const inverseField = relation.inverseRelation?.propertyName;
     const rMeta = relation.inverseEntityMetadata;
-    const rRepo = repo.manager.getRepository(rMeta.name);
+    const rRepo = repo.manager.getRepository(rMeta.target);
 
     const link = inverseField
       ? { [inverseField]: { select: { id: obj.id } } }
@@ -287,7 +291,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     meta: EntityMetadata,
     data: CreateArgs<T>,
   ) {
-    const protectedFields = getProtectedFields(this.#client, meta.name, "create");
+    const protectedFields = getProtectedFields(repo, this.#client, "create");
     rejectProtectedFields(Object.keys(data), protectedFields, meta.name);
 
     const attrs: Record<string, any> = {};
@@ -429,7 +433,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
     const { id, version, ...rest } = data;
 
     const meta = repo.metadata;
-    const protectedFields = getProtectedFields(this.#client, meta.name, "update");
+    const protectedFields = getProtectedFields(repo, this.#client, "update");
     rejectProtectedFields(Object.keys(rest), protectedFields, meta.name);
 
     const attrs: Record<string, any> = {};
