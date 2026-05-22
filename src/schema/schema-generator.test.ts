@@ -661,4 +661,37 @@ describe("schema generator tests", () => {
     expect(code).toMatch(/implements\s+Auditable\b/);
     expect(code).toMatch(/from "\.\/Auditable"/);
   });
+
+  it("should not emit self-imports for relations targeting the entity itself", () => {
+    const Category = defineEntity({
+      name: "Category",
+      fields: [
+        {
+          name: "name",
+          type: "String",
+          required: true,
+        },
+        {
+          name: "parent",
+          type: "ManyToOne",
+          target: "Category",
+        },
+        {
+          name: "children",
+          type: "OneToMany",
+          target: "Category",
+          mappedBy: "parent",
+        },
+      ],
+    });
+
+    generateSchema(outDir, { schema: [Category] });
+    const code = fs.readFileSync(path.join(outDir, "Category.ts"), {
+      encoding: "utf-8",
+    });
+
+    expect(code).not.toMatch(/from "\.\/Category"/);
+    expect(code).toMatch(/parent\?:\s*Relation<Category>/);
+    expect(code).toMatch(/children\?:\s*Relation<Category>\[\]/);
+  });
 });
