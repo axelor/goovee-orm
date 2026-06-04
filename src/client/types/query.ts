@@ -145,7 +145,7 @@ type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
     : T extends Array<infer A>
       ? Arg extends { select: infer Select; [key: string]: any }
         ? A extends Entity
-          ? PayloadSelect<A, Select>[]
+          ? (PayloadSelect<A, Select> & PaginationMeta)[]
           : never
         : never
       : T extends Entity
@@ -169,16 +169,18 @@ export type PayloadArg<
     : PayloadSelect<Type, Select>
   : Empty;
 
-export type Payload<
-  Type extends Entity,
-  Query,
-  Empty = ResultIdentity<Type>,
-> = PayloadArg<Type, Query, Empty> & {
+export type PaginationMeta = {
   _count?: string;
   _cursor?: string;
   _hasNext?: boolean;
   _hasPrev?: boolean;
 };
+
+export type Payload<
+  Type extends Entity,
+  Query,
+  Empty = ResultIdentity<Type>,
+> = PayloadArg<Type, Query, Empty> & PaginationMeta;
 
 export type CreatePayload<Type extends Entity, Query> = Payload<
   Type,

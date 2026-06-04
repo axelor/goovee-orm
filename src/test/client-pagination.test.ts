@@ -185,6 +185,94 @@ describe("client pagination tests", async () => {
     expect(prev2[1]).toMatchObject(all[3]);
   });
 
+  it("should expose pagination metadata on nested toMany relations", async () => {
+    const c = await client.contact.create({
+      data: {
+        firstName: "Nested",
+        lastName: "Paginated",
+        addresses: {
+          create: [
+            { contact: {}, street: "Street 1" },
+            { contact: {}, street: "Street 2" },
+            { contact: {}, street: "Street 3" },
+          ],
+        },
+      },
+    });
+
+    const contact = await client.contact.findOne({
+      where: { id: c.id },
+      select: {
+        id: true,
+        addresses: {
+          select: { id: true, street: true },
+          orderBy: { id: "ASC" },
+          take: 2,
+        },
+      },
+    });
+
+    expect(contact).toBeDefined();
+    expect(contact!.addresses).toHaveLength(2);
+
+    const first = contact!.addresses![0];
+    const last = contact!.addresses![1];
+
+    // These property accesses must compile without `as any` — that is the
+    // behavior this test guards (PaginationMeta on nested toMany element type).
+    expect(first._count).toBe(3);
+    expect(first._cursor).toBeDefined();
+    expect(first._hasPrev).toBeFalsy();
+    expect(last._hasNext).toBe(true);
+
+    // find(): same nested metadata, typed without `as any`
+    const list = await client.contact.find({
+      where: { id: c.id },
+      select: {
+        id: true,
+        addresses: { select: { id: true }, orderBy: { id: "ASC" }, take: 2 },
+      },
+    });
+    expect(list[0].addresses![0]._count).toBe(3);
+    expect(list[0].addresses![1]._hasNext).toBe(true);
+
+    // update(): result payload carries nested metadata too
+    const cur = await client.contact.findOne({
+      where: { id: c.id },
+      select: { version: true },
+    });
+    const updated = await client.contact.update({
+      data: { id: c.id, version: cur!.version, lastName: "Updated" },
+      select: {
+        id: true,
+        addresses: { select: { id: true }, orderBy: { id: "ASC" }, take: 2 },
+      },
+    });
+    expect(updated.addresses![0]._count).toBe(3);
+    expect(updated.addresses![1]._hasNext).toBe(true);
+
+    // create(): result payload carries nested metadata too
+    const created = await client.contact.create({
+      data: {
+        firstName: "Nested2",
+        lastName: "Paginated2",
+        addresses: {
+          create: [
+            { contact: {}, street: "A" },
+            { contact: {}, street: "B" },
+            { contact: {}, street: "C" },
+          ],
+        },
+      },
+      select: {
+        id: true,
+        addresses: { select: { id: true }, orderBy: { id: "ASC" }, take: 2 },
+      },
+    });
+    expect(created.addresses![0]._count).toBe(3);
+    expect(created.addresses![1]._hasNext).toBe(true);
+  });
+
   it("should support distinct option in queries", async () => {
     const contact = await client.contact.create({
       data: {
