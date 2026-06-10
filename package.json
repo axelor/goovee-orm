@@ -11,6 +11,7 @@
     "release": "pnpm publish --no-git-checks",
     "test": "vitest",
     "test:e2e": "vitest --mode e2e --reporter=verbose --test-timeout 10000",
+    "test:types": "vitest --run --mode types",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css,scss,html}\""
   },
   "sideEffects": false,
