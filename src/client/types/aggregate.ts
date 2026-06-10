@@ -184,10 +184,17 @@ type AggregateResultType<T, Op extends AggregateOperation> = Op extends "count"
         ? T
         : never;
 
+// groupBy passes column nulls through — the null group is a real bucket
+type GroupByNull<V, Op extends AggregateOperation> = Op extends "groupBy"
+  ? null extends V
+    ? null
+    : never
+  : never;
+
 export type AggregateValue<T, S, Op extends AggregateOperation = "groupBy"> = {
   [K in keyof S]: S[K] extends true
     ? K extends keyof T
-      ? AggregateResultType<NonNullable<T[K]>, Op>
+      ? AggregateResultType<NonNullable<T[K]>, Op> | GroupByNull<T[K], Op>
       : never
     : S[K] extends object
       ? K extends keyof T
