@@ -117,6 +117,10 @@ const OrderBy = new GraphQLEnumType({
   values: {
     ASC: { value: "ASC" },
     DESC: { value: "DESC" },
+    ASC_NULLS_FIRST: { value: "ASC_NULLS_FIRST" },
+    ASC_NULLS_LAST: { value: "ASC_NULLS_LAST" },
+    DESC_NULLS_FIRST: { value: "DESC_NULLS_FIRST" },
+    DESC_NULLS_LAST: { value: "DESC_NULLS_LAST" },
   },
 });
 

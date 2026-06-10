@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseQuery } from "../client/parser";
+import { encodeCursor, parseCursor } from "../client/parser/cursor";
 import { QueryOptions } from "../client/types";
 import { getTestClient } from "./client.utils";
 
@@ -10,6 +11,131 @@ describe("query parser tests", async () => {
 
   // access the internal typeorm repo for testing
   const getContactRepo = () => (client.contact as any).unwrap();
+
+  it("should parse cursor with ASC_NULLS_LAST", () => {
+    const cursor = encodeCursor([["self.firstName", "ASC_NULLS_LAST", "John"]]);
+    const res = parseCursor({
+      order: { "self.firstName": "ASC_NULLS_LAST" },
+      cursor,
+    });
+    // ASC NULLS LAST: nulls sort after non-nulls, so the page after John
+    // must also include trailing NULL rows.
+    expect(res.where).toBe("(self.firstName > :q0 OR self.firstName IS NULL)");
+  });
+
+  it("should parse cursor with ASC_NULLS_FIRST", () => {
+    const cursor = encodeCursor([
+      ["self.firstName", "ASC_NULLS_FIRST", "John"],
+    ]);
+    const res = parseCursor({
+      order: { "self.firstName": "ASC_NULLS_FIRST" },
+      cursor,
+    });
+    // ASC NULLS FIRST: NULLs already passed, so just > John.
+    expect(res.where).toBe("self.firstName > :q0");
+  });
+
+  it("should parse cursor with DESC_NULLS_LAST and non-null value", () => {
+    const cursor = encodeCursor([
+      ["self.firstName", "DESC_NULLS_LAST", "John"],
+    ]);
+    const res = parseCursor({
+      order: { "self.firstName": "DESC_NULLS_LAST" },
+      cursor,
+    });
+    // DESC NULLS LAST: nulls sort after non-nulls, include trailing NULLs.
+    expect(res.where).toBe("(self.firstName < :q0 OR self.firstName IS NULL)");
+  });
+
+  it("should parse backward cursor with ASC_NULLS_LAST", () => {
+    const cursor = encodeCursor([["self.firstName", "ASC_NULLS_LAST", "John"]]);
+    const res = parseCursor({
+      order: { "self.firstName": "ASC_NULLS_LAST" },
+      cursor,
+      take: -10,
+    });
+    // Backward through ASC NULLS LAST: previous page is rows < John;
+    // trailing NULLs are already past us, so exclude them.
+    expect(res.where).toBe("self.firstName < :q0");
+  });
+
+  it("should parse backward cursor with ASC_NULLS_FIRST", () => {
+    const cursor = encodeCursor([
+      ["self.firstName", "ASC_NULLS_FIRST", "John"],
+    ]);
+    const res = parseCursor({
+      order: { "self.firstName": "ASC_NULLS_FIRST" },
+      cursor,
+      take: -10,
+    });
+    // Backward through ASC NULLS FIRST: previous page is rows < John,
+    // and leading NULLs (sorted before everything) must be included.
+    expect(res.where).toBe("(self.firstName < :q0 OR self.firstName IS NULL)");
+  });
+
+  it("should parse cursor with NULL value and DESC", () => {
+    const cursor = encodeCursor([["self.firstName", "DESC", null]]);
+    const res = parseCursor({
+      order: { "self.firstName": "DESC" },
+      cursor,
+    });
+    // DESC defaults to NULLS FIRST (Postgres), so after NULL there are
+    // still non-null rows to return.
+    expect(res.where).toBe("self.firstName IS NOT NULL");
+  });
+
+  it("should parse multi-key cursor where leading key is NULL", () => {
+    const cursor = encodeCursor([
+      ["self.firstName", "ASC", null],
+      ["self.lastName", "ASC", "Doe"],
+    ]);
+    const res = parseCursor({
+      order: { "self.firstName": "ASC", "self.lastName": "ASC" },
+      cursor,
+    });
+    // ASC defaults to NULLS LAST: leading NULL means we are in the
+    // trailing NULL block; the only rows "after" share NULL firstName and
+    // have lastName > 'Doe'. The tie-break must use IS NOT DISTINCT FROM
+    // so the NULL = NULL match holds.
+    expect(res.where).toBe(
+      "FALSE OR (self.firstName IS NOT DISTINCT FROM :q0 AND (self.lastName > :q1 OR self.lastName IS NULL))",
+    );
+  });
+
+  it("should parse cursor with NULL value and ASC (default NULLS LAST)", () => {
+    const cursor = encodeCursor([["self.firstName", "ASC", null]]);
+    const res = parseCursor({
+      order: { "self.firstName": "ASC" },
+      cursor,
+    });
+    // ASC defaults to NULLS LAST; NULL sits at the trailing edge, so no
+    // rows come after it.
+    expect(res.where).toBe("FALSE");
+  });
+
+  it("should parse backward cursor with NULL value and ASC (default NULLS LAST)", () => {
+    const cursor = encodeCursor([["self.firstName", "ASC", null]]);
+    const res = parseCursor({
+      order: { "self.firstName": "ASC" },
+      cursor,
+      take: -10,
+    });
+    // Backward through ASC NULLS LAST starting at a NULL cursor: the
+    // previous page is every non-null row (they all sort before NULL).
+    expect(res.where).toBe("self.firstName IS NOT NULL");
+  });
+
+  it("should parse backward cursor with NULL value and DESC (default NULLS FIRST)", () => {
+    const cursor = encodeCursor([["self.firstName", "DESC", null]]);
+    const res = parseCursor({
+      order: { "self.firstName": "DESC" },
+      cursor,
+      take: -10,
+    });
+    // Backward through DESC NULLS FIRST starting at a NULL cursor: NULLs
+    // sit at the leading edge, so nothing comes before them.
+    expect(res.where).toBe("FALSE");
+  });
 
   it("should parse simple `select` options", () => {
     const opts: QueryOptions<Contact> = {

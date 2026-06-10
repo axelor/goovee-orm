@@ -7,7 +7,7 @@ import {
   parseCursor,
 } from "../../parser";
 import { OrmRepository } from "../types";
-import { createSelectQuery, relationQuery } from "./utils";
+import { createSelectQuery, relationQuery, toSqlOrder } from "./utils";
 
 export const runQuery = async (
   repo: OrmRepository<any>,
@@ -66,7 +66,7 @@ const doQuery = async (
       // when fetching previous page with a cursor we have to invert
       // the original ordering first to get required data and finally
       // return the result with the requested order.
-      const sub = new SelectQueryBuilder(sq).orderBy(cur.order);
+      const sub = new SelectQueryBuilder(sq).orderBy(toSqlOrder(cur.order));
       const res = await sub.getMany();
       const ids = res.map((x) => x.id);
       if (ids.length === 0) return noResult;
