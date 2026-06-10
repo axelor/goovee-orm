@@ -14,7 +14,7 @@ import {
 } from "graphql";
 import { toCamelCase } from "../schema/schema-utils";
 
-import { EntityOptions, EnumItem } from "../schema/types";
+import { EntityOptions, EnumItem, PropertyOptions } from "../schema/types";
 import {
   connectionResolver,
   createResolver,
@@ -187,15 +187,27 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
   const nestedCreateInputs: Record<string, GraphQLInputObjectType> = {};
   const nestedUpdateInputs: Record<string, GraphQLInputObjectType> = {};
 
+  const namePascal = (name: string) =>
+    name.charAt(0).toUpperCase() + name.slice(1);
+
   const nameNode = (name: string) => name;
   const nameEdge = (name: string) => `${name}Edge`;
   const nameConnection = (name: string) => `${name}Connection`;
   const nameFilter = (name: string) => `${name}Filter`;
   const nameOrder = (name: string) => `${name}Order`;
-  const nameCreateInput = (name: string) => `${name}CreateInput`;
+  const nameCreateInput = (name: string, without?: string) =>
+    without
+      ? `${name}CreateWithout${namePascal(without)}Input`
+      : `${name}CreateInput`;
   const nameUpdateInput = (name: string) => `${name}UpdateInput`;
-  const nameNestedCreate = (name: string) => `${name}NestedCreateInput`;
-  const nameNestedUpdate = (name: string) => `${name}NestedUpdateInput`;
+  const nameNestedCreate = (name: string, without?: string) =>
+    without
+      ? `${name}NestedCreateWithout${namePascal(without)}Input`
+      : `${name}NestedCreateInput`;
+  const nameNestedUpdate = (name: string, without?: string) =>
+    without
+      ? `${name}NestedUpdateWithout${namePascal(without)}Input`
+      : `${name}NestedUpdateInput`;
 
   const findEnum = (name: string) => enums[name];
 
@@ -402,34 +414,56 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
     return (orders[name] = input);
   };
 
-  const nestedCreateInput = (entity: EntityOptions) => {
-    const name = nameNestedCreate(entity.name);
+  // The mappedBy field of a relation, when the target declares it required.
+  // Nested creates through such a relation must not demand it — the ORM fills
+  // it from the parent record — so they use "Without" input variants.
+  const autoFilledMappedBy = (item: PropertyOptions) => {
+    if (!("mappedBy" in item) || !item.mappedBy) return undefined;
+    const { target, mappedBy } = item;
+    const field = entities
+      .find((x) => x.name === target)
+      ?.fields?.find((x) => x.name === mappedBy);
+    return field && "required" in field && field.required
+      ? mappedBy
+      : undefined;
+  };
+
+  const nestedCreateInput = (entity: EntityOptions, without?: string) => {
+    const name = nameNestedCreate(entity.name, without);
     const input = new GraphQLInputObjectType({
       name,
-      fields: {
-        create: { type: new GraphQLList(findCreateInput(entity.name)) },
-        select: { type: new GraphQLList(findFilter(entity.name)) },
+      fields() {
+        return {
+          create: {
+            type: new GraphQLList(findCreateInput(nameCreateInput(entity.name, without))),
+          },
+          select: { type: new GraphQLList(findFilter(entity.name)) },
+        };
       },
     });
     return (nestedCreateInputs[name] = input);
   };
 
-  const nestedUpdateInput = (entity: EntityOptions) => {
-    const name = nameNestedUpdate(entity.name);
+  const nestedUpdateInput = (entity: EntityOptions, without?: string) => {
+    const name = nameNestedUpdate(entity.name, without);
     const input = new GraphQLInputObjectType({
       name,
-      fields: {
-        create: { type: new GraphQLList(findCreateInput(entity.name)) },
-        update: { type: new GraphQLList(findUpdateInput(entity.name)) },
-        select: { type: new GraphQLList(findFilter(entity.name)) },
-        remove: { type: new GraphQLList(GraphQLID) },
+      fields() {
+        return {
+          create: {
+            type: new GraphQLList(findCreateInput(nameCreateInput(entity.name, without))),
+          },
+          update: { type: new GraphQLList(findUpdateInput(entity.name)) },
+          select: { type: new GraphQLList(findFilter(entity.name)) },
+          remove: { type: new GraphQLList(GraphQLID) },
+        };
       },
     });
     return (nestedUpdateInputs[name] = input);
   };
 
-  const createCreateInput = (entity: EntityOptions) => {
-    const name = nameCreateInput(entity.name);
+  const createCreateInput = (entity: EntityOptions, without?: string) => {
+    const name = nameCreateInput(entity.name, without);
     const input = new GraphQLInputObjectType({
       name,
       fields() {
@@ -438,14 +472,16 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
         for (const item of items as any[]) {
           let { type, target, required } = item;
           if (target) {
-            type = findNestedCreateInput(target);
+            type = findNestedCreateInput(
+              nameNestedCreate(target, autoFilledMappedBy(item)),
+            );
           } else if (type === "Enum") {
             type = findEnum(item.enumType);
           } else {
             type = TypeMap[type];
           }
 
-          if (required) {
+          if (required && item.name !== without) {
             type = new GraphQLNonNull(type);
           }
 
@@ -472,7 +508,9 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
         for (const item of items as any[]) {
           let { type, target } = item;
           if (target) {
-            type = findNestedUpdateInput(target);
+            type = findNestedUpdateInput(
+              nameNestedUpdate(target, autoFilledMappedBy(item)),
+            );
           } else if (type === "Enum") {
             type = findEnum(item.enumType);
           } else {
@@ -537,6 +575,22 @@ export const buildGraphQLSchema = (entities: EntityOptions[]) => {
     createUpdateInput(entity);
     nestedCreateInput(entity);
     nestedUpdateInput(entity);
+  }
+
+  // generate "Without" input variants for relations whose required
+  // mappedBy field the ORM auto-fills on nested creates
+  for (const entity of entities) {
+    if (entity.abstract) continue;
+    for (const item of (entity.fields ?? []) as any[]) {
+      const without = autoFilledMappedBy(item);
+      if (!without) continue;
+      const target = entities.find((x) => x.name === item.target);
+      if (!target || findCreateInput(nameCreateInput(target.name, without)))
+        continue;
+      createCreateInput(target, without);
+      nestedCreateInput(target, without);
+      nestedUpdateInput(target, without);
+    }
   }
 
   const query = new GraphQLObjectType({

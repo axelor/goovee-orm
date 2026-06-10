@@ -189,7 +189,6 @@ describe("client update tests", async () => {
         lastName: "NAME",
         addresses: {
           create: {
-            contact: {},
             street: "My HOME",
           },
         },
@@ -214,7 +213,6 @@ describe("client update tests", async () => {
         addresses: {
           create: [
             {
-              contact: {},
               street: "My OFFICE",
             },
           ],

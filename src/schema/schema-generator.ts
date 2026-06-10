@@ -226,10 +226,24 @@ class RelationImportName extends ImportName {
   }
 }
 
+class ToManyImportName extends ImportName {
+  private mappedBy;
+  constructor(name: string, module: string, mappedBy: string) {
+    super(name, module);
+    this.mappedBy = mappedBy;
+  }
+  emit(file: CodeFile): void {
+    const toManyType = new ImportName("type ToMany", "@goovee/orm");
+    file.write(toManyType).write("<");
+    super.emit(file);
+    file.write(`, "${this.mappedBy}">`);
+  }
+}
+
 class RelationalField<
   T extends PropertyOptions & IRelational,
 > extends FieldGenerator<T> {
-  protected get actualType() {
+  protected get actualType(): ImportName {
     const { type, target } = this.options;
     const collection = type.endsWith("ToMany");
     return new RelationImportName(collection, target, `./${target}`);
@@ -285,6 +299,16 @@ class ManyToOneFieldGenerator extends RelationalField<ManyToOneProperty> {
 }
 
 class OneToManyFieldGenerator extends RelationalField<OneToManyProperty> {
+  // Carry the mappedBy key in the type, so create types know which
+  // field the ORM auto-fills on nested creates.
+  protected get actualType() {
+    const { target, mappedBy } = this.options;
+    if (mappedBy) {
+      return new ToManyImportName(target, `./${target}`, mappedBy);
+    }
+    return super.actualType;
+  }
+
   protected decorators(options: OneToManyProperty) {
     const { name, target, mappedBy } = options;
     if (mappedBy) {

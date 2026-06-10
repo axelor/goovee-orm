@@ -1,19 +1,39 @@
 import type { BigDecimal } from "../fields/decimal";
-import type { Entity, ID, InputIdentity, OmitByType } from "./base";
+import type { Entity, ID, InputIdentity, OmitByType, ToMany } from "./base";
 import type { SelectOptions, WhereOptions } from "./query";
 
 // ============================================================================
 // Create/Update/Delete Types
 // ============================================================================
 
+// The `mappedBy` key carried by a ToMany collection type — the field on the
+// target entity that the ORM fills with the owning record on nested creates.
+// Plain (unbranded) arrays yield never.
+type MappedByKey<T, P extends Entity> =
+  T extends ToMany<P, infer K extends keyof P> ? K : never;
+
+// CreateArgs<T> for targets created nested under the owning side of a
+// collection: the mappedBy field is auto-filled by the ORM, so it becomes
+// optional. Top-level creates use CreateArgs<T> directly and keep requiring
+// it — there is no owner to fill it from.
+type NestedCreateArgs<T extends Entity, MappedBy extends keyof T> = Omit<
+  CreateArgs<T>,
+  MappedBy
+> & {
+  [K in MappedBy]?: CreateArg<T[K]>;
+};
+
 interface NestedCreateArg<T extends Entity> {
   select?: WhereOptions<T>;
   create?: CreateArgs<T>;
 }
 
-interface NestedCreateManyArg<T extends Entity> {
+interface NestedCreateManyArg<
+  T extends Entity,
+  MappedBy extends keyof T = never,
+> {
   select?: WhereOptions<T> | WhereOptions<T>[];
-  create?: CreateArgs<T> | CreateArgs<T>[];
+  create?: NestedCreateArgs<T, MappedBy> | NestedCreateArgs<T, MappedBy>[];
 }
 
 type AllowNull<T> = T extends undefined ? T | null : T;
@@ -25,7 +45,7 @@ type LeafArg<T> = T extends BigDecimal
 export type CreateArg<T> =
   T extends Array<infer P>
     ? P extends Entity
-      ? NestedCreateManyArg<P>
+      ? NestedCreateManyArg<P, MappedByKey<T, P>>
       : T
     : T extends Entity
       ? NestedCreateArg<T>
@@ -46,9 +66,12 @@ type NestedUpdateArg<T extends Entity> = {
   update?: UpdateArgs<T>;
 };
 
-type NestedUpdateManyArg<T extends Entity> = {
+type NestedUpdateManyArg<
+  T extends Entity,
+  MappedBy extends keyof T = never,
+> = {
   select?: WhereOptions<T> | WhereOptions<T>[];
-  create?: CreateArgs<T> | CreateArgs<T>[];
+  create?: NestedCreateArgs<T, MappedBy> | NestedCreateArgs<T, MappedBy>[];
   update?: UpdateArgs<T> | UpdateArgs<T>[];
   remove?: ID | ID[];
 };
@@ -56,7 +79,7 @@ type NestedUpdateManyArg<T extends Entity> = {
 export type UpdateArg<T> =
   T extends Array<infer P>
     ? P extends Entity
-      ? NestedUpdateManyArg<P>
+      ? NestedUpdateManyArg<P, MappedByKey<T, P>>
       : T
     : T extends Entity
       ? NestedUpdateArg<T>
