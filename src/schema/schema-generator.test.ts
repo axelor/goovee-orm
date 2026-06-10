@@ -322,10 +322,10 @@ import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMa
 import { AuditableModel } from "./AuditableModel";
 import { Title } from "./Title";
 import { Bio } from "./Bio";
+import { type ToMany, type Text, type Binary, type Json } from "@goovee/orm";
 import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
-import { type Text, type Binary, type Json } from "@goovee/orm";
 
 @Entity("contacts")
 export class Contact extends AuditableModel {
@@ -352,7 +352,7 @@ export class Contact extends AuditableModel {
   bio?: Relation<Bio> | null;
 
   @OneToMany(() => Address, (x) => x.contact)
-  addresses?: Relation<Address>[] | null;
+  addresses?: ToMany<Address, "contact"> | null;
 
   @ManyToMany(() => Circle, (x) => x.contacts)
   @JoinTable()
@@ -377,10 +377,10 @@ import { Entity, ManyToOne, type Relation, Column, OneToOne, JoinColumn, OneToMa
 import { AuditableModel } from "./AuditableModel";
 import { Title } from "./Title";
 import { Bio } from "./Bio";
+import { type ToMany, type Text, type Binary, type Json } from "@goovee/orm";
 import { Address } from "./Address";
 import { Circle } from "./Circle";
 import { ContactType } from "./ContactType";
-import { type Text, type Binary, type Json } from "@goovee/orm";
 
 @Entity("contacts")
 export class Contact extends AuditableModel {
@@ -407,7 +407,7 @@ export class Contact extends AuditableModel {
   bio?: Relation<Bio> | null;
 
   @OneToMany(() => Address, (x) => x.contact)
-  addresses?: Relation<Address>[] | null;
+  addresses?: ToMany<Address, "contact"> | null;
 
   @ManyToMany(() => Circle, (x) => x.contacts)
   @JoinTable({ name: "contacts_circles", joinColumn: { name: "contacts" }, inverseJoinColumn: { name: "circles" } })

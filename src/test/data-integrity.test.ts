@@ -207,7 +207,6 @@ describe("data integrity tests", async () => {
           lastName: "Doe",
           addresses: {
             create: {
-              contact: {},
               street: "Main St",
             },
           },
