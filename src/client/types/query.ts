@@ -158,8 +158,24 @@ type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
           : never
         : T;
 
+// Simple selection: plain scalar columns only — relations and lazy
+// (text/jsonb/oid) columns are not loaded. The filter must test the
+// NonNullable type: optional fields never extend the excluded set directly
+// because of their null member.
 export type PayloadSimple<T extends Entity> = ResultIdentity<T> &
-  OmitByType<T, Json | Text | Binary | Entity | Entity[] | undefined>;
+  Pick<
+    T,
+    {
+      [K in keyof T]-?: NonNullable<T[K]> extends
+        | Json
+        | Text
+        | Binary
+        | Entity
+        | Entity[]
+        ? never
+        : K;
+    }[keyof T]
+  >;
 
 export type PayloadArg<
   Type extends Entity,
