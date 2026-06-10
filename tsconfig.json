@@ -5,6 +5,7 @@
     "module": "ESNext",
     "moduleDetection": "force",
     "skipLibCheck": true,
+    "types": ["node"],
 
     "allowJs": true,
     "esModuleInterop": true,
