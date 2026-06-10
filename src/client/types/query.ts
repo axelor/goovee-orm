@@ -174,7 +174,7 @@ export type Payload<
   Query,
   Empty = ResultIdentity<Type>,
 > = PayloadArg<Type, Query, Empty> & {
-  _count?: string;
+  _count?: number;
   _cursor?: string;
   _hasNext?: boolean;
   _hasPrev?: boolean;
