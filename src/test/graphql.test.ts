@@ -81,6 +81,101 @@ describe("GraphQL tests", async () => {
     });
   });
 
+  it("should page a record's collection through a relay connection", async () => {
+    const contact = await client.contact.create({
+      data: { firstName: "Single", lastName: "Tester" },
+    });
+    for (const street of ["A1", "A2", "A3"]) {
+      await client.address.create({
+        data: { contact: { select: { id: contact.id } }, street },
+      });
+    }
+
+    const firstPageQuery = /* GraphQL */ `
+      {
+        contact {
+          edges {
+            node {
+              addresses(first: 2) {
+                edges {
+                  cursor
+                  node {
+                    street
+                  }
+                }
+                pageInfo {
+                  startCursor
+                  endCursor
+                  hasPreviousPage
+                  hasNextPage
+                  totalCount
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const firstPage: any = await graphql({
+      schema,
+      source: firstPageQuery,
+      contextValue: { client },
+    });
+
+    expect(firstPage.errors).toBeUndefined();
+    const addresses = firstPage.data?.contact?.edges?.[0]?.node?.addresses;
+    expect(addresses).toBeDefined();
+
+    const { edges, pageInfo } = addresses;
+    expect(edges.map((edge: any) => edge.node.street)).toEqual(["A1", "A2"]);
+    edges.forEach((edge: any) => expect(edge.cursor).toBeTruthy());
+    expect(pageInfo.totalCount).toBe(3);
+    expect(pageInfo.hasNextPage).toBeTruthy();
+    expect(pageInfo.startCursor).toBeTruthy();
+    expect(pageInfo.endCursor).toBeTruthy();
+
+    const secondPageQuery = /* GraphQL */ `
+      query ($after: String) {
+        contact {
+          edges {
+            node {
+              addresses(first: 2, after: $after) {
+                edges {
+                  cursor
+                  node {
+                    street
+                  }
+                }
+                pageInfo {
+                  hasPreviousPage
+                  hasNextPage
+                  totalCount
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const secondPage: any = await graphql({
+      schema,
+      source: secondPageQuery,
+      variableValues: { after: pageInfo.endCursor },
+      contextValue: { client },
+    });
+
+    expect(secondPage.errors).toBeUndefined();
+    const nextAddresses = secondPage.data?.contact?.edges?.[0]?.node?.addresses;
+    expect(nextAddresses.edges.map((edge: any) => edge.node.street)).toEqual([
+      "A3",
+    ]);
+    expect(nextAddresses.pageInfo.totalCount).toBe(3);
+    expect(nextAddresses.pageInfo.hasNextPage).toBeFalsy();
+    expect(nextAddresses.pageInfo.hasPreviousPage).toBeTruthy();
+  });
+
   it("should create", async () => {
     const mutation = /* GraphQL */ `
       mutation {
