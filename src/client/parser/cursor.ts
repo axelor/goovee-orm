@@ -58,9 +58,10 @@ export function parseCursor(
     return {};
   }
 
+  const invert = (take ?? 0) < 0;
   let count = 0;
 
-  const makeWhere = (items: CursorTuple[], invert: boolean): WhereResult => {
+  const makeWhere = (items: CursorTuple[]): WhereResult => {
     const [first, ...rest] = items;
     const [key, order, value] = first;
 
@@ -71,21 +72,47 @@ export function parseCursor(
     params[p] = value;
 
     const op = invert ? ORDER_OPS_INVERTED[order] : ORDER_OPS[order];
+    const isAsc = order.startsWith("ASC");
+    const nullsFirst = order.includes("NULLS_FIRST");
+    const nullsLast = order.includes("NULLS_LAST");
+
+    // Forward direction: where do NULLs sit?
+    // Explicit NULLS_FIRST/LAST wins; otherwise fall back to the DB
+    // (Postgres) default: ASC -> NULLS LAST, DESC -> NULLS FIRST.
+    let effectiveNullsFirst: boolean;
+    if (nullsFirst) effectiveNullsFirst = true;
+    else if (nullsLast) effectiveNullsFirst = false;
+    else effectiveNullsFirst = !isAsc;
+
+    if (invert) effectiveNullsFirst = !effectiveNullsFirst;
+
+    let comp: string;
+    if (value === null) {
+      // NULL at the start of our direction -> everything non-null is after it.
+      // NULL at the end -> nothing is after it.
+      comp = effectiveNullsFirst ? `${key} IS NOT NULL` : "FALSE";
+    } else if (!effectiveNullsFirst) {
+      // NULLs sit on the "after" side, so pull trailing NULL rows in too.
+      comp = `(${key} ${op} :${p} OR ${key} IS NULL)`;
+    } else {
+      comp = `${key} ${op} :${p}`;
+    }
+
+    const eq = `${key} IS NOT DISTINCT FROM :${p}`;
 
     if (rest && rest.length) {
-      const next = makeWhere(rest, invert);
+      const next = makeWhere(rest);
       if (rest.length > 1 && next.where) next.where = `(${next.where})`;
-      where = `${key} ${op} :${p} OR (${key} = :${p} AND ${next.where})`;
+      where = `${comp} OR (${eq} AND ${next.where})`;
       params = { ...params, ...next.params };
     } else {
-      where = `${key} ${op} :${p}`;
+      where = comp;
     }
 
     return { where, params, joins: {} };
   };
 
-  const invert = (take ?? 0) < 0;
-  const { where, params } = makeWhere(cur, invert);
+  const { where, params } = makeWhere(cur);
 
   if (invert) {
     const order = Object.entries(orderBy).reduce(

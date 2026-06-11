@@ -547,7 +547,21 @@ const addresses = await client.address.find({
     },
   },
 });
+
+// Control NULL placement explicitly
+const contacts = await client.contact.find({
+  orderBy: {
+    lastName: "ASC_NULLS_LAST",
+    firstName: "DESC_NULLS_FIRST",
+  },
+});
 ```
+
+Supported values: `"ASC"`, `"DESC"`, `"ASC_NULLS_FIRST"`, `"ASC_NULLS_LAST"`,
+`"DESC_NULLS_FIRST"`, `"DESC_NULLS_LAST"`. Plain `"ASC"`/`"DESC"` use the
+database default (PostgreSQL: `ASC` → NULLS LAST, `DESC` → NULLS FIRST); use
+the explicit variants when you need to pin NULL placement independently of
+sort direction.
 
 #### Pagination
 
@@ -612,6 +626,48 @@ const prevPage = await client.contact.find({
   cursor: currentPage[0]._cursor,
 });
 ```
+
+**Nested Collection Pagination:**
+
+A `take`/`skip` inside a collection select paginates **each record's list
+independently** — every parent gets its own window, regardless of how many
+items its siblings have:
+
+```javascript
+// Each contact comes back with its own newest address
+const contacts = await client.contact.find({
+  select: {
+    firstName: true,
+    addresses: {
+      select: { street: true },
+      orderBy: { id: "DESC" },
+      take: 1,
+    },
+  },
+});
+
+// Negative take works like the top level: the last N of each record's
+// list, still returned in the requested order
+const withOldest = await client.contact.find({
+  select: {
+    firstName: true,
+    addresses: {
+      select: { street: true },
+      orderBy: { createdOn: "ASC" },
+      take: -2,
+    },
+  },
+});
+```
+
+When the parent page holds several records, a nested `cursor` is ignored if
+a nested `take`/`skip` is present, and nested items carry no
+`_count`/`_cursor` metadata. A page with a single record (e.g. `findOne`)
+keeps the full top-level semantics for its collections — nested cursor
+pagination and `_count`/`_cursor` metadata included — which is what GraphQL
+nested connections rely on. When the nested `orderBy` reaches through
+another collection, the lists are paginated in memory after fetching the
+filtered items of the current page's parents.
 
 #### Aggregations
 

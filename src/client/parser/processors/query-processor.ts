@@ -57,9 +57,11 @@ export class QueryProcessor {
     const whereResult = this.whereProcessor.process(repo, conditions, "self");
     const orderResult = this.orderProcessor.process(repo, orderBy, "self");
 
-    // Handle pagination ordering
+    // Any take/skip selects a window from an ordered list, so the ordering
+    // must be total for the result to be deterministic — not just for page
+    // queries, but also for skip-only windows and an explicit `skip: 0`
     let finalOrder = orderResult?.order || {};
-    if (isPageQuery(query)) {
+    if (isPageQuery(query) || take || skip) {
       const uniqueOrder = this.orderProcessor.ensureUniqueOrderBy(
         repo,
         orderBy,
