@@ -85,10 +85,10 @@ describe("aggregate e2e tests", async () => {
 
     const first = result[0];
     expect(first.count).toBeDefined();
-    expect(first.count.id).toBeTypeOf("number");
-    expect(first.count.firstName).toBeTypeOf("number");
-    expect(first.count.id).toBeGreaterThan(0);
-    expect(first.count.firstName).toBeGreaterThan(0);
+    expect(first.count.id).toBeTypeOf("string");
+    expect(first.count.firstName).toBeTypeOf("string");
+    expect(Number(first.count.id)).toBeGreaterThan(0);
+    expect(Number(first.count.firstName)).toBeGreaterThan(0);
   });
 
   it("should perform count with relations", async () => {
@@ -112,9 +112,9 @@ describe("aggregate e2e tests", async () => {
       const first = result[0];
       expect(first.count).toBeDefined();
       expect(first.count.title).toBeDefined();
-      expect(first.count.title.id).toBeTypeOf("number");
+      expect(first.count.title.id).toBeTypeOf("string");
       expect(first.count.addresses).toBeDefined();
-      expect(first.count.addresses.id).toBeTypeOf("number");
+      expect(first.count.addresses.id).toBeTypeOf("string");
     }
   });
 
@@ -133,7 +133,7 @@ describe("aggregate e2e tests", async () => {
     if (result.length > 0) {
       const first = result[0];
       expect(first.avg).toBeDefined();
-      expect(first.avg.version).toBeTypeOf("number");
+      expect(first.avg.version).toBeTypeOf("string");
     }
   });
 
@@ -154,9 +154,29 @@ describe("aggregate e2e tests", async () => {
       expect(first.sum).toBeDefined();
       // Sum can be null if no valid values exist, or a number
       expect(
-        first.sum.version === null || typeof first.sum.version === "number",
+        first.sum.version === null || typeof first.sum.version === "string",
       ).toBe(true);
     }
+  });
+
+  it("should return decimal sums as exact strings", async () => {
+    await client.country.createAll({
+      data: [
+        { code: "d1", name: "Decimal One", population: "1.25" },
+        { code: "d2", name: "Decimal Two", population: "2.5" },
+      ],
+    });
+
+    const result = await client.country.aggregate({
+      sum: { population: true },
+      avg: { population: true },
+      where: { code: { in: ["d1", "d2"] } },
+    });
+
+    // pg sums numerics exactly and the value passes through untouched —
+    // no parseInt truncation (3), no float rounding
+    expect(result[0].sum.population).toBe("3.75");
+    expect(Number(result[0].avg.population)).toBe(1.875);
   });
 
   it("should perform min and max aggregations", async () => {
@@ -214,14 +234,14 @@ describe("aggregate e2e tests", async () => {
     if (result.length > 0) {
       const first = result[0];
       expect(first.count).toBeDefined();
-      expect(first.count.id).toBeTypeOf("number");
+      expect(first.count.id).toBeTypeOf("string");
       expect(first.avg).toBeDefined();
       expect(
-        first.avg.version === null || typeof first.avg.version === "number",
+        first.avg.version === null || typeof first.avg.version === "string",
       ).toBe(true);
       expect(first.sum).toBeDefined();
       expect(
-        first.sum.version === null || typeof first.sum.version === "number",
+        first.sum.version === null || typeof first.sum.version === "string",
       ).toBe(true);
       expect(first.min).toBeDefined();
       expect(first.min.firstName).toBeTypeOf("string");
@@ -248,7 +268,7 @@ describe("aggregate e2e tests", async () => {
     if (result.length > 0) {
       const first = result[0];
       expect(first.count).toBeDefined();
-      expect(first.count.id).toBeTypeOf("number");
+      expect(first.count.id).toBeTypeOf("string");
       expect(first.groupBy).toBeDefined();
       expect(first.groupBy.firstName).toBeDefined();
       expect(first.groupBy.version).toBeDefined();
@@ -273,7 +293,7 @@ describe("aggregate e2e tests", async () => {
     if (result.length > 0) {
       const first = result[0];
       expect(first.count).toBeDefined();
-      expect(first.count.id).toBeTypeOf("number");
+      expect(first.count.id).toBeTypeOf("string");
       expect(first.groupBy).toBeDefined();
       expect(first.groupBy.title).toBeDefined();
       expect(first.groupBy.title.id).toBeDefined();
@@ -300,7 +320,7 @@ describe("aggregate e2e tests", async () => {
     if (result.length > 0) {
       const first = result[0];
       expect(first.count).toBeDefined();
-      expect(first.count.id).toBeTypeOf("number");
+      expect(first.count.id).toBeTypeOf("string");
       expect(first.groupBy).toBeDefined();
       expect(first.groupBy.addresses).toBeDefined();
       expect(first.groupBy.addresses.country).toBeDefined();
@@ -328,10 +348,10 @@ describe("aggregate e2e tests", async () => {
     if (result.length > 0) {
       const first = result[0];
       expect(first.count).toBeDefined();
-      expect(first.count.id).toBeTypeOf("number");
+      expect(first.count.id).toBeTypeOf("string");
       expect(first.avg).toBeDefined();
       expect(
-        first.avg.version === null || typeof first.avg.version === "number",
+        first.avg.version === null || typeof first.avg.version === "string",
       ).toBe(true);
     }
   });
@@ -363,11 +383,11 @@ describe("aggregate e2e tests", async () => {
     if (result.length > 0) {
       const first = result[0];
       expect(first.count).toBeDefined();
-      expect(first.count.id).toBeTypeOf("number");
-      expect(first.count.id).toBeGreaterThan(0);
+      expect(first.count.id).toBeTypeOf("string");
+      expect(Number(first.count.id)).toBeGreaterThan(0);
       expect(first.avg).toBeDefined();
-      expect(first.avg.version).toBeTypeOf("number");
-      expect(first.avg.version).toBeGreaterThanOrEqual(1.0);
+      expect(first.avg.version).toBeTypeOf("string");
+      expect(Number(first.avg.version)).toBeGreaterThanOrEqual(1.0);
       expect(first.groupBy).toBeDefined();
       expect(first.groupBy.firstName).toBeDefined();
     }
@@ -412,12 +432,12 @@ describe("aggregate e2e tests", async () => {
     if (result.length > 0) {
       const first = result[0];
       expect(first.count).toBeDefined();
-      expect(first.count.id).toBeTypeOf("number");
+      expect(first.count.id).toBeTypeOf("string");
       expect(first.count.addresses).toBeDefined();
-      expect(first.count.addresses.id).toBeTypeOf("number");
+      expect(first.count.addresses.id).toBeTypeOf("string");
       expect(first.avg).toBeDefined();
-      expect(first.avg.version).toBeTypeOf("number");
-      expect(first.avg.version).toBeLessThan(100);
+      expect(first.avg.version).toBeTypeOf("string");
+      expect(Number(first.avg.version)).toBeLessThan(100);
       expect(first.max).toBeDefined();
       expect(first.max.firstName).toBeTypeOf("string");
       expect(first.groupBy).toBeDefined();
@@ -450,7 +470,7 @@ describe("aggregate e2e tests", async () => {
       expect(first.avg.addresses.country).toBeDefined();
       expect(
         first.avg.addresses.country.version === null ||
-          typeof first.avg.addresses.country.version === "number",
+          typeof first.avg.addresses.country.version === "string",
       ).toBe(true);
     }
   });
@@ -476,13 +496,13 @@ describe("aggregate e2e tests", async () => {
       const first = result[0];
       expect(first.avg).toBeDefined();
       expect(
-        first.avg.version === null || typeof first.avg.version === "number",
+        first.avg.version === null || typeof first.avg.version === "string",
       ).toBe(true);
       expect(first.avg.addresses).toBeDefined();
       expect(first.avg.addresses.country).toBeDefined();
       expect(
         first.avg.addresses.country.version === null ||
-          typeof first.avg.addresses.country.version === "number",
+          typeof first.avg.addresses.country.version === "string",
       ).toBe(true);
 
       // They should be different values since they come from different tables (if both not null)
@@ -513,6 +533,6 @@ describe("aggregate e2e tests", async () => {
 
     const first = result[0];
     expect(first.count).toBeDefined();
-    expect(first.count.id).toBe(0);
+    expect(first.count.id).toBe("0");
   });
 });

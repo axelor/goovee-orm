@@ -167,10 +167,15 @@ export type OrderByFromSelection<S> = {
       : never;
 };
 
+// Computed aggregates have no column type to preserve — pg widens them
+// (sum(int) → bigint, avg(int) → numeric) and the driver delivers exact
+// strings; the client passes them through, leaving the precision of the
+// conversion to the caller. count is never null (NULL → "0"); sum/avg are
+// null over empty or all-null sets.
 type AggregateResultType<T, Op extends AggregateOperation> = Op extends "count"
-  ? number
+  ? string
   : Op extends "avg" | "sum"
-    ? number
+    ? string | null
     : Op extends "min" | "max"
       ? T extends Date
         ? Date

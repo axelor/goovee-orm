@@ -73,14 +73,15 @@ export const runAggregate = async (
 
     switch (operation) {
       case "count":
-        // COUNT should always return a number, even if it's 0
-        return value === null ? 0 : parseInt(value, 10);
+        // COUNT arrives as the driver's bigint string and stays exact;
+        // it is never null (no rows → "0")
+        return value === null ? "0" : value;
       case "sum":
-        // SUM can be null if there are no rows, or a number
-        return value === null ? null : parseInt(value, 10);
       case "avg":
-        // AVG can be null if there are no rows, or a float
-        return value === null ? null : parseFloat(value);
+        // pg widens sum/avg beyond the column type and the driver delivers
+        // exact numeric strings — pass them through untouched; null when
+        // there are no rows (or only nulls)
+        return value;
       case "min":
       case "max":
         // For min/max, we need to preserve the original type
