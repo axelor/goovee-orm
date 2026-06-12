@@ -21,6 +21,10 @@
     {
       "type": "Decimal",
       "name": "population"
+    },
+    {
+      "type": "Int",
+      "name": "rank"
     }
   ]
 }
