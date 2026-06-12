@@ -128,9 +128,11 @@ type PayloadSelect<T extends Entity, Select> = ResultIdentity<T> & {
   [K in keyof SelectKeys<T, Select>]-?: K extends keyof Select & keyof T
     ? NonNullable<T[K]> extends Array<any>
       ? PayloadSelectArg<NonNullable<T[K]>, Select[K]>
-      : undefined extends T[K]
-        ? PayloadSelectArg<NonNullable<T[K]>, Select[K]> | null
-        : PayloadSelectArg<T[K], Select[K]>
+      : NonNullable<T[K]> extends Promise<any>
+        ? NonNullable<T[K]>
+        : undefined extends T[K]
+          ? PayloadSelectArg<NonNullable<T[K]>, Select[K]> | null
+          : PayloadSelectArg<T[K], Select[K]>
     : never;
 };
 

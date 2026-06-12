@@ -16,10 +16,10 @@ export type JsonObject = {
   [key: string]: JsonValue;
 };
 
-// Async data types
-export type Json = Promise<JsonObject>;
-export type Text = Promise<string>;
-export type Binary = Promise<Buffer>;
+// Async data types; the lazy loader resolves the column value or null
+export type Json = Promise<JsonObject | null>;
+export type Text = Promise<string | null>;
+export type Binary = Promise<Buffer | null>;
 
 // ============================================================================
 // Entity Types
