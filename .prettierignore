@@ -1,0 +1,4 @@
+# Type-level test files use intentional long, single-line cases so that each
+# `@ts-expect-error` attaches to the error on the line immediately below it.
+# Prettier's line wrapping would move the error off that line and break them.
+*.test-d.ts

@@ -105,8 +105,8 @@ describe("json tests", async () => {
     expect(lower).toBeDefined();
 
     if (upper?.attrs && lower?.attrs) {
-      const upperDate = (await upper.attrs).dateOfBirth as string;
-      const lowerDate = (await lower.attrs).dateOfBirth as string;
+      const upperDate = (await upper.attrs)?.dateOfBirth as string;
+      const lowerDate = (await lower.attrs)?.dateOfBirth as string;
 
       const res = await client.contact.find({
         where: {

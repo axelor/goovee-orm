@@ -1,5 +1,5 @@
 import type { AggregateOptions, AggregatePayload } from "./aggregate";
-import type { Entity, ID, Options } from "./base";
+import type { Entity, Options } from "./base";
 import type {
   BulkCreateOptions,
   BulkDeleteOptions,
@@ -35,10 +35,10 @@ export interface Repository<T extends Entity> {
     args: Options<U, UpdateOptions<T>>,
   ): Promise<Payload<T, U>>;
 
-  delete(args: DeleteOptions<T>): Promise<ID>;
+  delete(args: DeleteOptions<T>): Promise<number>;
 
-  count(): Promise<ID>;
-  count(args: QueryOptions<T>): Promise<ID>;
+  count(): Promise<number>;
+  count(args: QueryOptions<T>): Promise<number>;
 
   aggregate<U extends AggregateOptions<T>>(
     args: Options<U, AggregateOptions<T>>,
@@ -48,8 +48,8 @@ export interface Repository<T extends Entity> {
     args: Options<U, BulkCreateOptions<T>>,
   ): Promise<CreatePayload<T, U>[]>;
 
-  updateAll(args: BulkUpdateOptions<T>): Promise<ID>;
+  updateAll(args: BulkUpdateOptions<T>): Promise<number>;
 
-  deleteAll(): Promise<ID>;
-  deleteAll(args: BulkDeleteOptions<T>): Promise<ID>;
+  deleteAll(): Promise<number>;
+  deleteAll(args: BulkDeleteOptions<T>): Promise<number>;
 }

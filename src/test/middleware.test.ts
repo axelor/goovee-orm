@@ -80,7 +80,6 @@ describe("middleware tests", async () => {
         addresses: {
           create: [
             {
-              contact: {},
               street: "My Home",
             },
           ],

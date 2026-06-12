@@ -17,8 +17,27 @@ const e2eTests: ViteUserConfig["test"] = {
   maxWorkers: 1,
 };
 
+// Type-level tests (`*.test-d.ts`), checked by tsc via Vitest's typecheck mode.
+// No runtime / DB — the client is `declare`d in the test files; the global
+// setup only generates the test client code the suite typechecks against.
+const typeTests: ViteUserConfig["test"] = {
+  include: [],
+  globalSetup: ["src/test/types-setup.ts"],
+  typecheck: {
+    enabled: true,
+    only: true,
+    include: ["src/test/**/*.test-d.ts"],
+    tsconfig: "tsconfig.typecheck.json",
+  },
+};
+
 export default defineConfig((env) => {
-  const testConfig = env.mode === "e2e" ? e2eTests : unitTests;
+  const testConfig =
+    env.mode === "e2e"
+      ? e2eTests
+      : env.mode === "types"
+        ? typeTests
+        : unitTests;
   return {
     plugins: [
       {

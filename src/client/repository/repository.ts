@@ -266,7 +266,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   }
 
   @intercept()
-  async count(args?: QueryOptions<T>): Promise<ID> {
+  async count(args?: QueryOptions<T>): Promise<number> {
     const client = this.#client;
     const repo = this.#repo;
     const opts = parseQuery(client, repo, args ?? {});
@@ -515,7 +515,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   }
 
   @intercept()
-  async delete(args: DeleteOptions<T>): Promise<ID> {
+  async delete(args: DeleteOptions<T>): Promise<number> {
     const repo: any = this.#repo;
     const { id, version } = args;
 
@@ -570,7 +570,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   }
 
   @intercept()
-  async updateAll(args: BulkUpdateOptions<T>): Promise<ID> {
+  async updateAll(args: BulkUpdateOptions<T>): Promise<number> {
     const client = this.#client;
     const repo = this.#repo;
     const meta = repo.metadata;
@@ -603,7 +603,7 @@ export class EntityRepository<T extends Entity> implements Repository<T> {
   }
 
   @intercept()
-  async deleteAll(args?: BulkDeleteOptions<T>): Promise<ID> {
+  async deleteAll(args?: BulkDeleteOptions<T>): Promise<number> {
     const client = this.#client;
     const repo = this.#repo;
     const { where } = args ?? {};

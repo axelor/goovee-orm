@@ -126,9 +126,13 @@ export type SelectKeys<T, S> = Pick<
 
 type PayloadSelect<T extends Entity, Select> = ResultIdentity<T> & {
   [K in keyof SelectKeys<T, Select>]-?: K extends keyof Select & keyof T
-    ? undefined extends T[K]
-      ? PayloadSelectArg<NonNullable<T[K]>, Select[K]> | null
-      : PayloadSelectArg<T[K], Select[K]>
+    ? NonNullable<T[K]> extends Array<any>
+      ? PayloadSelectArg<NonNullable<T[K]>, Select[K]>
+      : NonNullable<T[K]> extends Promise<any>
+        ? NonNullable<T[K]>
+        : undefined extends T[K]
+          ? PayloadSelectArg<NonNullable<T[K]>, Select[K]> | null
+          : PayloadSelectArg<T[K], Select[K]>
     : never;
 };
 
@@ -154,8 +158,24 @@ type PayloadSelectArg<T, Arg> = Arg extends undefined | null | false
           : never
         : T;
 
+// Simple selection: plain scalar columns only — relations and lazy
+// (text/jsonb/oid) columns are not loaded. The filter must test the
+// NonNullable type: optional fields never extend the excluded set directly
+// because of their null member.
 export type PayloadSimple<T extends Entity> = ResultIdentity<T> &
-  OmitByType<T, Json | Text | Binary | Entity | Entity[] | undefined>;
+  Pick<
+    T,
+    {
+      [K in keyof T]-?: NonNullable<T[K]> extends
+        | Json
+        | Text
+        | Binary
+        | Entity
+        | Entity[]
+        ? never
+        : K;
+    }[keyof T]
+  >;
 
 export type PayloadArg<
   Type extends Entity,
@@ -174,7 +194,7 @@ export type Payload<
   Query,
   Empty = ResultIdentity<Type>,
 > = PayloadArg<Type, Query, Empty> & {
-  _count?: string;
+  _count?: number;
   _cursor?: string;
   _hasNext?: boolean;
   _hasPrev?: boolean;

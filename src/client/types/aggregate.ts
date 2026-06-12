@@ -167,26 +167,34 @@ export type OrderByFromSelection<S> = {
       : never;
 };
 
+// Computed aggregates have no column type to preserve — pg widens them
+// (sum(int) → bigint, avg(int) → numeric) and the driver delivers exact
+// strings; the client passes them through, leaving the precision of the
+// conversion to the caller. count is never null (NULL → "0"); sum/avg are
+// null over empty or all-null sets.
 type AggregateResultType<T, Op extends AggregateOperation> = Op extends "count"
-  ? number
+  ? string
   : Op extends "avg" | "sum"
-    ? number
+    ? string | null
     : Op extends "min" | "max"
-      ? T extends Date
-        ? Date
-        : T extends string
-          ? string
-          : T extends boolean
-            ? boolean
-            : number
+      ? // min/max return stored column values — they keep the column's model
+        // type; null when the set is empty or all-null
+        T | null
       : Op extends "groupBy"
         ? T
         : never;
 
+// groupBy passes column nulls through — the null group is a real bucket
+type GroupByNull<V, Op extends AggregateOperation> = Op extends "groupBy"
+  ? null extends V
+    ? null
+    : never
+  : never;
+
 export type AggregateValue<T, S, Op extends AggregateOperation = "groupBy"> = {
   [K in keyof S]: S[K] extends true
     ? K extends keyof T
-      ? AggregateResultType<NonNullable<T[K]>, Op>
+      ? AggregateResultType<NonNullable<T[K]>, Op> | GroupByNull<T[K], Op>
       : never
     : S[K] extends object
       ? K extends keyof T

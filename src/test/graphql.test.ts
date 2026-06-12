@@ -89,7 +89,7 @@ describe("GraphQL tests", async () => {
             firstName: "Some"
             lastName: "NAME"
             title: { create: { code: "mr", name: "Mr." } }
-            addresses: { create: [{ contact: {}, street: "My HOME" }] }
+            addresses: { create: [{ street: "My HOME" }] }
           }
         ) {
           edges {
@@ -176,7 +176,6 @@ describe("GraphQL tests", async () => {
         addresses: {
           create: [
             {
-              contact: {},
               street: "My Home",
             },
           ],
@@ -205,7 +204,7 @@ describe("GraphQL tests", async () => {
             lastName: "NAME"
             title: { select: { code: { eq: "mrs" } } }
             addresses: {
-              create: { contact: {}, street: "My Office" }
+              create: { street: "My Office" }
               remove: [ ${contact.addresses![0].id}]
             }
           }

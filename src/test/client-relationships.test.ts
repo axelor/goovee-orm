@@ -11,7 +11,6 @@ describe("client relationship tests", async () => {
         lastName: "Name",
         bio: {
           create: {
-            contact: {},
             content: "It's Me!",
           },
         },

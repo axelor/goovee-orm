@@ -88,7 +88,6 @@ const createContact = async (
       addresses: {
         create: [
           {
-            contact: {},
             street,
             city,
             country: {

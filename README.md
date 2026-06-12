@@ -674,6 +674,59 @@ const highValueCountries = await client.order.aggregate({
 });
 ```
 
+#### Aggregate result types
+
+**`count`, `sum` and `avg` are returned as exact decimal strings** — for
+example `"42"` or `"1234.56"`. The value is always exact, no matter how large
+or precise; convert it to whatever your use case needs:
+
+```javascript
+const stats = await client.order.aggregate({
+  count: { id: true },
+  sum: { total: true }, // total is a Decimal field
+  avg: { total: true },
+});
+
+const row = stats[0];
+row.count.id; //=> "42"      — never null (no matching rows → "0")
+row.sum.total; //=> "1234.56" — null when there are no matching rows
+row.avg.total; //=> "411.52"  — null when there are no matching rows
+
+Number(row.sum.total); // display, charts, simple math
+new BigDecimal(row.sum.total); // exact arithmetic, e.g. monetary values
+BigInt(row.count.id); // very large counts
+```
+
+**`min`, `max` and `groupBy` return the field's own type** — the same value a
+`find` on that field would give you:
+
+| Field type  | `min`/`max`/`groupBy` value |
+| ----------- | --------------------------- |
+| String/Enum | `string` / enum member      |
+| Int         | `number`                    |
+| Decimal     | `BigDecimal`                |
+| Date / Time | date / time `string`        |
+| DateTime    | `Date`                      |
+| BigInt (id) | `string`                    |
+
+`min` and `max` are `null` when no rows match (or the field is null in all of
+them). `groupBy` values of nullable fields include `null` — records without a
+value form their own group:
+
+```javascript
+const byPopulation = await client.country.aggregate({
+  groupBy: { population: true }, // Decimal field
+  count: { id: true },
+});
+
+for (const group of byPopulation) {
+  // group.groupBy.population is BigDecimal | null — the null group
+  // collects the countries with no population set
+  const label = group.groupBy.population?.toString() ?? "unknown";
+  console.log(label, group.count.id);
+}
+```
+
 ### Transactions
 
 ```javascript

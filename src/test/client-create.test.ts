@@ -52,12 +52,10 @@ describe("client create tests", async () => {
         addresses: {
           create: [
             {
-              contact: {},
               street: "My HOME",
               type: AddressType.Home,
             },
             {
-              contact: {},
               street: "My Office",
               type: AddressType.Office,
             },
