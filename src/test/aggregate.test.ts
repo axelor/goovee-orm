@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getTestClient } from "./client.utils";
+import { BigDecimal } from "@goovee/orm";
 import { Contact, Title, Address, Country } from "./db/models";
 
 describe("aggregate e2e tests", async () => {
@@ -177,6 +178,110 @@ describe("aggregate e2e tests", async () => {
     // no parseInt truncation (3), no float rounding
     expect(result[0].sum.population).toBe("3.75");
     expect(Number(result[0].avg.population)).toBe(1.875);
+  });
+
+  it("should return decimal min/max/groupBy values as BigDecimal, negatives included", async () => {
+    await client.country.createAll({
+      data: [
+        { code: "g1", name: "Negative One", population: "-1.25" },
+        { code: "g2", name: "Negative Two", population: "-2.5" },
+      ],
+    });
+
+    const minMax = await client.country.aggregate({
+      min: { population: true },
+      max: { population: true },
+      where: { code: { in: ["g1", "g2"] } },
+    });
+
+    expect(minMax[0].min.population).toBeInstanceOf(BigDecimal);
+    expect(minMax[0].min.population!.equals(new BigDecimal("-2.5"))).toBe(true);
+    expect(minMax[0].max.population!.equals(new BigDecimal("-1.25"))).toBe(
+      true,
+    );
+
+    const groups = await client.country.aggregate({
+      groupBy: { population: true },
+      count: { id: true },
+      where: { code: { in: ["g1", "g2"] } },
+    });
+    const values = groups
+      .map((g) => Number(g.groupBy.population!.toString()))
+      .sort((a, b) => a - b);
+
+    expect(values).toEqual([-2.5, -1.25]);
+  });
+
+  it("should keep numeric-looking string group keys as strings", async () => {
+    await client.country.create({
+      data: { code: "007", name: "Bond", population: "1" },
+    });
+
+    const result = await client.country.aggregate({
+      groupBy: { code: true },
+      count: { id: true },
+      where: { code: { in: ["007"] } },
+    });
+
+    expect(result[0].groupBy.code).toBe("007");
+  });
+
+  it("should keep bigint id aggregate values as strings", async () => {
+    const c = await client.country.create({
+      data: { code: "big1", name: "Big One" },
+    });
+
+    const result = await client.country.aggregate({
+      groupBy: { id: true },
+      count: { id: true },
+      where: { code: { in: ["big1"] } },
+    });
+
+    expect(result[0].groupBy.id).toBe(String(c.id));
+  });
+
+  it("should return temporal aggregate values per their column types", async () => {
+    await client.contact.createAll({
+      data: [
+        {
+          firstName: "T1",
+          lastName: "Temporal",
+          registeredOn: new Date("2024-03-01T10:00:00Z"),
+          dateOfBirth: "1990-05-15",
+          timeOfBirth: "14:30:45",
+        },
+        {
+          firstName: "T2",
+          lastName: "Temporal",
+          registeredOn: new Date("2024-03-02T10:00:00Z"),
+          dateOfBirth: "1991-07-20",
+          timeOfBirth: "09:15:00",
+        },
+      ],
+    });
+
+    const groups = await client.contact.aggregate({
+      groupBy: { dateOfBirth: true, timeOfBirth: true, registeredOn: true },
+      count: { id: true },
+      where: { lastName: { in: ["Temporal"] } },
+    });
+
+    // date columns group as date strings (matching the model type), time
+    // columns as time strings, timestamp columns as Date instances
+    const dates = groups.map((g) => g.groupBy.dateOfBirth).sort();
+    expect(dates).toEqual(["1990-05-15", "1991-07-20"]);
+    expect(groups[0].groupBy.timeOfBirth).toMatch(/^\d{2}:\d{2}:\d{2}/);
+    expect(groups[0].groupBy.registeredOn).toBeInstanceOf(Date);
+
+    const minMax = await client.contact.aggregate({
+      min: { dateOfBirth: true, registeredOn: true },
+      max: { dateOfBirth: true },
+      where: { lastName: { in: ["Temporal"] } },
+    });
+
+    expect(minMax[0].min.dateOfBirth).toBe("1990-05-15");
+    expect(minMax[0].max.dateOfBirth).toBe("1991-07-20");
+    expect(minMax[0].min.registeredOn).toBeInstanceOf(Date);
   });
 
   it("should perform min and max aggregations", async () => {

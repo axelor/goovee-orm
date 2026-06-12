@@ -1,3 +1,5 @@
+import { DateUtils } from "typeorm/util/DateUtils.js";
+import { BigDecimal } from "../../fields/decimal";
 import { ParseResult } from "../../parser";
 import { OrmRepository } from "../types";
 
@@ -66,6 +68,18 @@ export const runAggregate = async (
   // Execute the query and get raw results
   const rawResults = await sq.getRawMany();
 
+  // Resolve an aggregate path ("min.title.name") to its column metadata,
+  // walking relations; undefined when the path does not reach a plain column
+  const resolveColumn = (pathParts: string[]) => {
+    let meta = repo.metadata;
+    for (let i = 1; i < pathParts.length - 1; i++) {
+      const relation = meta.findRelationWithPropertyPath(pathParts[i]);
+      if (!relation) return undefined;
+      meta = relation.inverseEntityMetadata;
+    }
+    return meta.findColumnWithPropertyName(pathParts[pathParts.length - 1]);
+  };
+
   // Helper function to convert values based on aggregate operation
   const convertAggregateValue = (value: any, originalPath: string): any => {
     const pathParts = originalPath.split(".");
@@ -84,23 +98,22 @@ export const runAggregate = async (
         return value;
       case "min":
       case "max":
-        // For min/max, we need to preserve the original type
-        // Numbers should be converted, strings/dates should remain as-is
+      case "groupBy": {
+        // min/max/groupBy carry stored column values, which keep the
+        // column's model type. The driver already delivers most of them
+        // correctly (ints as numbers, strings/enums/bigints as strings,
+        // timestamps as Dates); only numeric and date columns arrive in
+        // shapes that differ from entity hydration and need converting.
         if (value === null) return null;
-        if (typeof value === "string" && /^\d+(\.\d+)?$/.test(value)) {
-          return parseFloat(value);
+        const column = resolveColumn(pathParts);
+        if (typeof value === "string" && String(column?.type) === "numeric") {
+          return new BigDecimal(value);
+        }
+        if (value instanceof Date && String(column?.type) === "date") {
+          return DateUtils.mixedDateToDateString(value);
         }
         return value;
-      case "groupBy":
-        // GroupBy values should preserve their original types
-        // Only convert if it's clearly a number
-        if (value === null) return null;
-        if (typeof value === "string" && /^\d+$/.test(value)) {
-          return parseInt(value, 10);
-        } else if (typeof value === "string" && /^\d+\.\d+$/.test(value)) {
-          return parseFloat(value);
-        }
-        return value;
+      }
       default:
         return value;
     }
