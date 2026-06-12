@@ -177,13 +177,9 @@ type AggregateResultType<T, Op extends AggregateOperation> = Op extends "count"
   : Op extends "avg" | "sum"
     ? string | null
     : Op extends "min" | "max"
-      ? T extends Date
-        ? Date
-        : T extends string
-          ? string
-          : T extends boolean
-            ? boolean
-            : number
+      ? // min/max return stored column values — they keep the column's model
+        // type; null when the set is empty or all-null
+        T | null
       : Op extends "groupBy"
         ? T
         : never;
