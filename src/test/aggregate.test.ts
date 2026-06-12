@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getTestClient } from "./client.utils";
 import { BigDecimal } from "@goovee/orm";
-import { Contact, Title, Address, Country } from "./db/models";
+import { AddressType } from "./db/models";
 
 describe("aggregate e2e tests", async () => {
   const client = await getTestClient();
@@ -282,6 +282,173 @@ describe("aggregate e2e tests", async () => {
     expect(minMax[0].min.dateOfBirth).toBe("1990-05-15");
     expect(minMax[0].max.dateOfBirth).toBe("1991-07-20");
     expect(minMax[0].min.registeredOn).toBeInstanceOf(Date);
+  });
+
+  it("should include the null group as its own bucket for nullable columns", async () => {
+    await client.country.createAll({
+      data: [
+        { code: "nb1", name: "Null Bucket One" },
+        { code: "nb2", name: "Null Bucket Two" },
+        { code: "nb3", name: "Null Bucket Three", population: "5" },
+      ],
+    });
+
+    const groups = await client.country.aggregate({
+      groupBy: { population: true },
+      count: { id: true },
+      where: { code: { in: ["nb1", "nb2", "nb3"] } },
+    });
+
+    const nullBucket = groups.find((g) => g.groupBy.population === null);
+    const fiveBucket = groups.find((g) =>
+      g.groupBy.population?.equals(new BigDecimal("5")),
+    );
+
+    expect(nullBucket?.count.id).toBe("2");
+    expect(fiveBucket?.count.id).toBe("1");
+  });
+
+  it("should aggregate empty sets to null and count zero", async () => {
+    const result = await client.country.aggregate({
+      count: { id: true },
+      sum: { population: true },
+      avg: { population: true },
+      min: { population: true },
+      max: { name: true },
+      where: { code: { in: ["does-not-exist"] } },
+    });
+
+    expect(result[0].count.id).toBe("0");
+    expect(result[0].sum.population).toBeNull();
+    expect(result[0].avg.population).toBeNull();
+    expect(result[0].min.population).toBeNull();
+    expect(result[0].max.name).toBeNull();
+
+    const groups = await client.country.aggregate({
+      groupBy: { population: true },
+      count: { id: true },
+      where: { code: { in: ["does-not-exist"] } },
+    });
+
+    expect(groups).toHaveLength(0);
+  });
+
+  it("should group by boolean and enum columns", async () => {
+    await client.country.createAll({
+      data: [
+        { code: "bool1", name: "Bool One", isMember: true },
+        { code: "bool2", name: "Bool Two", isMember: true },
+        { code: "bool3", name: "Bool Three", isMember: false },
+      ],
+    });
+
+    const bools = await client.country.aggregate({
+      groupBy: { isMember: true },
+      count: { id: true },
+      where: { code: { in: ["bool1", "bool2", "bool3"] } },
+    });
+
+    expect(bools.find((g) => g.groupBy.isMember === true)?.count.id).toBe("2");
+    expect(bools.find((g) => g.groupBy.isMember === false)?.count.id).toBe("1");
+
+    await client.contact.create({
+      data: {
+        firstName: "E",
+        lastName: "Enum",
+        addresses: {
+          create: [
+            { street: "A", type: AddressType.Office },
+            { street: "B", type: AddressType.Office },
+          ],
+        },
+      },
+    });
+
+    const enums = await client.address.aggregate({
+      groupBy: { type: true },
+      count: { id: true },
+      where: { type: { in: [AddressType.Office] } },
+    });
+
+    expect(enums[0].groupBy.type).toBe(AddressType.Office);
+  });
+
+  it("should group by columns reached through relations", async () => {
+    const title = await client.title.create({
+      data: { code: "rw", name: "RW Title" },
+    });
+    await client.contact.createAll({
+      data: [
+        {
+          firstName: "R1",
+          lastName: "RelWalk",
+          title: { select: { id: title.id } },
+        },
+        {
+          firstName: "R2",
+          lastName: "RelWalk",
+          title: { select: { id: title.id } },
+        },
+      ],
+    });
+
+    const groups = await client.contact.aggregate({
+      groupBy: { title: { name: true } },
+      count: { id: true },
+      where: { lastName: { in: ["RelWalk"] } },
+    });
+
+    expect(groups[0].groupBy.title.name).toBe("RW Title");
+    expect(groups[0].count.id).toBe("2");
+  });
+
+  it("should sum and average integer columns as exact strings", async () => {
+    await client.country.createAll({
+      data: [
+        { code: "int1", name: "Int One", rank: 1 },
+        { code: "int2", name: "Int Two", rank: 2 },
+      ],
+    });
+
+    const result = await client.country.aggregate({
+      sum: { rank: true },
+      avg: { rank: true },
+      min: { rank: true },
+      max: { rank: true },
+      where: { code: { in: ["int1", "int2"] } },
+    });
+
+    expect(result[0].sum.rank).toBe("3");
+    expect(Number(result[0].avg.rank)).toBe(1.5);
+    expect(result[0].min.rank).toBe(1);
+    expect(result[0].max.rank).toBe(2);
+
+    const groups = await client.country.aggregate({
+      groupBy: { rank: true },
+      count: { id: true },
+      where: { code: { in: ["int1", "int2"] } },
+    });
+    const keys = groups.map((g) => g.groupBy.rank).sort();
+
+    expect(keys).toEqual([1, 2]);
+  });
+
+  it("should min/max time columns as strings", async () => {
+    await client.contact.createAll({
+      data: [
+        { firstName: "TM1", lastName: "TimeMinMax", timeOfBirth: "09:15:00" },
+        { firstName: "TM2", lastName: "TimeMinMax", timeOfBirth: "14:30:45" },
+      ],
+    });
+
+    const result = await client.contact.aggregate({
+      min: { timeOfBirth: true },
+      max: { timeOfBirth: true },
+      where: { lastName: { in: ["TimeMinMax"] } },
+    });
+
+    expect(result[0].min.timeOfBirth).toBe("09:15:00");
+    expect(result[0].max.timeOfBirth).toBe("14:30:45");
   });
 
   it("should perform min and max aggregations", async () => {
